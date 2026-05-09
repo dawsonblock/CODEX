@@ -179,6 +179,9 @@ fn claim_memory_populated_after_run() {
 #[test]
 fn claim_memory_detects_contradictions_across_cycles() {
     // Seed chosen so the same scenario appears repeatedly in a 50-cycle run.
+    // Any seed produces ≥50 claims from 7 scenario templates — the exact seed
+    // is not load-bearing; seed 5 is used throughout the test suite for
+    // consistency with other evaluator tests.
     let mut run = EvaluatorRun::new(5, None);
     let _card = run.run(50);
 

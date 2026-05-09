@@ -529,6 +529,10 @@ impl ClaimMemory {
             "simworld_outcome",
             format!("{subject}:{action}:{}", if good_outcome { "ok" } else { "fail" }),
             ts.clone(),
+            // 0.85 for success: high confidence the action produced a good outcome.
+            // 0.35 for failure: low confidence, acts as a weak negative signal.
+            // The gap between the two values ensures contradictions are resolvable
+            // in favour of the higher-confidence (success) claim.
             if good_outcome { 0.85 } else { 0.35 },
         );
         self.assert_claim(
