@@ -15,17 +15,16 @@ class ActionType(str, Enum):
     ``str`` mixin ensures equality with plain string literals so existing code
     that compares ``action_type == "answer"`` continues to work without changes.
     """
-    ANSWER               = "answer"
-    ASK_CLARIFICATION    = "ask_clarification"
-    RETRIEVE_MEMORY      = "retrieve_memory"
-    WRITE_SCRATCHPAD     = "write_scratchpad"
-    DEFER                = "defer"
-    REFUSE_UNGROUNDED    = "refuse_ungrounded"
-    REPAIR               = "repair"
-    SUMMARIZE            = "summarize"
-    CONSERVE_RESOURCES   = "conserve_resources"
-    GENERATE_PRINCIPLE   = "generate_principle"
-    INTERNAL_DIAGNOSTIC  = "internal_diagnostic"
+    ANSWER                      = "answer"
+    ASK_CLARIFICATION           = "ask_clarification"
+    RETRIEVE_MEMORY             = "retrieve_memory"
+    REFUSE_UNSAFE               = "refuse_unsafe"
+    DEFER_INSUFFICIENT_EVIDENCE = "defer_insufficient_evidence"
+    SUMMARIZE                   = "summarize"
+    PLAN                        = "plan"
+    EXECUTE_BOUNDED_TOOL        = "execute_bounded_tool"
+    NO_OP                       = "no_op"
+    INTERNAL_DIAGNOSTIC         = "internal_diagnostic"
 
 
 def now_ts() -> float:

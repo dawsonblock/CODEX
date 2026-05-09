@@ -1,6 +1,11 @@
 # Rust build artifacts
 target/
 
+# Runtime artifacts (generated logs)
+*.gwlog
+artifacts/test_traces/
+artifacts/traces/
+
 # Python
 __pycache__/
 *.pyc

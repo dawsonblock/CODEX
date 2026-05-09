@@ -51,14 +51,14 @@ class Planner:
                 return PlannerDecision(selected, rejected, f"somatic bad-outcome predictor active; preferred {selected.action_type}", selected.memory_write_recommendation, selected.action_type)
 
         if state.threat > 0.65 or state.uncertainty > 0.65:
-            preferred: tuple[ActionType, ...] = ("ask_clarification", "retrieve_memory", "refuse_ungrounded", "repair", "summarize")
+            preferred: tuple[ActionType, ...] = ("ask_clarification", "retrieve_memory", "refuse_unsafe", "defer_insufficient_evidence", "summarize")
             chosen = self._best_matching_action(allowed, preferred)
             if chosen:
                 selected, score = chosen
                 return PlannerDecision(selected, rejected, "high threat or uncertainty; chose conservative action-grounded candidate", selected.memory_write_recommendation, selected.action_type)
             reason = "high threat or uncertainty; best available candidate selected"
         elif state.world_resources < 0.35:
-            preferred = ("conserve_resources", "summarize", "ask_clarification")
+            preferred = ("no_op", "summarize", "ask_clarification")
             chosen = self._best_matching_action(allowed, preferred)
             if chosen:
                 selected, score = chosen
@@ -67,7 +67,7 @@ class Planner:
             selected, score = allowed[0]
             reason = "world resources critically low; chose lower-cost candidate"
         elif state.resource_pressure > 0.65:
-            preferred = ("conserve_resources", "summarize", "ask_clarification")
+            preferred = ("no_op", "summarize", "ask_clarification")
             chosen = self._best_matching_action(allowed, preferred)
             if chosen:
                 selected, score = chosen
@@ -103,11 +103,11 @@ class Planner:
     def _preferred_actions_from_somatic(self, somatic_map: SomaticMap, state: InternalState) -> tuple[ActionType, ...]:
         pressure = somatic_map.values
         if pressure.get("resource_strain", 0.0) > 0.5 or state.resource_pressure > 0.65:
-            return ("conserve_resources", "summarize", "ask_clarification")
+            return ("no_op", "summarize", "ask_clarification")
         if pressure.get("memory_conflict", 0.0) > 0.42 or pressure.get("contradiction_pressure", 0.0) > 0.45:
-            return ("retrieve_memory", "ask_clarification", "refuse_ungrounded")
+            return ("retrieve_memory", "ask_clarification", "refuse_unsafe")
         if pressure.get("social_threat_pressure", 0.0) > 0.5 or pressure.get("kindness_violation_pressure", 0.0) > 0.45:
-            return ("repair", "ask_clarification", "summarize")
+            return ("defer_insufficient_evidence", "ask_clarification", "summarize")
         if pressure.get("uncertainty_load", 0.0) > 0.5 or pressure.get("control_loss", 0.0) > 0.45:
-            return ("ask_clarification", "retrieve_memory", "refuse_ungrounded")
-        return ("ask_clarification", "retrieve_memory", "repair", "refuse_ungrounded", "summarize")
+            return ("ask_clarification", "retrieve_memory", "refuse_unsafe")
+        return ("ask_clarification", "retrieve_memory", "refuse_unsafe", "defer_insufficient_evidence", "summarize")

@@ -7,18 +7,18 @@ from typing import Any
 
 
 class SimAction(str, Enum):
-    """Bounded actions available to the runtime in SimWorld."""
+    """Bounded actions available to the runtime in SimWorld (Rust-authoritative 10-type vocabulary)."""
 
     ANSWER = "answer"
     ASK_CLARIFICATION = "ask_clarification"
     RETRIEVE_MEMORY = "retrieve_memory"
-    WRITE_SCRATCHPAD = "write_scratchpad"
-    DEFER = "defer"
-    REFUSE_UNGROUNDED = "refuse_ungrounded"
-    REPAIR = "repair"
+    REFUSE_UNSAFE = "refuse_unsafe"
+    DEFER_INSUFFICIENT_EVIDENCE = "defer_insufficient_evidence"
     SUMMARIZE = "summarize"
-    CONSERVE_RESOURCES = "conserve_resources"
-    GENERATE_PRINCIPLE = "generate_principle"
+    PLAN = "plan"
+    EXECUTE_BOUNDED_TOOL = "execute_bounded_tool"
+    NO_OP = "no_op"
+    INTERNAL_DIAGNOSTIC = "internal_diagnostic"
 
 
 @dataclass

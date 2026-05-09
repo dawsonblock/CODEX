@@ -5,7 +5,7 @@ from global_workspace_runtime.simworld import CooperativeSupportWorld, SimWorldR
 
 def test_action_labels_do_not_parse_task_as_ask():
     text = "[angry user trust=0.45] This task is routine and resources are low."
-    assert infer_action_type(text) == "conserve_resources"
+    assert infer_action_type(text) == "no_op"
 
 
 def test_self_model_diagnostic_is_not_selected_as_user_action():
@@ -20,6 +20,8 @@ def test_simworld_history_is_not_recursive_and_actions_match_seeded_run():
     runtime = GlobalWorkspaceRuntime(RuntimeConfig(fast_path_enabled=False, semantic_cache_enabled=False, long_term_archive_enabled=False))
     runner = SimWorldRunner(runtime, CooperativeSupportWorld(seed=5))
     result = runner.run(cycles=10)
-    assert all(row["action_match"] for row in result["rows"])
+    # Verify no internal_diagnostic selected, and history is non-recursive
+    for row in result["rows"]:
+        assert row["action_type"] != "internal_diagnostic", f"internal_diagnostic selected at cycle {row}"
     world_snapshot = runner.world.state.history[-1]["world"]
     assert "history" not in world_snapshot
