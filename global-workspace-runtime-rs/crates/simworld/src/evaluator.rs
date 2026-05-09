@@ -99,7 +99,13 @@ impl EvaluatorRun {
             trace.resource_score_after = self.world.resources;
             trace.unsafe_action_flag = is_unsafe;
             trace.memory_hits_count = step.memory_hits.len();
+            trace.memory_hit_ids = step.memory_hits.iter().map(|h| h.key.clone()).collect();
             trace.symbolic_context_count = step.symbolic_activations.len();
+            trace.symbolic_symbol_ids = step
+                .symbolic_activations
+                .iter()
+                .map(|s| s.symbol_id.clone())
+                .collect();
             trace.candidate_actions = step
                 .candidate_actions
                 .iter()
@@ -113,8 +119,22 @@ impl EvaluatorRun {
                     reason: r.reason.clone(),
                 })
                 .collect();
+            trace.policy_scores = step
+                .policy_scores
+                .iter()
+                .map(|p| crate::evaluator_trace::TracePolicyScore {
+                    action_type: p.action_type.to_string(),
+                    base_score: p.base_score,
+                    bonus: p.bonus,
+                    final_score: p.final_score,
+                    modifiers: p.modifiers.clone(),
+                })
+                .collect();
             trace.runtime_events_count = step.events.len();
             trace.selection_reason = step.selection_reason.clone();
+            if let Some(ref ctx) = rt.last_context {
+                trace.observation_kind = ctx.kind.as_str().to_string();
+            }
 
             self.traces.push(trace);
         }

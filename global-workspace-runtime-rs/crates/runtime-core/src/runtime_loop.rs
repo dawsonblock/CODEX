@@ -22,6 +22,8 @@ pub struct RuntimeLoop {
     pub activator: SymbolicActivator,
     /// Last observation context
     pub last_context: Option<ObservationContext>,
+    /// Symbolic activations for current cycle (used in scoring)
+    pub symbolic_activations: Vec<crate::runtime_step_result::SymbolActivation>,
 }
 
 impl RuntimeLoop {
@@ -32,6 +34,7 @@ impl RuntimeLoop {
             memory,
             activator: SymbolicActivator::new(),
             last_context: None,
+            symbolic_activations: Vec::new(),
         }
     }
 
@@ -50,7 +53,8 @@ impl RuntimeLoop {
         self.interpreter
             .apply_to_state(&mut self.internal_state, &ctx);
         self.last_context = Some(ctx.clone());
-        result.symbolic_activations = self.activator.activate(&ctx);
+        self.symbolic_activations = self.activator.activate(&ctx);
+        result.symbolic_activations = self.symbolic_activations.clone();
 
         // ── 1. Observation ──────────────────────────────────────────
         result.events.push(RuntimeEvent::CycleStarted {
@@ -228,6 +232,20 @@ impl RuntimeLoop {
                 _ => {}
             }
         }
+
+        // Symbolic activation influence: small bonus when
+        // activations match the action's purpose.
+        let symbolic_bonus = self
+            .symbolic_activations
+            .iter()
+            .filter(|sym| {
+                sym.symbol_id.contains(action.as_str())
+                    || action.as_str().contains(&sym.symbol_id)
+                    || sym.influence.contains(action.as_str())
+            })
+            .count() as f64
+            * 0.05;
+        bonus += symbolic_bonus;
 
         (base + bonus).clamp(0.0, 1.0)
     }

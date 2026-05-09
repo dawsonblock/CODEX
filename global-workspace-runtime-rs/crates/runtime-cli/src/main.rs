@@ -21,7 +21,7 @@ fn main() {
         Some("check-action-schema") => cmd_check_action_schema(),
         Some("check-no-fake-mv2") => cmd_check_no_mv2(&args[2..]),
         Some("symbolic-smoke") => cmd_symbolic_smoke(),
-        Some("proof") => cmd_proof(),
+        Some("proof") => cmd_proof(&args[2..]),
         _ => {
             eprintln!("Usage:");
             eprintln!("  runtime-cli simworld --cycles <N> --seed <S>");
@@ -222,13 +222,42 @@ fn cmd_symbolic_smoke() {
 
 // ─── proof ──────────────────────────────────────────────────────────────
 
-fn cmd_proof() {
+fn cmd_proof(args: &[String]) {
+    let strict = args.iter().any(|a| a == "--strict");
+    let out_dir =
+        parse_string_flag(args, "--out").unwrap_or_else(|| "artifacts/proof/latest".to_string());
+    let _ = std::fs::create_dir_all(&out_dir);
+
+    let mut all_ok = true;
+
     // 1. SimWorld
     let mut run = EvaluatorRun::new(5, None);
     let card = run.run(25);
     let sim_ok = card.resource_survival > 0.70 && card.unsafe_action_count == 0;
+    if strict && !sim_ok {
+        all_ok = false;
+    }
+    // Write simworld summary
+    let sim_json = serde_json::json!({
+        "scorecard": to_json(&card),
+        "traces": to_json(&run.traces),
+    });
+    let _ = std::fs::write(
+        format!("{out_dir}/simworld_summary.json"),
+        serde_json::to_string_pretty(&sim_json).unwrap_or_default(),
+    );
 
-    // 2. Action schema check
+    // 2. Replay verifier — run on evaluator's event log
+    let replay_report = runtime_core::replay_verifier::verify_replay(&run.log);
+    let _ = std::fs::write(
+        format!("{out_dir}/replay_report.json"),
+        serde_json::to_string_pretty(&replay_report).unwrap_or_default(),
+    );
+    if strict && !replay_report.replay_passes {
+        all_ok = false;
+    }
+
+    // 3. Action schema
     let mut schema_ok = true;
     for s in ActionType::all_strs() {
         if ActionType::from_schema_str(s).is_none() {
@@ -236,11 +265,11 @@ fn cmd_proof() {
         }
     }
 
-    // 3. No fake mv2
+    // 4. No fake mv2
     let mv2_files = find_mv2(&PathBuf::from("."));
     let mv2_ok = mv2_files.is_empty();
 
-    // 4. Symbolic smoke
+    // 5. Symbolic smoke
     let mut graph = symbolic::SymbolGraph::new();
     let sym = symbolic::Symbol::new(
         symbolic::SymbolId::from("proof_sym"),
@@ -252,14 +281,20 @@ fn cmd_proof() {
     graph.validate(&symbolic::SymbolId::from("proof_sym"));
     let sym_ok = graph.authoritative_symbols().len() == 1;
 
-    let all_ok = sim_ok && schema_ok && mv2_ok && sym_ok;
+    let all_ok = all_ok && sim_ok && schema_ok && mv2_ok && sym_ok;
 
     let output = serde_json::json!({
         "command": "proof",
+        "strict": strict,
+        "output_dir": out_dir,
         "checks": {
             "simworld": {
                 "status": if sim_ok { "pass" } else { "fail" },
                 "scorecard": to_json(&card),
+            },
+            "replay": {
+                "status": if replay_report.replay_passes { "pass" } else { "fail" },
+                "report": to_json(&replay_report),
             },
             "action_schema": {
                 "status": if schema_ok { "pass" } else { "fail" },

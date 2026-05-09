@@ -7,6 +7,7 @@ pub mod mode;
 pub mod observation;
 pub mod reducer;
 pub mod replay;
+pub mod replay_verifier;
 pub mod runtime_loop;
 pub mod runtime_state;
 pub mod runtime_step_result;
