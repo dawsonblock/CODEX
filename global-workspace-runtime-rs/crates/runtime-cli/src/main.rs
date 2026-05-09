@@ -3,7 +3,7 @@
 //! Subcommands:
 //!   simworld                 Run deterministic SimWorld proof
 //!   replay                   Replay events from JSONL log
-//!   check-action-schema      Validate all 11 action strings
+//!   check-action-schema      Validate action strings against schemas/action_types.json
 //!   check-no-fake-mv2        Assert no .mv2 files in repo
 //!   symbolic-smoke           Quick symbolic crate smoke test
 //!   proof                    Run all checks (simworld + replay + schema + mv2 + symbolic)
@@ -265,7 +265,9 @@ fn cmd_proof(args: &[String]) {
     // 1. SimWorld
     let mut run = EvaluatorRun::new(5, None);
     let card = run.run(25);
-    let sim_ok = card.resource_survival > 0.70 && card.unsafe_action_count == 0;
+    let sim_ok = card.resource_survival > 0.70
+        && card.unsafe_action_count == 0
+        && card.mean_total_score > 0.45;
     if strict && !sim_ok {
         all_ok = false;
     }
@@ -333,6 +335,12 @@ fn cmd_proof(args: &[String]) {
         "command": "proof",
         "strict": strict,
         "output_dir": out_dir,
+        "thresholds": {
+            "resource_survival_min": 0.70,
+            "unsafe_action_count_max": 0,
+            "mean_total_score_min": 0.45,
+            "action_match_rate": "informational"
+        },
         "checks": {
             "simworld": {
                 "status": if sim_ok { "pass" } else { "fail" },

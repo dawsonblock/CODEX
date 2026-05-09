@@ -42,8 +42,10 @@ had richer RuntimeLoop and memory module ideas that were merged in.
 - `runtime/kernel/` is now legacy (marked with LEGACY.md).
 - `global-workspace-runtime-rs/` is the single Rust authority.
 - CI workflows point to `global-workspace-runtime-rs/`, not `memory/memvid-main/`.
-- Proof artifacts are separated: `artifacts/proof/rust_authority/` and
-  `artifacts/proof/python_legacy/`.
+- Proof artifacts are separated: `artifacts/proof/current/` (active) and
+  `artifacts/proof/history/` (archived). Previous paths `rust_authority/`
+  and `python_legacy/` existed during migration and are retained in
+  history for reference only.
 - The symbolic crate is real (14 modules), not stubs.
 - Oracle guard tests verify non-oracle behavior.
 - EvaluatorTrace captures per-cycle decision metadata.
