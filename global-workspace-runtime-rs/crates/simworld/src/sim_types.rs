@@ -1,23 +1,21 @@
-//! SimWorld value types.  action_type strings map to ActionType via From impls.
+//! SimWorld value types. Maps directly to runtime_core::ActionType.
 
 use runtime_core::ActionType;
 use serde::{Deserialize, Serialize};
 
-/// All actions the simworld recognises — including the safety-only InternalDiagnostic.
+/// All actions the SimWorld recognizes.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SimAction {
     Answer,
     AskClarification,
     RetrieveMemory,
-    WriteScratchpad,
-    Defer,
-    RefuseUngrounded,
-    Repair,
+    RefuseUnsafe,
+    DeferInsufficientEvidence,
     Summarize,
-    ConserveResources,
-    GeneratePrinciple,
-    /// Never surfaced to users — safety valve only.
+    Plan,
+    ExecuteBoundedTool,
+    NoOp,
     InternalDiagnostic,
 }
 
@@ -27,13 +25,12 @@ impl SimAction {
             Self::Answer => "answer",
             Self::AskClarification => "ask_clarification",
             Self::RetrieveMemory => "retrieve_memory",
-            Self::WriteScratchpad => "write_scratchpad",
-            Self::Defer => "defer",
-            Self::RefuseUngrounded => "refuse_ungrounded",
-            Self::Repair => "repair",
+            Self::RefuseUnsafe => "refuse_unsafe",
+            Self::DeferInsufficientEvidence => "defer_insufficient_evidence",
             Self::Summarize => "summarize",
-            Self::ConserveResources => "conserve_resources",
-            Self::GeneratePrinciple => "generate_principle",
+            Self::Plan => "plan",
+            Self::ExecuteBoundedTool => "execute_bounded_tool",
+            Self::NoOp => "no_op",
             Self::InternalDiagnostic => "internal_diagnostic",
         }
     }
@@ -49,13 +46,12 @@ impl From<ActionType> for SimAction {
             ActionType::Answer => Self::Answer,
             ActionType::AskClarification => Self::AskClarification,
             ActionType::RetrieveMemory => Self::RetrieveMemory,
-            ActionType::WriteScratchpad => Self::WriteScratchpad,
-            ActionType::Defer => Self::Defer,
-            ActionType::RefuseUngrounded => Self::RefuseUngrounded,
-            ActionType::Repair => Self::Repair,
+            ActionType::RefuseUnsafe => Self::RefuseUnsafe,
+            ActionType::DeferInsufficientEvidence => Self::DeferInsufficientEvidence,
             ActionType::Summarize => Self::Summarize,
-            ActionType::ConserveResources => Self::ConserveResources,
-            ActionType::GeneratePrinciple => Self::GeneratePrinciple,
+            ActionType::Plan => Self::Plan,
+            ActionType::ExecuteBoundedTool => Self::ExecuteBoundedTool,
+            ActionType::NoOp => Self::NoOp,
             ActionType::InternalDiagnostic => Self::InternalDiagnostic,
         }
     }
@@ -67,13 +63,12 @@ impl From<SimAction> for ActionType {
             SimAction::Answer => Self::Answer,
             SimAction::AskClarification => Self::AskClarification,
             SimAction::RetrieveMemory => Self::RetrieveMemory,
-            SimAction::WriteScratchpad => Self::WriteScratchpad,
-            SimAction::Defer => Self::Defer,
-            SimAction::RefuseUngrounded => Self::RefuseUngrounded,
-            SimAction::Repair => Self::Repair,
+            SimAction::RefuseUnsafe => Self::RefuseUnsafe,
+            SimAction::DeferInsufficientEvidence => Self::DeferInsufficientEvidence,
             SimAction::Summarize => Self::Summarize,
-            SimAction::ConserveResources => Self::ConserveResources,
-            SimAction::GeneratePrinciple => Self::GeneratePrinciple,
+            SimAction::Plan => Self::Plan,
+            SimAction::ExecuteBoundedTool => Self::ExecuteBoundedTool,
+            SimAction::NoOp => Self::NoOp,
             SimAction::InternalDiagnostic => Self::InternalDiagnostic,
         }
     }
@@ -84,15 +79,6 @@ impl From<SimAction> for ActionType {
 pub struct SimUser {
     pub name: String,
     pub trust: f64,
-}
-
-/// World event types the environment can emit.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum SimWorldEvent {
-    HarmAttempt { intensity: f64 },
-    TrustBoost { delta: f64 },
-    ResourceDrain { amount: f64 },
-    Neutral,
 }
 
 /// Outcome of applying a single action.
@@ -108,8 +94,15 @@ pub struct SimOutcome {
     pub matches_expected: bool,
 }
 
+/// Snapshot of world state.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimWorldState {
+    pub resources: f64,
+    pub cycle: u64,
+    pub trust_mean: f64,
+}
+
 impl SimOutcome {
-    /// Sum of six component scores divided by 6 (range ≈ [0,1]).
     pub fn total_score(&self) -> f64 {
         (self.truth_score
             + self.kindness_score
@@ -119,12 +112,4 @@ impl SimOutcome {
             + (1.0 - self.harm_score.clamp(0.0, 1.0)))
             / 6.0
     }
-}
-
-/// Snapshot of world state at any point.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SimWorldState {
-    pub resources: f64,
-    pub cycle: u64,
-    pub trust_mean: f64,
 }

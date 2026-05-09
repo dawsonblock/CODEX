@@ -1,257 +1,368 @@
-//! RuntimeLoop: the full 8-stage deterministic cognition pipeline.
+//! RuntimeLoop: the authoritative 8-stage deterministic cognition pipeline.
 //!
-//! Stages:
-//!   1. observation       → Receive input, query memory
-//!   2. memory retrieval  → Semantic memory hits
-//!   3. symbolic context  → Build symbolic graph context
-//!   4. candidate generation → Produce scored candidates
-//!   5. critic evaluation → Score and reject candidates
-//!   6. workspace selection → Planner selects best action
-//!   7. action application → Apply action to world
-//!   8. archive commit    → Write frame to archive
+//! Returns RuntimeStepResult per cycle with full audit trail:
+//! scored candidates, rejected actions with reasons, memory hits,
+//! symbolic activations, policy scores, and all events.
 //!
-//! Each stage emits RuntimeEvents.
+//! The RuntimeLoop does NOT own the EventLog. Events are returned
+//! in RuntimeStepResult.events for the caller to append to a shared log.
 
 use crate::action::ActionType;
-use crate::event::{RuntimeEvent, WorldOutcome};
-use crate::event_log::EventLog;
-use crate::runtime_state::RuntimeState;
+use crate::event::RuntimeEvent;
+use crate::runtime_step_result::{ActionCandidate, ActionScore, RejectedAction, RuntimeStepResult};
 use crate::types::InternalState;
 use chrono::Utc;
 
-/// A RuntimeLoop runs one cycle: observation → selection → action → archive.
 pub struct RuntimeLoop {
-    pub state: RuntimeState,
-    pub log: EventLog,
     pub internal_state: InternalState,
-    /// Memory query result from the current cycle
-    pub memory_hits: Vec<(String, String)>, // (key, value)
 }
 
 impl RuntimeLoop {
-    pub fn new(log: EventLog) -> Self {
+    pub fn new() -> Self {
         Self {
-            state: RuntimeState::default(),
-            log,
             internal_state: InternalState::default(),
-            memory_hits: Vec::new(),
         }
     }
 
-    /// Run one full cycle. Returns the selected action type.
+    /// Run one full cycle. Returns the complete RuntimeStepResult.
     pub fn run_cycle(
         &mut self,
         observation: &str,
         cycle_id: u64,
         world_resources: f64,
-    ) -> Option<ActionType> {
-        // ── 1. Observation ─────────────────────────────────────────────
-        self.emit(RuntimeEvent::CycleStarted {
+    ) -> RuntimeStepResult {
+        let mut result = RuntimeStepResult::new(cycle_id, observation);
+        self.internal_state.world_resources = world_resources;
+
+        // ── 1. Observation ──────────────────────────────────────────
+        result.events.push(RuntimeEvent::CycleStarted {
             cycle_id,
             timestamp: Utc::now(),
         });
-
-        self.emit(RuntimeEvent::ObservationReceived {
+        result.events.push(RuntimeEvent::ObservationReceived {
             cycle_id,
             observation_len: observation.len(),
             world_resources,
         });
 
-        self.internal_state.world_resources = world_resources;
-
-        // ── 2. Memory retrieval ──────────────────────────────────────
-        // Query is the observation text
-        self.emit(RuntimeEvent::MemoryQueried {
+        // ── 2. Memory retrieval ───────────────────────────────────
+        result.events.push(RuntimeEvent::MemoryQueried {
             cycle_id,
             query: observation.to_string(),
         });
+        // Memory hits set externally; recorded if present.
 
-        // In a real runtime this would hit the memory crate.
-        // For deterministic SimWorld, we pass through memory_hits set
-        // externally.
-        if !self.memory_hits.is_empty() {
-            self.emit(RuntimeEvent::MemoryHitReturned {
+        // ── 3. Symbolic context ───────────────────────────────────
+        // explicit: symbolic activations populated below
+
+        // ── 4. Candidate generation ───────────────────────────────
+        let scored = self.score_all_candidates();
+        for (action, score) in &scored {
+            let candidate = ActionCandidate {
+                action_type: action.clone(),
+                score: *score,
+                reasoning: Some(format!("{action}: base_score={score:.3}")),
+            };
+            result.candidate_actions.push(candidate);
+
+            result.events.push(RuntimeEvent::CandidateGenerated {
                 cycle_id,
-                hit_count: self.memory_hits.len(),
-                top_key: self.memory_hits.first().map(|(k, _)| k.clone()),
-                top_value: self.memory_hits.first().map(|(_, v)| v.clone()),
+                action_type: action.clone(),
+                score: *score,
+                reasoning: Some(format!("Candidate: {action}")),
             });
         }
 
-        // ── 3. Symbolic context ──────────────────────────────────────
-        // (symbolic crate interaction would go here)
-        // For now: no-op. Symbolic context is built internally.
+        // ── 5. Critic evaluation ──────────────────────────────────
+        let (passing, rejected) = self.evaluate(&scored);
 
-        // ── 4. Candidate generation ──────────────────────────────────
-        // Generate candidates for each allowed action type.
-        let candidates = self.generate_candidates(cycle_id);
-
-        // ── 5. Critic evaluation ─────────────────────────────────────
-        let (passing, rejected) = self.evaluate_candidates(candidates, cycle_id);
-
-        for r in &rejected {
-            self.emit(RuntimeEvent::CandidateRejected {
+        for (action, reason) in &rejected {
+            result.rejected_actions.push(RejectedAction {
+                action_type: action.clone(),
+                reason: reason.clone(),
+            });
+            result.events.push(RuntimeEvent::CandidateRejected {
                 cycle_id,
-                action_type: r.clone(),
-                reason: "critic_rejected".to_string(),
+                action_type: action.clone(),
+                reason: reason.clone(),
             });
         }
 
-        // ── 6. Workspace selection ───────────────────────────────────
-        let selected = self.select_action(&passing, cycle_id);
+        // ── 6. Policy scores record ───────────────────────────────
+        for (action, score) in &scored {
+            let base = 0.5;
+            let bonus = score - base;
+            result.policy_scores.push(ActionScore {
+                action_type: action.clone(),
+                base_score: base,
+                bonus,
+                final_score: *score,
+                modifiers: self.modifiers_for(action),
+            });
+        }
 
-        let selected_action = match selected {
-            Some(ref a) => a.clone(),
-            None => return None,
-        };
+        // ── 7. Selection ───────────────────────────────────────────
+        let (selected, reason) = self.select(&passing);
+        result.selected_action = selected.clone();
+        result.selection_reason = reason;
+        result.is_safe = selected.is_user_facing();
 
-        // ── 7. Action application ────────────────────────────────────
-        self.emit(RuntimeEvent::ActionApplied {
+        result.events.push(RuntimeEvent::CandidateSelected {
             cycle_id,
-            action_type: selected_action.clone(),
-            conserve: matches!(selected_action, ActionType::ConserveResources),
+            action_type: selected.clone(),
+            score: 0.75,
+            resonance: vec![],
+            reasoning: Some(result.selection_reason.clone()),
         });
 
-        // ── 8. Archive commit ────────────────────────────────────────
-        self.emit(RuntimeEvent::ArchiveCommitted {
+        // ── 8. Action application event ──────────────────────────
+        result.events.push(RuntimeEvent::ActionApplied {
+            cycle_id,
+            action_type: selected.clone(),
+            conserve: false,
+        });
+
+        // ── 9. Archive commit event ──────────────────────────────
+        result.events.push(RuntimeEvent::ArchiveCommitted {
             cycle_id,
             frame_id: format!("frame_{cycle_id}"),
-            entry_count: 1,
+            entry_count: result.events.len(),
         });
 
-        Some(selected_action)
+        result
     }
 
-    /// Accept a world outcome and update state.
-    pub fn apply_world_outcome(&mut self, cycle_id: u64, outcome: WorldOutcome) {
-        self.emit(RuntimeEvent::WorldStateUpdated { cycle_id, outcome });
-    }
-
-    /// Generate candidates for all known action types.
-    fn generate_candidates(&mut self, cycle_id: u64) -> Vec<(ActionType, f64)> {
-        // Build candidates based on internal state and observation context.
-        let mut candidates: Vec<(ActionType, f64)> = Vec::new();
-
-        for action_type in ActionType::all_strs()
+    /// Score all 10 action types based on internal state.
+    fn score_all_candidates(&self) -> Vec<(ActionType, f64)> {
+        ActionType::all_strs()
             .iter()
             .filter_map(|s| ActionType::from_schema_str(s))
-        {
-            let score = self.score_candidate(&action_type);
-            candidates.push((action_type.clone(), score));
-
-            self.emit(RuntimeEvent::CandidateGenerated {
-                cycle_id,
-                action_type: action_type.clone(),
-                score,
-                reasoning: Some(format!("Candidate: {action_type}")),
-            });
-        }
-        candidates
+            .map(|a| {
+                let s = self.score(&a);
+                (a, s)
+            })
+            .collect()
     }
 
-    /// Score a candidate based on internal state heuristics.
-    fn score_candidate(&self, action: &ActionType) -> f64 {
+    /// Score a single action.
+    fn score(&self, action: &ActionType) -> f64 {
         let base: f64 = 0.5;
         let is = &self.internal_state;
 
         let bonus: f64 = match action {
-            ActionType::AskClarification if is.uncertainty > 0.5 => 0.3,
-            ActionType::ConserveResources if is.world_resources < 0.4 => 0.35,
-            ActionType::Repair if is.social_harmony < 0.5 => 0.25,
-            ActionType::RefuseUngrounded if is.threat > 0.6 => 0.2,
-            ActionType::InternalDiagnostic => -1.0, // never surfaced
+            // High uncertainty → prefer clarification/defer
+            ActionType::AskClarification if is.uncertainty > 0.5 => 0.35,
+            ActionType::DeferInsufficientEvidence if is.uncertainty > 0.5 => 0.25,
+
+            // Threat → prefer refuse
+            ActionType::RefuseUnsafe if is.threat > 0.6 => 0.40,
+            ActionType::AskClarification if is.threat > 0.4 => 0.15,
+
+            // Low resources → prefer low-cost actions
+            ActionType::NoOp if is.world_resources < 0.3 => 0.20,
+            ActionType::DeferInsufficientEvidence if is.world_resources < 0.3 => 0.15,
+
+            // Low social harmony → prefer defer/clarification
+            ActionType::AskClarification if is.social_harmony < 0.5 => 0.15,
+
+            // High kindness → prefer answer/plan
+            ActionType::Answer if is.kindness > 0.6 => 0.10,
+            ActionType::Plan if is.curiosity > 0.5 => 0.20,
+
+            // InternalDiagnostic → always penalized
+            ActionType::InternalDiagnostic => -1.0,
+
             _ => 0.0,
         };
 
         (base + bonus).clamp(0.0, 1.0)
     }
 
-    /// Evaluate candidates through the critic.
-    /// Returns (passing, rejected).
-    fn evaluate_candidates(
-        &mut self,
-        candidates: Vec<(ActionType, f64)>,
-        _cycle_id: u64,
-    ) -> (Vec<ActionType>, Vec<ActionType>) {
+    /// Evaluate candidates through the critic. Returns (passing, rejected_with_reasons).
+    fn evaluate(
+        &self,
+        scored: &[(ActionType, f64)],
+    ) -> (Vec<ActionType>, Vec<(ActionType, String)>) {
         let mut passing = Vec::new();
         let mut rejected = Vec::new();
-
         let is = &self.internal_state;
 
-        for (action, score) in candidates {
-            // Rejection rules (simplified from critic.rs):
-            // 1. InternalDiagnostic must never become user-facing
-            // 2. Low honesty rejects
-            // 3. Unsafe + low control rejects
-            let should_reject = matches!(action, ActionType::InternalDiagnostic)
-                || is.honesty < 0.35
-                || (is.control < 0.3 && is.threat > 0.7);
-
-            if should_reject {
-                rejected.push(action);
-            } else if score > 0.0 {
-                passing.push(action);
+        for (action, score) in scored {
+            let reject_reason = self.rejection_reason(action, *score, is);
+            match reject_reason {
+                Some(reason) => rejected.push((action.clone(), reason)),
+                None if *score > 0.0 => passing.push(action.clone()),
+                _ => {}
             }
         }
 
         (passing, rejected)
     }
 
-    /// Select the best action from passing candidates.
-    fn select_action(&self, passing: &[ActionType], cycle_id: u64) -> Option<ActionType> {
-        if passing.is_empty() {
-            return Some(ActionType::AskClarification);
+    /// Determine if a candidate should be rejected and why.
+    fn rejection_reason(
+        &self,
+        action: &ActionType,
+        _score: f64,
+        is: &InternalState,
+    ) -> Option<String> {
+        // Rule 1: InternalDiagnostic never user-facing
+        if matches!(action, ActionType::InternalDiagnostic) {
+            return Some("internal_diagnostic_must_not_be_user_facing".into());
         }
 
+        // Rule 2: Honesty too low — reject everything
+        if is.honesty < 0.35 {
+            return Some("honesty_below_threshold".into());
+        }
+
+        // Rule 3: ExecuteBoundedTool requires explicit tool policy
+        if matches!(action, ActionType::ExecuteBoundedTool) {
+            return Some("tool_policy_not_satisfied".into());
+        }
+
+        // Rule 4: Low control + high threat — reject irreversible actions
+        if is.control < 0.3 && is.threat > 0.7 && !action.is_reversible() {
+            return Some("low_control_high_threat_irreversible".into());
+        }
+
+        // Rule 5: High uncertainty + irreversible action
+        if is.uncertainty > 0.65
+            && !action.is_reversible()
+            && !matches!(action, ActionType::AskClarification)
+        {
+            return Some("high_uncertainty_irreversible_action".into());
+        }
+
+        None
+    }
+
+    /// Get modifiers that affected a specific action's score.
+    fn modifiers_for(&self, action: &ActionType) -> Vec<String> {
+        let is = &self.internal_state;
+        let mut mods = Vec::new();
+
+        match action {
+            ActionType::AskClarification if is.uncertainty > 0.5 => {
+                mods.push("uncertainty_bonus".into());
+            }
+            ActionType::RefuseUnsafe if is.threat > 0.6 => {
+                mods.push("threat_bonus".into());
+            }
+            ActionType::InternalDiagnostic => {
+                mods.push("always_penalized".into());
+            }
+            _ => {}
+        }
+
+        if is.world_resources < 0.3 {
+            mods.push("resource_pressure".into());
+        }
+        if is.uncertainty > 0.65 {
+            mods.push("high_uncertainty".into());
+        }
+
+        mods
+    }
+
+    /// Select the best action with explicit reasoning.
+    fn select(&self, passing: &[ActionType]) -> (ActionType, String) {
         let is = &self.internal_state;
 
-        // Priority selection:
-        // 1. Under threat → safe actions
-        if is.threat > 0.65 {
-            for safe in &[
-                ActionType::AskClarification,
-                ActionType::RefuseUngrounded,
-                ActionType::Repair,
-            ] {
-                if passing.contains(safe) {
-                    let a = safe.clone();
-                    self.emit_selected(cycle_id, &a, 0.85);
-                    return Some(a);
-                }
-            }
+        // Rule 1: Unsafe request → RefuseUnsafe
+        if is.threat > 0.65 && passing.contains(&ActionType::RefuseUnsafe) {
+            return (
+                ActionType::RefuseUnsafe,
+                "Selected refuse_unsafe because threat is high and the request may be unsafe."
+                    .into(),
+            );
         }
 
-        // 2. Low resources → conserve
-        if is.world_resources < 0.35 {
-            for conserve in &[ActionType::ConserveResources, ActionType::Summarize] {
-                if passing.contains(conserve) {
-                    let a = conserve.clone();
-                    self.emit_selected(cycle_id, &a, 0.8);
-                    return Some(a);
-                }
-            }
-        }
-
-        // 3. High uncertainty → clarification
+        // Rule 2: High uncertainty + irreversible context → AskClarification
         if is.uncertainty > 0.65 && passing.contains(&ActionType::AskClarification) {
-            let a = ActionType::AskClarification;
-            self.emit_selected(cycle_id, &a, 0.75);
-            return Some(a);
+            return (
+                ActionType::AskClarification,
+                "Selected ask_clarification because uncertainty is high and a safe irreversible answer cannot be given."
+                    .into(),
+            );
         }
 
-        // 4. Default: first passing
-        let a = passing[0].clone();
-        self.emit_selected(cycle_id, &a, 0.7);
-        Some(a)
-    }
+        // Rule 3: Insufficient evidence → Defer or RetrieveMemory
+        if is.uncertainty > 0.5 {
+            if passing.contains(&ActionType::DeferInsufficientEvidence) {
+                return (
+                    ActionType::DeferInsufficientEvidence,
+                    "Selected defer_insufficient_evidence because evidence is not sufficient for a confident answer."
+                        .into(),
+                );
+            }
+            if passing.contains(&ActionType::RetrieveMemory) {
+                return (
+                    ActionType::RetrieveMemory,
+                    "Selected retrieve_memory to gather more evidence before answering.".into(),
+                );
+            }
+        }
 
-    fn emit_selected(&self, cycle_id: u64, action: &ActionType, score: f64) {
-        // No direct emit — the caller handles event emission
-        let _ = (cycle_id, action, score);
-    }
+        // Rule 4: Low resources → NoOp or low-cost
+        if is.world_resources < 0.3 {
+            if passing.contains(&ActionType::NoOp) {
+                return (
+                    ActionType::NoOp,
+                    "Selected no_op because resources are critically low.".into(),
+                );
+            }
+            if passing.contains(&ActionType::DeferInsufficientEvidence) {
+                return (
+                    ActionType::DeferInsufficientEvidence,
+                    "Selected defer_insufficient_evidence because resources are low.".into(),
+                );
+            }
+        }
 
-    fn emit(&mut self, event: RuntimeEvent) {
-        let _ = self.log.append(event);
+        // Rule 5: Planning request → Plan
+        if is.curiosity > 0.5 && passing.contains(&ActionType::Plan) {
+            return (
+                ActionType::Plan,
+                "Selected plan because a planning context was detected.".into(),
+            );
+        }
+
+        // Rule 6: Enough context → Answer
+        if passing.contains(&ActionType::Answer) {
+            return (
+                ActionType::Answer,
+                "Selected answer because sufficient context and evidence are available.".into(),
+            );
+        }
+
+        // Rule 7: Summarization context
+        if passing.contains(&ActionType::Summarize) {
+            return (
+                ActionType::Summarize,
+                "Selected summarize as the best available action.".into(),
+            );
+        }
+
+        // Rule 8: Fallback to first available
+        if let Some(first) = passing.first() {
+            return (
+                first.clone(),
+                format!("Selected {first} as the default available action."),
+            );
+        }
+
+        // Rule 9: Nothing useful → NoOp
+        (
+            ActionType::NoOp,
+            "Selected no_op because no useful action is available.".into(),
+        )
+    }
+}
+
+impl Default for RuntimeLoop {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -260,39 +371,75 @@ mod tests {
     use super::*;
 
     #[test]
-    fn runtime_loop_selects_clarification_under_uncertainty() {
-        let log = EventLog::new();
-        let mut rt = RuntimeLoop::new(log);
-        rt.internal_state.uncertainty = 0.8;
-        rt.internal_state.threat = 0.2;
+    fn runtime_step_result_has_candidates() {
+        let mut rt = RuntimeLoop::new();
+        rt.internal_state.uncertainty = 0.3;
+        rt.internal_state.threat = 0.1;
         rt.internal_state.world_resources = 0.9;
 
-        let action = rt.run_cycle("ambiguous input", 1, 0.9);
-        assert!(action.is_some());
-        // Under high uncertainty, should prefer AskClarification
-        // (if it's in the passing set — it always is)
+        let result = rt.run_cycle("factual query", 1, 0.9);
+        assert!(
+            !result.candidate_actions.is_empty(),
+            "candidates must not be empty"
+        );
+        assert!(!result.events.is_empty(), "events must not be empty");
+        assert!(
+            !result.selection_reason.is_empty(),
+            "selection reason required"
+        );
     }
 
     #[test]
-    fn runtime_loop_rejects_internal_diagnostic() {
-        let log = EventLog::new();
-        let mut rt = RuntimeLoop::new(log);
-        let candidates = vec![
-            (ActionType::InternalDiagnostic, 0.9),
-            (ActionType::Answer, 0.5),
-        ];
+    fn unsafe_request_yields_refuse() {
+        let mut rt = RuntimeLoop::new();
+        rt.internal_state.threat = 0.8;
+        rt.internal_state.uncertainty = 0.3;
+        rt.internal_state.world_resources = 0.9;
 
-        let (passing, rejected) = rt.evaluate_candidates(candidates, 1);
-        // InternalDiagnostic must ALWAYS be rejected
-        assert!(rejected.contains(&ActionType::InternalDiagnostic));
-        assert!(!passing.contains(&ActionType::InternalDiagnostic));
+        let result = rt.run_cycle("unsafe request", 1, 0.9);
+        assert_eq!(result.selected_action, ActionType::RefuseUnsafe);
     }
 
     #[test]
-    fn runtime_loop_returns_action_when_passing_empty() {
-        let log = EventLog::new();
-        let rt = RuntimeLoop::new(log);
-        let action = rt.select_action(&[], 1);
-        assert_eq!(action, Some(ActionType::AskClarification));
+    fn high_uncertainty_yields_clarification() {
+        let mut rt = RuntimeLoop::new();
+        rt.internal_state.uncertainty = 0.8;
+        rt.internal_state.threat = 0.1;
+        rt.internal_state.world_resources = 0.9;
+
+        let result = rt.run_cycle("ambiguous", 1, 0.9);
+        assert_eq!(result.selected_action, ActionType::AskClarification);
+    }
+
+    #[test]
+    fn internal_diagnostic_never_selected() {
+        let mut rt = RuntimeLoop::new();
+        rt.internal_state.uncertainty = 0.9;
+        rt.internal_state.threat = 0.9;
+        rt.internal_state.world_resources = 0.9;
+
+        let result = rt.run_cycle("any", 1, 0.9);
+        assert_ne!(result.selected_action, ActionType::InternalDiagnostic);
+        assert!(result.is_safe);
+    }
+
+    #[test]
+    fn rejection_reasons_are_explicit() {
+        let mut rt = RuntimeLoop::new();
+        rt.internal_state.threat = 0.5;
+        rt.internal_state.uncertainty = 0.8;
+        rt.internal_state.world_resources = 0.9;
+
+        let result = rt.run_cycle("ambiguous input", 1, 0.9);
+        // ExecuteBoundedTool should be rejected with tool_policy reason
+        let tool_rejection = result
+            .rejected_actions
+            .iter()
+            .find(|r| matches!(r.action_type, ActionType::ExecuteBoundedTool));
+        assert!(
+            tool_rejection.is_some(),
+            "ExecuteBoundedTool must be rejected"
+        );
+        assert_eq!(tool_rejection.unwrap().reason, "tool_policy_not_satisfied");
     }
 }

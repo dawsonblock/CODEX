@@ -1,5 +1,5 @@
 //! Planner: select best action from a scored packet.
-//! Implements the 8-step decision tree from cognition/planner.py.
+//! Updated for ActionType v2 (10 types).
 
 use crate::candidate::CandidatePacket;
 use modulation::SomaticMap;
@@ -8,7 +8,6 @@ use runtime_core::{ActionType, InternalState};
 pub struct Planner;
 
 impl Planner {
-    /// Select the best action given current state, somatic map, and candidates.
     pub fn select(
         state: &InternalState,
         somatic: &SomaticMap,
@@ -21,17 +20,14 @@ impl Planner {
             .filter(|c| c.passes_critic && allowed.contains(&c.action_type))
             .collect();
 
-        // Step 1: control too low → ask for clarification
         if state.control < 0.3 {
             return Self::prefer_or_best(ActionType::AskClarification, &passing);
         }
 
-        // Step 2: no allowed candidates → retrieve memory
         if passing.is_empty() {
             return ActionType::RetrieveMemory;
         }
 
-        // Step 3: somatic override
         if somatic.predicts_bad_outcome(0.52) {
             if let Some(preferred_str) = somatic.preferred_action_under_pressure() {
                 if let Some(a) = ActionType::from_schema_str(preferred_str) {
@@ -42,12 +38,11 @@ impl Planner {
             }
         }
 
-        // Step 4: threat or uncertainty > 0.65 → safe set
         let safe_set = [
             ActionType::AskClarification,
             ActionType::RetrieveMemory,
-            ActionType::RefuseUngrounded,
-            ActionType::Repair,
+            ActionType::RefuseUnsafe,
+            ActionType::DeferInsufficientEvidence,
             ActionType::Summarize,
         ];
         if state.threat > 0.65 || state.uncertainty > 0.65 {
@@ -64,10 +59,9 @@ impl Planner {
             }
         }
 
-        // Step 5: world_resources < 0.35 → conserve-preferred, sort by cost ASC then score DESC
         if state.world_resources < 0.35 {
             let conserve_set = [
-                ActionType::ConserveResources,
+                ActionType::NoOp,
                 ActionType::Summarize,
                 ActionType::AskClarification,
             ];
@@ -89,10 +83,9 @@ impl Planner {
             }
         }
 
-        // Step 6: resource_pressure > 0.65 → prefer conserve set
         if state.resource_pressure > 0.65 {
             let conserve_set = [
-                ActionType::ConserveResources,
+                ActionType::NoOp,
                 ActionType::Summarize,
                 ActionType::AskClarification,
             ];
@@ -109,13 +102,8 @@ impl Planner {
             }
         }
 
-        // Step 7: curious + low threat → exploratory
         if state.curiosity > 0.65 && state.threat < 0.4 {
-            let exploratory = [
-                ActionType::Answer,
-                ActionType::WriteScratchpad,
-                ActionType::GeneratePrinciple,
-            ];
+            let exploratory = [ActionType::Answer, ActionType::Plan];
             if let Some(best) = passing
                 .iter()
                 .filter(|c| exploratory.contains(&c.action_type))
@@ -129,7 +117,6 @@ impl Planner {
             }
         }
 
-        // Step 8: best by total score
         let best = passing
             .iter()
             .max_by(|a, b| {
@@ -142,7 +129,6 @@ impl Planner {
         best.unwrap_or(ActionType::AskClarification)
     }
 
-    /// Return `preferred` if it's in the passing set, otherwise best.
     fn prefer_or_best(
         preferred: ActionType,
         passing: &[&crate::candidate::ThoughtCandidate],

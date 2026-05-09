@@ -15,7 +15,7 @@ fn action_schema_matches_json() {
             "action '{s}' round-trips incorrectly: got '{round_tripped}'"
         );
     }
-    assert_eq!(expected.len(), 11);
+    assert_eq!(expected.len(), 10);
 }
 
 #[test]

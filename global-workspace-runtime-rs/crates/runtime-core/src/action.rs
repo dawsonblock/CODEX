@@ -1,36 +1,33 @@
 use serde::{Deserialize, Serialize};
 
-/// All valid action types — maps 1-to-1 with schemas/action_types.json.
+/// All valid action types.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ActionType {
     Answer,
     AskClarification,
     RetrieveMemory,
-    WriteScratchpad,
-    Defer,
-    RefuseUngrounded,
-    Repair,
+    RefuseUnsafe,
+    DeferInsufficientEvidence,
     Summarize,
-    ConserveResources,
-    GeneratePrinciple,
+    Plan,
+    ExecuteBoundedTool,
+    NoOp,
     InternalDiagnostic,
 }
 
 impl ActionType {
-    /// Parse from schema string.  Returns `None` for unknown strings.
     pub fn from_schema_str(s: &str) -> Option<Self> {
         match s {
             "answer" => Some(Self::Answer),
             "ask_clarification" => Some(Self::AskClarification),
             "retrieve_memory" => Some(Self::RetrieveMemory),
-            "write_scratchpad" => Some(Self::WriteScratchpad),
-            "defer" => Some(Self::Defer),
-            "refuse_ungrounded" => Some(Self::RefuseUngrounded),
-            "repair" => Some(Self::Repair),
+            "refuse_unsafe" => Some(Self::RefuseUnsafe),
+            "defer_insufficient_evidence" => Some(Self::DeferInsufficientEvidence),
             "summarize" => Some(Self::Summarize),
-            "conserve_resources" => Some(Self::ConserveResources),
-            "generate_principle" => Some(Self::GeneratePrinciple),
+            "plan" => Some(Self::Plan),
+            "execute_bounded_tool" => Some(Self::ExecuteBoundedTool),
+            "no_op" => Some(Self::NoOp),
             "internal_diagnostic" => Some(Self::InternalDiagnostic),
             _ => None,
         }
@@ -41,32 +38,60 @@ impl ActionType {
             Self::Answer => "answer",
             Self::AskClarification => "ask_clarification",
             Self::RetrieveMemory => "retrieve_memory",
-            Self::WriteScratchpad => "write_scratchpad",
-            Self::Defer => "defer",
-            Self::RefuseUngrounded => "refuse_ungrounded",
-            Self::Repair => "repair",
+            Self::RefuseUnsafe => "refuse_unsafe",
+            Self::DeferInsufficientEvidence => "defer_insufficient_evidence",
             Self::Summarize => "summarize",
-            Self::ConserveResources => "conserve_resources",
-            Self::GeneratePrinciple => "generate_principle",
+            Self::Plan => "plan",
+            Self::ExecuteBoundedTool => "execute_bounded_tool",
+            Self::NoOp => "no_op",
             Self::InternalDiagnostic => "internal_diagnostic",
         }
     }
 
-    /// All 11 schema strings in canonical order.
     pub fn all_strs() -> &'static [&'static str] {
         &[
             "answer",
             "ask_clarification",
             "retrieve_memory",
-            "write_scratchpad",
-            "defer",
-            "refuse_ungrounded",
-            "repair",
+            "refuse_unsafe",
+            "defer_insufficient_evidence",
             "summarize",
-            "conserve_resources",
-            "generate_principle",
+            "plan",
+            "execute_bounded_tool",
+            "no_op",
             "internal_diagnostic",
         ]
+    }
+
+    /// Whether this action can be surfaced to users.
+    pub fn is_user_facing(&self) -> bool {
+        !matches!(self, Self::InternalDiagnostic)
+    }
+
+    /// Whether the action is reversible (safe to execute under uncertainty).
+    pub fn is_reversible(&self) -> bool {
+        matches!(
+            self,
+            Self::AskClarification
+                | Self::RetrieveMemory
+                | Self::Summarize
+                | Self::DeferInsufficientEvidence
+                | Self::NoOp
+        )
+    }
+
+    /// Estimated resource cost (0.0–1.0).
+    pub fn resource_cost(&self) -> f64 {
+        match self {
+            Self::NoOp => 0.0,
+            Self::AskClarification | Self::DeferInsufficientEvidence => 0.01,
+            Self::RetrieveMemory | Self::Summarize => 0.02,
+            Self::RefuseUnsafe => 0.01,
+            Self::Plan => 0.03,
+            Self::Answer => 0.05,
+            Self::ExecuteBoundedTool => 0.08,
+            Self::InternalDiagnostic => 0.0,
+        }
     }
 }
 

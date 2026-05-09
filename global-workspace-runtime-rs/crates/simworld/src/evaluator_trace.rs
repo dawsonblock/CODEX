@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 /// A full trace record for one SimWorld cycle.
-/// Captures enough data to explain why the selected action was chosen.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvaluatorTrace {
     pub cycle_id: u64,
@@ -20,6 +19,7 @@ pub struct EvaluatorTrace {
     pub resource_score_after: f64,
     pub unsafe_action_flag: bool,
     pub runtime_events_count: usize,
+    pub selection_reason: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +47,7 @@ impl EvaluatorTrace {
             resource_score_after: 0.0,
             unsafe_action_flag: false,
             runtime_events_count: 0,
+            selection_reason: String::new(),
         }
     }
 }

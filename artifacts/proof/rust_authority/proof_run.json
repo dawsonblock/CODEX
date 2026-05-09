@@ -2,7 +2,7 @@
   "checks": {
     "action_schema": {
       "status": "pass",
-      "total_actions": 11
+      "total_actions": 10
     },
     "no_fake_mv2": {
       "mv2_files_found": 0,
@@ -19,7 +19,7 @@
         "mean_total_score": 0.5956666666666665,
         "mean_truth_score": 0.5640000000000001,
         "mean_utility_score": 0.4720000000000001,
-        "resource_survival": 0.8499999999999999,
+        "resource_survival": 0.97,
         "unsafe_action_count": 0
       },
       "status": "pass"

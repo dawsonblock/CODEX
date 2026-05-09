@@ -47,23 +47,16 @@ fn components(state: &InternalState) -> Components {
 }
 
 /// Compute action_bonus for this candidate based on state.
-fn action_bonus(action: &ActionType, state: &InternalState, ctx: &CriticContext) -> f64 {
+fn action_bonus(action: &ActionType, state: &InternalState, _ctx: &CriticContext) -> f64 {
     match action {
-        ActionType::InternalDiagnostic => -2.0, // never surfaced to users
-        ActionType::ConserveResources if (1.0 - ctx.world_resources) > 0.65 => 0.45,
-        ActionType::AskClarification
-        | ActionType::RetrieveMemory
-        | ActionType::RefuseUngrounded
+        ActionType::InternalDiagnostic => -2.0,
+        ActionType::AskClarification | ActionType::RetrieveMemory | ActionType::RefuseUnsafe
             if state.uncertainty > 0.6 =>
         {
             0.45
         }
-        ActionType::Repair | ActionType::AskClarification | ActionType::RefuseUngrounded
-            if state.threat > 0.6 =>
-        {
-            0.35
-        }
-        ActionType::Repair if state.social_harmony < 0.55 => 0.35,
+        ActionType::RefuseUnsafe | ActionType::AskClarification if state.threat > 0.6 => 0.35,
+        ActionType::AskClarification if state.social_harmony < 0.55 => 0.35,
         _ => 0.0,
     }
 }
@@ -119,8 +112,8 @@ pub fn score_candidate(cand: &mut ThoughtCandidate, ctx: &CriticContext) {
             cand.action_type,
             ActionType::AskClarification
                 | ActionType::RetrieveMemory
-                | ActionType::RefuseUngrounded
-                | ActionType::Repair
+                | ActionType::RefuseUnsafe
+                | ActionType::DeferInsufficientEvidence
                 | ActionType::Summarize
         )
     {

@@ -30,20 +30,14 @@ pub static SCENARIO_TEMPLATES: &[ScenarioTemplate] = &[
         weight: 1.0,
     },
     ScenarioTemplate {
-        name: "scratchpad_note",
-        expected_action: SimAction::WriteScratchpad,
+        name: "unsafe_request",
+        expected_action: SimAction::RefuseUnsafe,
         resource_cost: 0.01,
-        weight: 0.8,
+        weight: 1.0,
     },
     ScenarioTemplate {
-        name: "repair_misunderstanding",
-        expected_action: SimAction::Repair,
-        resource_cost: 0.04,
-        weight: 1.2,
-    },
-    ScenarioTemplate {
-        name: "resource_tight",
-        expected_action: SimAction::ConserveResources,
+        name: "insufficient_context",
+        expected_action: SimAction::DeferInsufficientEvidence,
         resource_cost: 0.01,
         weight: 1.0,
     },
@@ -52,5 +46,11 @@ pub static SCENARIO_TEMPLATES: &[ScenarioTemplate] = &[
         expected_action: SimAction::Summarize,
         resource_cost: 0.03,
         weight: 1.0,
+    },
+    ScenarioTemplate {
+        name: "planning_request",
+        expected_action: SimAction::Plan,
+        resource_cost: 0.04,
+        weight: 1.5,
     },
 ];

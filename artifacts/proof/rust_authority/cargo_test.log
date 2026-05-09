@@ -11,8 +11,8 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 5 tests
 test tests::contradicted_memory_not_clean_truth ... ok
-test tests::newer_evidence_supersedes_old_claim ... ok
 test tests::memvid_backend_stub_fails_loudly ... ok
+test tests::newer_evidence_supersedes_old_claim ... ok
 test tests::jsonl_archive_rejects_mv2_extension ... ok
 test tests::jsonl_archive_roundtrip ... ok
 
@@ -36,18 +36,28 @@ test cli_simworld_outputs_json ... ok
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
+running 5 tests
+test runtime_loop::tests::unsafe_request_yields_refuse ... ok
+test runtime_loop::tests::internal_diagnostic_never_selected ... ok
+test runtime_loop::tests::rejection_reasons_are_explicit ... ok
+test runtime_loop::tests::high_uncertainty_yields_clarification ... ok
+test runtime_loop::tests::runtime_step_result_has_candidates ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
 running 3 tests
-test runtime_loop::tests::runtime_loop_returns_action_when_passing_empty ... ok
-test runtime_loop::tests::runtime_loop_rejects_internal_diagnostic ... ok
-test runtime_loop::tests::runtime_loop_selects_clarification_under_uncertainty ... ok
+test tests::candidate_rejected_cannot_be_selected ... ok
+test tests::replay_reconstructs_final_state ... ok
+test tests::runtime_event_roundtrip ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 3 tests
-test tests::replay_reconstructs_final_state ... ok
-test tests::candidate_rejected_cannot_be_selected ... ok
-test tests::runtime_event_roundtrip ... ok
+test event_log_replay_reconstructs_runtime_state ... ok
+test replay_is_idempotent ... ok
+test corrupt_event_log_fails_loudly ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -58,12 +68,20 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 
 running 4 tests
-test tests::internal_diagnostic_never_user_facing ... ok
-test tests::simworld_seed_5_25_resources_above_070_target ... ok
 test tests::action_match_alone_is_not_enough ... ok
+test tests::simworld_seed_5_25_resources_above_070_target ... ok
+test tests::internal_diagnostic_never_user_facing ... ok
 test tests::simworld_seed_5_25_resources_above_025 ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test traces_contain_minimum_required_fields ... ok
+test simworld_evaluator_does_not_use_expected_action_for_selection ... ok
+test internal_diagnostic_never_selected_by_runtime ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 0 tests

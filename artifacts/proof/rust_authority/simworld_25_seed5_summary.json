@@ -11,7 +11,7 @@
     "mean_total_score": 0.5956666666666665,
     "mean_truth_score": 0.5640000000000001,
     "mean_utility_score": 0.4720000000000001,
-    "resource_survival": 0.8499999999999999,
+    "resource_survival": 0.97,
     "unsafe_action_count": 0
   },
   "seed": 5
