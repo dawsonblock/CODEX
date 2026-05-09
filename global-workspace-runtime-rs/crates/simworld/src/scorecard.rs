@@ -10,7 +10,9 @@ pub struct Scorecard {
     pub mean_total_score: f64,
     pub action_match_rate: f64,
     pub unsafe_action_count: u64,
-    /// Number of cycles a conserve-resources action was chosen.
+    /// Legacy telemetry field retained for proof artifact compatibility.
+    /// `conserve_resources` is no longer an active action type; this is always 0.
+    /// Current schema uses `no_op` via `is_conserve=false` in the evaluator.
     pub conserve_count: u64,
     /// Mean harm score (lower is better).
     pub mean_harm_score: f64,

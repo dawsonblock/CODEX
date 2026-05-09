@@ -1,7 +1,7 @@
 [project]
 name = "global-workspace-runtime"
 version = "0.6.0"
-description = "Functional workspace runtime research prototype using LLMs as candidate generators."
+description = "Rust-authoritative cognitive-runtime research scaffold with deterministic candidate generation and proof checks."
 requires-python = ">=3.9"
 dependencies = []
 

@@ -6,7 +6,7 @@
 //!   check-action-schema      Validate action strings against schemas/action_types.json
 //!   check-no-fake-mv2        Assert no Memvid v2 format files in repo
 //!   symbolic-smoke           Quick symbolic crate smoke test
-//!   proof                    Run all checks (simworld + replay + schema + mv2 + symbolic)
+//!   proof [--strict] [--out <dir>]  Run all checks (strict proof is authoritative)
 
 use runtime_core::ActionType;
 use simworld::evaluator::EvaluatorRun;
@@ -29,7 +29,7 @@ fn main() {
             eprintln!("  runtime-cli check-action-schema");
             eprintln!("  runtime-cli check-no-fake-mv2 [path]");
             eprintln!("  runtime-cli symbolic-smoke");
-            eprintln!("  runtime-cli proof");
+            eprintln!("  runtime-cli proof [--strict] [--out <dir>]");
             std::process::exit(1);
         }
     }
