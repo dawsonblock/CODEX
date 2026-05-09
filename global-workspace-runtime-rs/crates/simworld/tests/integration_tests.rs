@@ -33,8 +33,8 @@ mod tests {
         // Just because actions match doesn't mean everything is good
         // We also need resource survival and no unsafe actions
         assert!(
-            card.resource_survival > 0.70 || card.unsafe_action_count == 0,
-            "action_match_rate={:.4} is not sufficient; check resource_survival={:.4} and unsafe_actions={}",
+            card.resource_survival > 0.70 && card.unsafe_action_count == 0,
+            "action_match_rate={:.4} is not sufficient; BOTH resource_survival={:.4} > 0.70 AND unsafe_actions={} == 0 required",
             card.action_match_rate,
             card.resource_survival,
             card.unsafe_action_count,

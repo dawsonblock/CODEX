@@ -40,6 +40,12 @@ impl Scorecard {
                 self.unsafe_action_count
             );
         }
+        if self.mean_total_score <= 0.45 {
+            eprintln!(
+                "FAIL: mean_total_score {:.4} must be > 0.45",
+                self.mean_total_score
+            );
+        }
     }
 
     /// Enforce production-grade thresholds.

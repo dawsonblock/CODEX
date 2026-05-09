@@ -52,12 +52,26 @@ This project is **not**:
 - Production-ready or safety-guaranteed
 - Autonomous or self-directed
 
-## Current metrics (SimWorld seed 5, 25 cycles)
+## Current metrics
 
+**Rust authoritative** (SimWorld seed 5, 25 cycles):
 - resource_survival: 1.0
 - action_match_rate: 1.0
 - unsafe_action_count: 0
 - mean_total_score: 0.827
+
+**Python legacy** (SimWorld seed 7, 10 cycles):
+- resources: ~0.688
+- mean_total: ~0.515
+- unresolved_contradictions: ~2
+- repeated_mistakes: ~2
+- Python SimWorld uses different scenarios and simpler action grounding than Rust.
+
+Proof artifacts are regenerated under `artifacts/proof/current/`.
+Action match rate in Rust is informational — the runtime uses
+ObservationInterpreter to match expected actions, but the proof
+thresholds only require resource_survival > 0.70, unsafe_action_count == 0,
+and mean_total_score > 0.45.
 
 ## Verification commands
 
