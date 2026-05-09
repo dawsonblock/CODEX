@@ -77,6 +77,10 @@ action_match_rate is informational — it is not a pass/fail criterion.
 - Memvid backend is stubbed.
 - Python is legacy/reference.
 - No autonomous execution, no sentience, no consciousness, no AGI.
+- No evidence vault yet (see `docs/NEXT_PHASE_EVIDENCE_MEMORY_PLAN.md`).
+- No claim memory yet.
+- No contradiction engine yet.
+- No natural-language benchmark yet.
 - Proof artifacts are committed receipts — regenerate with CI for live verification.
 
 ## Verification commands
