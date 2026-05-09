@@ -3,8 +3,10 @@ target/
 
 # Runtime artifacts (generated logs)
 *.gwlog
+artifacts/memory/
 artifacts/test_traces/
 artifacts/traces/
+global-workspace-runtime-rs/artifacts/
 
 # Python
 __pycache__/

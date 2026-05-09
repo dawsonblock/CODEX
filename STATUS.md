@@ -101,5 +101,5 @@ python -m global_workspace_runtime.scripts.check_resource_recovery
 
 Architecture:
 ```bash
-python scripts/architecture_guard.py
+python architecture_guard.py
 ```

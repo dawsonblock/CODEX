@@ -21,6 +21,14 @@ jobs:
           python-version: "3.11"
       - name: Install package (editable)
         run: python -m pip install -e ".[test]"
+      - name: Check action types
+        run: python -m global_workspace_runtime.scripts.check_action_types
+      - name: Check sentience claims
+        run: python -m global_workspace_runtime.scripts.check_sentience_claims
+      - name: Check no mv2
+        run: python -m global_workspace_runtime.scripts.check_no_mv2 .
+      - name: Check resource recovery
+        run: python -m global_workspace_runtime.scripts.check_resource_recovery
       - name: Run Python tests (legacy)
         run: python -m pytest -q
 
