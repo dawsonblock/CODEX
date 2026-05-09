@@ -66,7 +66,7 @@ consciousness, qualia, sentience, or subjective experience.
 ## Archive
 
 The default archive backend is `JsonlArchiveBackend`, which writes standard
-JSONL to `.gwlog` files. It does **not** use `.mv2` extensions.
+JSONL to `.gwlog` files. It does **not** use Memvid v2 format.
 
 `MemvidBackend` is a **stub** — it returns `NotImplemented` for every
 operation. No real Memvid binary is integrated. Do not claim Memvid

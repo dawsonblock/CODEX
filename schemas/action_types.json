@@ -2,20 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/global_workspace_runtime/action_types.json",
   "title": "ActionType",
-  "description": "Bounded vocabulary of first-class runtime actions.  Every ThoughtCandidate and PlannerDecision carries one of these labels.  The label is the serialised string value (e.g. \"answer\"); the Python counterpart is ActionType(str, Enum) in core.types.",
+  "description": "Bounded vocabulary of first-class runtime actions. Authoritative definition — Rust ActionType is the source of truth. Python is legacy/reference.",
   "type": "string",
   "enum": [
     "answer",
     "ask_clarification",
     "retrieve_memory",
-    "write_scratchpad",
-    "defer",
-    "refuse_ungrounded",
-    "repair",
+    "refuse_unsafe",
+    "defer_insufficient_evidence",
     "summarize",
-    "conserve_resources",
-    "generate_principle",
+    "plan",
+    "execute_bounded_tool",
+    "no_op",
     "internal_diagnostic"
   ],
-  "x-python-enum": "global_workspace_runtime.core.types.ActionType"
+  "x-authoritative-source": "global-workspace-runtime-rs/crates/runtime-core/src/action.rs"
 }

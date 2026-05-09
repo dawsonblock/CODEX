@@ -123,21 +123,53 @@ fn parse_string_flag(args: &[String], flag: &str) -> Option<String> {
 // ─── check-action-schema ────────────────────────────────────────────────
 
 fn cmd_check_action_schema() {
-    let expected = ActionType::all_strs();
-    let mut missing = Vec::new();
-
-    for s in expected {
-        if ActionType::from_schema_str(s).is_none() {
-            missing.push(s.to_string());
+    // Read the authoritative schema file
+    let schema_path = "../schemas/action_types.json";
+    let schema_json = match std::fs::read_to_string(schema_path) {
+        Ok(s) => s,
+        Err(e) => {
+            let output = serde_json::json!({
+                "command": "check-action-schema",
+                "status": "fail",
+                "error": format!("Cannot read {schema_path}: {e}"),
+            });
+            json_output(&output);
+            std::process::exit(1);
         }
-    }
+    };
+    let schema: serde_json::Value =
+        serde_json::from_str(&schema_json).unwrap_or(serde_json::json!({}));
+    let json_actions: Vec<String> = schema["enum"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
 
-    let ok = missing.is_empty();
+    let rust_actions: Vec<String> = ActionType::all_strs()
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+
+    let json_missing: Vec<_> = rust_actions
+        .iter()
+        .filter(|a| !json_actions.contains(a))
+        .collect();
+    let rust_missing: Vec<_> = json_actions
+        .iter()
+        .filter(|a| !rust_actions.contains(a))
+        .collect();
+
+    let ok = json_missing.is_empty() && rust_missing.is_empty();
     let output = serde_json::json!({
         "command": "check-action-schema",
-        "total": expected.len(),
-        "valid": expected.len() - missing.len(),
-        "missing": missing,
+        "schema_path": schema_path,
+        "json_count": json_actions.len(),
+        "rust_count": rust_actions.len(),
+        "json_missing_from_rust": json_missing,
+        "rust_missing_from_json": rust_missing,
         "status": if ok { "pass" } else { "fail" },
     });
     json_output(&output);
@@ -257,13 +289,27 @@ fn cmd_proof(args: &[String]) {
         all_ok = false;
     }
 
-    // 3. Action schema
-    let mut schema_ok = true;
-    for s in ActionType::all_strs() {
-        if ActionType::from_schema_str(s).is_none() {
-            schema_ok = false;
+    // 3. Action schema — validate against schemas/action_types.json
+    let schema_ok = match std::fs::read_to_string("../schemas/action_types.json") {
+        Ok(raw) => {
+            let schema: serde_json::Value = serde_json::from_str(&raw).unwrap_or_default();
+            let json_actions: Vec<String> = schema["enum"]
+                .as_array()
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let rust_actions: Vec<String> = ActionType::all_strs()
+                .iter()
+                .map(|s| s.to_string())
+                .collect();
+            json_actions.iter().all(|a| rust_actions.contains(a))
+                && rust_actions.iter().all(|a| json_actions.contains(a))
         }
-    }
+        Err(_) => false,
+    };
 
     // 4. No fake mv2
     let mv2_files = find_mv2(&PathBuf::from("."));
