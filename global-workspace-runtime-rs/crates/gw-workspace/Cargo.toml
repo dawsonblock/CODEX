@@ -1,0 +1,10 @@
+[package]
+name = "gw-workspace"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+runtime-core = { path = "../runtime-core" }
+symbolic = { path = "../symbolic" }
+serde = { workspace = true }
+serde_json = { workspace = true }

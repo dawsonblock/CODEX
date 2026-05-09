@@ -1,0 +1,6 @@
+{
+  "command": "check-no-fake-mv2",
+  "mv2_files_found": [],
+  "root": "/tmp/gw-work",
+  "status": "pass"
+}

@@ -1,0 +1,17 @@
+[package]
+name = "simworld"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+runtime-core = { path = "../runtime-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }
+thiserror = { workspace = true }
+
+chrono = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+insta = { workspace = true }
