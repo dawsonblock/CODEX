@@ -92,7 +92,8 @@ cargo run -p runtime-cli -- proof --strict --out ../artifacts/proof/current
 
 Python:
 ```bash
-python -m pytest tests -q
+python -m pip install -e ".[test]"
+python -m pytest -q
 python -m global_workspace_runtime.scripts.check_action_types
 python -m global_workspace_runtime.scripts.check_sentience_claims
 python -m global_workspace_runtime.scripts.check_no_mv2 .

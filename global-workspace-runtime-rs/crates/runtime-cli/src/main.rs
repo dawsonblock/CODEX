@@ -4,7 +4,7 @@
 //!   simworld                 Run deterministic SimWorld proof
 //!   replay                   Replay events from JSONL log
 //!   check-action-schema      Validate action strings against schemas/action_types.json
-//!   check-no-fake-mv2        Assert no .mv2 files in repo
+//!   check-no-fake-mv2        Assert no Memvid v2 format files in repo
 //!   symbolic-smoke           Quick symbolic crate smoke test
 //!   proof                    Run all checks (simworld + replay + schema + mv2 + symbolic)
 

@@ -50,25 +50,13 @@ for fname in ["README.md"]:
                     continue
                 fail(f"{fname} contains unsupported claim: '{term}'")
 
-# 6. No __pycache__ or .pyc — auto-cleanup before checking
-pycache_dirs = []
-pyc_files = []
+# 6. No __pycache__ or .pyc — report only, do not mutate
 for root, dirs, files in os.walk(ROOT):
     if "__pycache__" in dirs:
-        pycache_dirs.append(os.path.join(root, "__pycache__"))
+        fail(f"__pycache__ found at {os.path.join(root, '__pycache__')}. Run: python scripts/clean_python_artifacts.py")
     for f in files:
         if f.endswith(".pyc"):
-            pyc_files.append(os.path.join(root, f))
-if pycache_dirs or pyc_files:
-    import shutil
-    for d in pycache_dirs:
-        shutil.rmtree(d, ignore_errors=True)
-    for f in pyc_files:
-        try:
-            os.unlink(f)
-        except OSError:
-            pass
-    print(f"  Cleaned: {len(pycache_dirs)} __pycache__ dirs, {len(pyc_files)} .pyc files")
+            fail(f".pyc file found: {os.path.join(root, f)}. Run: python scripts/clean_python_artifacts.py")
 
 # 7. No duplicate runtime loop
 rl_files = []

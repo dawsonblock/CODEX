@@ -111,12 +111,13 @@ impl SomaticMap {
     }
 
     /// Preferred action when bad outcome is predicted.
+    /// Returns a schema-valid action string for the 10-action vocabulary.
     pub fn preferred_action_under_pressure(&self) -> Option<&'static str> {
         if self.predicts_bad_outcome(SOMATIC_OVERRIDE_THRESHOLD) {
             if self.resource_strain > 0.5 {
-                Some("conserve_resources")
+                Some("no_op")
             } else if self.social_threat_pressure > 0.5 {
-                Some("repair")
+                Some("defer_insufficient_evidence")
             } else {
                 Some("ask_clarification")
             }

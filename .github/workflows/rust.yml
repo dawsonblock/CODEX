@@ -32,4 +32,4 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --all-targets --all-features --verbose
       - name: Run proof
-        run: cargo run -p runtime-cli -- proof --strict
+        run: cargo run -p runtime-cli -- proof --strict --out ../artifacts/proof/current

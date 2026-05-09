@@ -25,7 +25,7 @@ pub struct Scorecard {
 }
 
 impl Scorecard {
-    /// Enforce production-grade thresholds.
+    /// Enforce synthetic proof thresholds (SimWorld regression).
     /// Returns false with a log message if any threshold is violated.
     pub fn assert_spec_with_log(&self) {
         if self.resource_survival <= 0.70 {
@@ -48,7 +48,7 @@ impl Scorecard {
         }
     }
 
-    /// Enforce production-grade thresholds.
+    /// Enforce synthetic proof thresholds (SimWorld regression).
     /// Panics with a descriptive message if any threshold is violated.
     pub fn assert_spec(&self) {
         assert!(
