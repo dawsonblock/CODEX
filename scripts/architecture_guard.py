@@ -78,9 +78,13 @@ for root, dirs, files in os.walk(os.path.join(RUST_WS, "crates")):
             rl_files.append(os.path.join(root, f))
 check(len(rl_files) == 1, f"Multiple runtime_loop.rs files: {rl_files}")
 
-# 8. Proof artifacts exist
-proof_dir = os.path.join(ROOT, "artifacts/proof/rust_authority")
-check(os.path.isdir(proof_dir), "Proof artifacts directory missing")
+# 8. Proof artifacts exist under current/
+proof_dir = os.path.join(ROOT, "artifacts/proof/current")
+check(os.path.isdir(proof_dir), "Proof artifacts directory missing (expected artifacts/proof/current/)")
+summary = os.path.join(ROOT, "artifacts/proof/current/simworld_summary.json")
+check(os.path.isfile(summary), "simworld_summary.json missing from artifacts/proof/current/")
+replay = os.path.join(ROOT, "artifacts/proof/current/replay_report.json")
+check(os.path.isfile(replay), "replay_report.json missing from artifacts/proof/current/")
 
 # Report
 if violations:

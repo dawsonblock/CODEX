@@ -19,7 +19,7 @@ The Rust build chain:
 ```bash
 cd global-workspace-runtime-rs
 cargo build
-cargo test          # all tests pass
+cargo test --workspace --all-targets --all-features
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
@@ -98,7 +98,7 @@ Generated outputs under `artifacts/proof/current/`:
 
 Additional checks run in proof mode:
 - action schema parity (Rust ↔ `schemas/action_types.json`)
-- no `.mv2` file scan
+- no Memvid v2 file scan
 - symbolic crate smoke test
 
 ## Legacy paths
@@ -110,9 +110,23 @@ Additional checks run in proof mode:
 - `vendor/memvid-main/` — Vendored Memvid source (not imported by Python or
   Rust at runtime).
 
+## Current limitations
+
+- **Mock-only deterministic runtime** — no real LLM integration. All cognition
+  is scored by deterministic heuristics.
+- **SimWorld is a regression harness** — not a general intelligence proof.
+  Results measure specific runtime behavior in a synthetic 7-scenario set.
+- **Memvid backend is stubbed** — returns `NotImplemented` for all operations.
+  JsonlArchiveBackend is the default.
+- **Python is legacy/reference only** — the Rust workspace is authoritative.
+- **No autonomous execution, no sentience, no consciousness, no AGI**.
+- **Proof artifacts are committed receipts** — regenerate with CI for live
+  verification. See `artifacts/proof/CURRENT_PROOF_SUMMARY.md`.
+
 ## Run Python tests (legacy)
 
 ```bash
+python -m pip install -e ".[test]"
 python -m pytest tests -q
 ```
 
