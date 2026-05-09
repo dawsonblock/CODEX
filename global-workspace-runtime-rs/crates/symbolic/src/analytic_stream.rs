@@ -1,6 +1,7 @@
 use super::symbol::{Symbol, SymbolId, SymbolKind};
 
 /// The analytic stream produces grounded, logical candidate symbols.
+#[derive(Default)]
 pub struct AnalyticStream;
 
 impl AnalyticStream {

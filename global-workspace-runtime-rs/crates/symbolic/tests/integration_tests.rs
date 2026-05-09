@@ -2,11 +2,8 @@
 
 #[cfg(test)]
 mod tests {
-    use symbolic::{
-        Symbol, SymbolGraph, SymbolId, SymbolKind,
-        ResonanceComputer, Principle,
-    };
     use runtime_core::ActionType;
+    use symbolic::{Principle, ResonanceComputer, Symbol, SymbolGraph, SymbolId, SymbolKind};
 
     #[test]
     fn symbolic_trace_serializes_losslessly() {

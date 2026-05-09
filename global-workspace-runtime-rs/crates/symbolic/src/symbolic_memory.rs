@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+use super::principle::Principle;
 use super::symbol::{Symbol, SymbolId, SymbolKind};
 use super::symbol_graph::SymbolGraph;
-use super::principle::Principle;
 
 /// Tags for classifying symbolic memory entries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

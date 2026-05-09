@@ -1,6 +1,7 @@
 pub mod adversarial;
 pub mod environment;
 pub mod evaluator;
+pub mod evaluator_trace;
 pub mod scenario;
 pub mod scorecard;
 pub mod sim_types;

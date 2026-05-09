@@ -2,6 +2,7 @@ use super::symbol::{Symbol, SymbolId, SymbolKind};
 
 /// The creative stream produces novel candidate symbols through blending.
 /// Output is ALWAYS speculative and must be validated by the critic.
+#[derive(Default)]
 pub struct CreativeStream;
 
 impl CreativeStream {

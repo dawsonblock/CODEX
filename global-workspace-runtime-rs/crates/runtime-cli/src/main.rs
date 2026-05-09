@@ -38,7 +38,10 @@ fn main() {
 // ─── JSON output helper ──────────────────────────────────────────────────
 
 fn json_output(value: &serde_json::Value) {
-    println!("{}", serde_json::to_string_pretty(value).unwrap_or_default());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(value).unwrap_or_default()
+    );
 }
 
 fn to_json<T: serde::Serialize>(value: &T) -> serde_json::Value {
@@ -114,9 +117,7 @@ fn cmd_replay(args: &[String]) {
 }
 
 fn parse_string_flag(args: &[String], flag: &str) -> Option<String> {
-    args.windows(2)
-        .find(|w| w[0] == flag)
-        .map(|w| w[1].clone())
+    args.windows(2).find(|w| w[0] == flag).map(|w| w[1].clone())
 }
 
 // ─── check-action-schema ────────────────────────────────────────────────
@@ -222,7 +223,6 @@ fn cmd_symbolic_smoke() {
 // ─── proof ──────────────────────────────────────────────────────────────
 
 fn cmd_proof() {
-
     // 1. SimWorld
     let mut run = EvaluatorRun::new(5, None);
     let card = run.run(25);

@@ -22,17 +22,17 @@ pub mod symbolic_memory;
 pub mod symbolic_trace;
 
 // Re-exports for convenience
+pub use abstraction::MemoryAbstractor;
+pub use analytic_stream::AnalyticStream;
+pub use associative_stream::AssociativeStream;
+pub use compression::{CompressionResult, Compressor};
+pub use conceptual_blender::{ConceptBlend, ConceptualBlender};
+pub use creative_stream::CreativeStream;
+pub use glyph::Glyph;
+pub use principle::Principle;
+pub use resonance::{ResonanceComputer, ResonanceEntry, ResonanceScore};
 pub use symbol::{Symbol, SymbolId, SymbolKind};
 pub use symbol_graph::{GraphSnapshot, SymbolEdge, SymbolGraph};
-pub use symbolic_trace::{SymbolicTrace, SymbolicTraceEntry, TraceAction, COMPRESSION_WARNING};
 pub use symbolic_frame::SymbolicFrame;
-pub use principle::Principle;
-pub use conceptual_blender::{ConceptBlend, ConceptualBlender};
-pub use glyph::Glyph;
-pub use resonance::{ResonanceComputer, ResonanceEntry, ResonanceScore};
 pub use symbolic_memory::{SymbolicMemory, SymbolicMemoryTag};
-pub use associative_stream::AssociativeStream;
-pub use analytic_stream::AnalyticStream;
-pub use creative_stream::CreativeStream;
-pub use abstraction::MemoryAbstractor;
-pub use compression::{CompressionResult, Compressor};
+pub use symbolic_trace::{SymbolicTrace, SymbolicTraceEntry, TraceAction, COMPRESSION_WARNING};

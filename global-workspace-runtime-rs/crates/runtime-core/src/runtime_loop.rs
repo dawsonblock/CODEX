@@ -109,10 +109,7 @@ impl RuntimeLoop {
         self.emit(RuntimeEvent::ActionApplied {
             cycle_id,
             action_type: selected_action.clone(),
-            conserve: matches!(
-                selected_action,
-                ActionType::ConserveResources
-            ),
+            conserve: matches!(selected_action, ActionType::ConserveResources),
         });
 
         // ── 8. Archive commit ────────────────────────────────────────
@@ -127,10 +124,7 @@ impl RuntimeLoop {
 
     /// Accept a world outcome and update state.
     pub fn apply_world_outcome(&mut self, cycle_id: u64, outcome: WorldOutcome) {
-        self.emit(RuntimeEvent::WorldStateUpdated {
-            cycle_id,
-            outcome,
-        });
+        self.emit(RuntimeEvent::WorldStateUpdated { cycle_id, outcome });
     }
 
     /// Generate candidates for all known action types.
@@ -138,7 +132,10 @@ impl RuntimeLoop {
         // Build candidates based on internal state and observation context.
         let mut candidates: Vec<(ActionType, f64)> = Vec::new();
 
-        for action_type in ActionType::all_strs().iter().filter_map(|s| ActionType::from_schema_str(s)) {
+        for action_type in ActionType::all_strs()
+            .iter()
+            .filter_map(|s| ActionType::from_schema_str(s))
+        {
             let score = self.score_candidate(&action_type);
             candidates.push((action_type.clone(), score));
 
@@ -154,10 +151,10 @@ impl RuntimeLoop {
 
     /// Score a candidate based on internal state heuristics.
     fn score_candidate(&self, action: &ActionType) -> f64 {
-        let base = 0.5;
+        let base: f64 = 0.5;
         let is = &self.internal_state;
 
-        let bonus = match action {
+        let bonus: f64 = match action {
             ActionType::AskClarification if is.uncertainty > 0.5 => 0.3,
             ActionType::ConserveResources if is.world_resources < 0.4 => 0.35,
             ActionType::Repair if is.social_harmony < 0.5 => 0.25,
@@ -166,7 +163,7 @@ impl RuntimeLoop {
             _ => 0.0,
         };
 
-        ((base + bonus) as f64).clamp(0.0, 1.0)
+        (base + bonus).clamp(0.0, 1.0)
     }
 
     /// Evaluate candidates through the critic.
@@ -201,11 +198,7 @@ impl RuntimeLoop {
     }
 
     /// Select the best action from passing candidates.
-    fn select_action(
-        &self,
-        passing: &[ActionType],
-        cycle_id: u64,
-    ) -> Option<ActionType> {
+    fn select_action(&self, passing: &[ActionType], cycle_id: u64) -> Option<ActionType> {
         if passing.is_empty() {
             return Some(ActionType::AskClarification);
         }

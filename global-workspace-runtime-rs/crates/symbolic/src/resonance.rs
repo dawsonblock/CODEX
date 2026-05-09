@@ -22,6 +22,7 @@ pub struct ResonanceEntry {
 }
 
 /// Compute resonance scores for candidates against the symbolic graph.
+#[derive(Default)]
 pub struct ResonanceComputer;
 
 impl ResonanceComputer {
@@ -31,11 +32,7 @@ impl ResonanceComputer {
 
     /// Compute a resonance score for a set of activated symbols.
     /// Scores are ADVISORY ONLY and do not override critic decisions.
-    pub fn compute(
-        &self,
-        activated_symbols: &[&Symbol],
-        action_type: &str,
-    ) -> ResonanceScore {
+    pub fn compute(&self, activated_symbols: &[&Symbol], action_type: &str) -> ResonanceScore {
         let entries: Vec<ResonanceEntry> = activated_symbols
             .iter()
             .map(|s| ResonanceEntry {

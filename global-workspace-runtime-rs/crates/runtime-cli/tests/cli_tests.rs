@@ -5,7 +5,10 @@ fn action_schema_matches_json() {
     let expected = ActionType::all_strs();
     for s in expected {
         let parsed = ActionType::from_schema_str(s);
-        assert!(parsed.is_some(), "action '{s}' missing from ActionType enum");
+        assert!(
+            parsed.is_some(),
+            "action '{s}' missing from ActionType enum"
+        );
         let round_tripped = parsed.unwrap().as_str();
         assert_eq!(
             round_tripped, *s,

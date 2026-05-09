@@ -87,10 +87,7 @@ impl EventLog {
         if ext == "mv2" {
             return Err(EventLogError::Io(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                format!(
-                    "EventLog does not read .mv2 files: {}",
-                    path.display()
-                ),
+                format!("EventLog does not read .mv2 files: {}", path.display()),
             )));
         }
         let f = std::fs::File::open(path)?;

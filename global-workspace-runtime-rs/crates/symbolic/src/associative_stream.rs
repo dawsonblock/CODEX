@@ -20,11 +20,7 @@ impl AssociativeStream {
     /// Produce a speculative symbol from a memory hit.
     /// These symbols are NOT validated — they are candidate material only.
     pub fn deconstruct(&self, memory_text: &str) -> Symbol {
-        let id = SymbolId(format!(
-            "assoc_{}_{:x}",
-            self.name,
-            seahash(memory_text)
-        ));
+        let id = SymbolId(format!("assoc_{}_{:x}", self.name, seahash(memory_text)));
         Symbol {
             id,
             kind: SymbolKind::Concept,

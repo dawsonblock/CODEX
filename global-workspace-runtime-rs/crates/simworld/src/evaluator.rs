@@ -1,22 +1,26 @@
 //! EvaluatorRun: orchestrates N cycles of simulation using RuntimeLoop.
 //!
 //! The evaluator feeds scenario observations into RuntimeLoop, which runs the
-//! full 8-stage pipeline (observation → memory → symbolic → candidates →
-//! critic → selection → action → archive). The selected action is then
-//! applied to the world. The scenario's `expected_action` is used ONLY for
-//! scoring the `action_match_rate` — it is NEVER used to select actions.
+//! full pipeline. The selected action is then applied to the world. The
+//! scenario's `expected_action` is used ONLY for scoring `action_match_rate` —
+//! it is NEVER used to select actions.
+//!
+//! Each cycle produces an `EvaluatorTrace` with enough detail to explain why
+//! the selected action was chosen.
 
 use chrono::Utc;
 use runtime_core::event::WorldOutcome;
 use runtime_core::{ActionType, EventLog, RuntimeEvent, RuntimeLoop};
 
 use crate::environment::CooperativeSupportWorld;
+use crate::evaluator_trace::EvaluatorTrace;
 use crate::scorecard::{Scorecard, ScorecardBuilder};
 use crate::sim_types::SimAction;
 
 pub struct EvaluatorRun {
     pub world: CooperativeSupportWorld,
     pub log: EventLog,
+    pub traces: Vec<EvaluatorTrace>,
 }
 
 impl EvaluatorRun {
@@ -28,6 +32,7 @@ impl EvaluatorRun {
         Self {
             world: CooperativeSupportWorld::new(seed),
             log,
+            traces: Vec::new(),
         }
     }
 
@@ -35,34 +40,47 @@ impl EvaluatorRun {
     ///
     /// Uses RuntimeLoop for action selection. The scenario's
     /// `expected_action` is used ONLY for match-rate scoring.
+    /// Produces one `EvaluatorTrace` per cycle.
     pub fn run(&mut self, cycles: u64) -> Scorecard {
         let mut builder = ScorecardBuilder::new();
-
-        // Create a RuntimeLoop with the same event log
-        let mut rt = RuntimeLoop::new(EventLog::new());
+        // Shared event log — RuntimeLoop events go HERE, not a separate log.
+        let mut rt = RuntimeLoop::new(self.log.clone());
 
         for cycle_id in 0..cycles {
-            // 1. cycle started
+            let scenario = self.world.next_scenario();
+            let observation = scenario.name;
+            let world_resources = self.world.resources;
+            let expected_action: SimAction = scenario.expected_action.clone();
+
+            let resource_before = self.world.resources;
+
+            // Build trace
+            let mut trace = EvaluatorTrace::new(cycle_id, scenario.name, observation);
+
+            // Cycle started
             let _ = self.log.append(RuntimeEvent::CycleStarted {
                 cycle_id,
                 timestamp: Utc::now(),
             });
 
-            // 2. pick scenario and prepare observation
-            let scenario = self.world.next_scenario();
-            let observation = scenario.name;
-            let world_resources = self.world.resources;
-            let _expected_action: SimAction = scenario.expected_action.clone();
-
-            // 3. Update internal state based on world conditions
+            // Update internal state
             rt.internal_state.world_resources = world_resources;
 
-            // 4. Run the RuntimeLoop pipeline — this is where action is selected
+            // ── RuntimeLoop pipeline ──────────────────────────────────────
             let selected_action_type = rt.run_cycle(observation, cycle_id, world_resources);
             let action_type = selected_action_type.unwrap_or(ActionType::AskClarification);
             let sim_action: SimAction = action_type.clone().into();
 
-            // 5. Emit candidate selected event to the shared log
+            // Trace: selected action
+            trace.selected_action = action_type.to_string();
+            trace.expected_action = expected_action.as_str().to_string();
+            trace.action_match = sim_action == expected_action;
+            trace.risk_score = rt.internal_state.threat;
+            trace.uncertainty_score = rt.internal_state.uncertainty;
+            trace.resource_score_before = resource_before;
+            trace.memory_hits_count = rt.memory_hits.len();
+
+            // Candidate selected event
             let _ = self.log.append(RuntimeEvent::CandidateSelected {
                 cycle_id,
                 action_type: action_type.clone(),
@@ -71,7 +89,7 @@ impl EvaluatorRun {
                 reasoning: Some(format!("RuntimeLoop selected {action_type}")),
             });
 
-            // 6. Action applied
+            // Action applied
             let is_conserve = sim_action == SimAction::ConserveResources;
             let _ = self.log.append(RuntimeEvent::ActionApplied {
                 cycle_id,
@@ -79,14 +97,15 @@ impl EvaluatorRun {
                 conserve: is_conserve,
             });
 
-            // 7. Apply to world and record outcome
+            // Apply to world
             let outcome = self.world.apply_action(&sim_action, scenario);
-
             let is_unsafe = sim_action == SimAction::InternalDiagnostic;
-            let total = outcome.total_score();
+
+            trace.resource_score_after = self.world.resources;
+            trace.unsafe_action_flag = is_unsafe;
 
             builder.record_outcome(
-                total,
+                outcome.total_score(),
                 outcome.matches_expected,
                 outcome.harm_score,
                 outcome.truth_score,
@@ -96,7 +115,7 @@ impl EvaluatorRun {
                 is_conserve,
             );
 
-            // 8. Record world update
+            // World update
             let _ = self.log.append(RuntimeEvent::WorldStateUpdated {
                 cycle_id,
                 outcome: WorldOutcome {
@@ -111,15 +130,23 @@ impl EvaluatorRun {
                 },
             });
 
-            // 9. Archive commit
+            // Archive commit
             let _ = self.log.append(RuntimeEvent::ArchiveCommitted {
                 cycle_id,
                 frame_id: format!("frame_{cycle_id}"),
                 entry_count: 1,
             });
+
+            trace.runtime_events_count = self.log.len();
+            self.traces.push(trace);
         }
 
         builder.set_final_resources(self.world.resources);
         builder.build()
+    }
+
+    /// Return all traces from the last run as JSON.
+    pub fn traces_as_json(&self) -> String {
+        serde_json::to_string_pretty(&self.traces).unwrap_or_default()
     }
 }

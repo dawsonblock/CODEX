@@ -91,8 +91,8 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.cycle_id = *cycle_id;
             // PRESERVATION: double +0.02 is intentional — kept exactly from gw-kernel.
             state.resources = (state.resources + outcome.resource_delta + 0.02).clamp(0.0, 1.0);
-            state.social_harmony = (0.85 * state.social_harmony + 0.15 * outcome.social_score)
-                .clamp(0.0, 1.0);
+            state.social_harmony =
+                (0.85 * state.social_harmony + 0.15 * outcome.social_score).clamp(0.0, 1.0);
 
             state.total_score_sum += outcome.truth_score
                 + outcome.kindness_score
@@ -115,8 +115,7 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
                 state.matched_expected_count = state.matched_expected_count.saturating_add(1);
             }
             if outcome.truth_score < 0.65 {
-                state.unresolved_contradictions =
-                    state.unresolved_contradictions.saturating_add(1);
+                state.unresolved_contradictions = state.unresolved_contradictions.saturating_add(1);
             }
         }
 
@@ -126,7 +125,10 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
 
         RuntimeEvent::MemoryWritten { .. } => {}
 
-        RuntimeEvent::ScratchpadUpdated { cycle_id, entry_count } => {
+        RuntimeEvent::ScratchpadUpdated {
+            cycle_id,
+            entry_count,
+        } => {
             state.cycle_id = *cycle_id;
             state.scratchpad_entry_count = *entry_count;
         }
@@ -178,7 +180,9 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
         }
 
         RuntimeEvent::PrincipleExtracted {
-            cycle_id, confidence, ..
+            cycle_id,
+            confidence,
+            ..
         } => {
             state.cycle_id = *cycle_id;
             state.principles_extracted = state.principles_extracted.saturating_add(1);

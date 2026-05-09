@@ -4,6 +4,7 @@ use super::symbol::Symbol;
 /// and archive frames.
 ///
 /// Abstraction is lossy; the compressed form approximates the source.
+#[derive(Default)]
 pub struct MemoryAbstractor;
 
 impl MemoryAbstractor {

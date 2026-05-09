@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use super::symbol::SymbolId;
 use super::principle::Principle;
+use super::symbol::SymbolId;
 use runtime_core::ActionType;
 
 /// A blended thought produced by combining a prior principle with a current
@@ -49,6 +49,7 @@ impl ConceptBlend {
 
 /// ConceptualBlender recombines prior principles with current problems into
 /// bounded candidates. All output is speculative.
+#[derive(Default)]
 pub struct ConceptualBlender;
 
 impl ConceptualBlender {
@@ -63,11 +64,7 @@ impl ConceptualBlender {
         problem: &str,
         action_type: ActionType,
     ) -> ConceptBlend {
-        let blend_id = format!(
-            "blend_{}_{:x}",
-            principle.key,
-            seahash(problem)
-        );
+        let blend_id = format!("blend_{}_{:x}", principle.key, seahash(problem));
         ConceptBlend::new(blend_id, principle, problem, action_type)
     }
 }
