@@ -12,7 +12,7 @@
 - **Replay durability**: Event logs can be replayed to reconstruct RuntimeState.
   Replay is idempotent. Corrupt logs fail loudly.
 - **Archive round-trip**: JSONL archive frames can be written and read back.
-- **Action schema**: All 11 action types round-trip through serialization.
+- **Action schema**: All 10 action types round-trip through serialization.
 - **Memory contracts**: Claims with contradicted status are not Active truth.
   Newer evidence supersedes old claims. Memvid stub fails loudly.
 - **Symbolic correctness**: Traces serialize losslessly. Resonance cannot
@@ -32,7 +32,7 @@
 1. The evaluator picks a scenario template (7 types).
 2. The scenario has an `expected_action` — used ONLY for match-rate scoring.
 3. The observation text is fed into `RuntimeLoop.run_cycle()`.
-4. `RuntimeLoop` scores all 11 action types, rejects unsafe ones (critic),
+4. `RuntimeLoop` scores all 10 action types, rejects unsafe ones (critic),
    and selects the best passing action (planner).
 5. The selected action is applied to the world.
 6. `outcome.matches_expected` is computed by comparing the selected action

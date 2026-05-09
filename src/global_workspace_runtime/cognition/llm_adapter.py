@@ -14,8 +14,11 @@ class LLMAdapter:
 
     def generate_candidates(self, role: str, workspace_packet: dict, memory_context: list, internal_state: InternalState, candidate_count: int) -> list[ThoughtCandidate]:
         if self.mode != "mock":
-            # Placeholder path: keeps tests offline while preserving interface.
-            return self._mock_generate(role, workspace_packet, memory_context, internal_state, candidate_count)
+            raise NotImplementedError(
+                f"LLM adapter mode '{self.mode}' is not implemented. "
+                f"Only mode='mock' is supported. This is a legacy Python reference "
+                f"runtime; the Rust workspace is authoritative."
+            )
         return self._mock_generate(role, workspace_packet, memory_context, internal_state, candidate_count)
 
     def _mock_generate(self, role: str, workspace_packet: dict, memory_context: list, internal_state: InternalState, candidate_count: int) -> list[ThoughtCandidate]:
@@ -35,7 +38,7 @@ class LLMAdapter:
                 risk = min(1.0, internal_state.threat + 0.05 * i)
                 uncertainty = min(1.0, internal_state.uncertainty + 0.03 * i)
                 novelty = 0.1 + 0.03 * i
-                truth = 0.78 if action_type in {"ask_clarification", "retrieve_memory", "refuse_ungrounded", "repair", "summarize"} else 0.7
+                truth = 0.78 if action_type in {"ask_clarification", "retrieve_memory", "refuse_unsafe", "defer_insufficient_evidence", "summarize"} else 0.7
             elif role == "associative":
                 mode = "exploratory" if internal_state.curiosity > internal_state.threat else "pattern_link"
                 action_type = inferred_action if inferred_action != "answer" else "answer"

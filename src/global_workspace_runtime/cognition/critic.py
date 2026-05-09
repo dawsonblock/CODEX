@@ -27,7 +27,7 @@ class Critic:
             rejected = True; reasons.append("ungrounded self-report")
         if state.control < 0.35 and candidate.risk_score > 0.45:
             rejected = True; reasons.append("high risk under low control")
-        if state.uncertainty > 0.7 and "evidence" not in candidate.text.lower() and "clarification" not in candidate.text.lower() and candidate.action_type not in {"ask_clarification", "retrieve_memory", "refuse_ungrounded"}:
+        if state.uncertainty > 0.7 and "evidence" not in candidate.text.lower() and "clarification" not in candidate.text.lower() and candidate.action_type not in {"ask_clarification", "retrieve_memory", "refuse_unsafe"}:
             rejected = True; reasons.append("ignores high uncertainty")
         if state.social_harmony < 0.5 and kindness < 0.5:
             rejected = True; reasons.append("low social harmony candidate")
@@ -65,13 +65,13 @@ class Critic:
     def _action_bonus(self, candidate: ThoughtCandidate, state: InternalState) -> float:
         if candidate.action_type == "internal_diagnostic":
             return -2.0
-        if state.resource_pressure > 0.65 and candidate.action_type == "conserve_resources":
+        if state.resource_pressure > 0.65 and candidate.action_type == "no_op":
             return 0.45
-        if state.uncertainty > 0.6 and candidate.action_type in {"ask_clarification", "retrieve_memory", "refuse_ungrounded"}:
+        if state.uncertainty > 0.6 and candidate.action_type in {"ask_clarification", "retrieve_memory", "refuse_unsafe"}:
             return 0.45
-        if state.threat > 0.6 and candidate.action_type in {"repair", "ask_clarification", "refuse_ungrounded"}:
+        if state.threat > 0.6 and candidate.action_type in {"refuse_unsafe", "ask_clarification", "defer_insufficient_evidence"}:
             return 0.35
-        if state.social_harmony < 0.55 and candidate.action_type == "repair":
+        if state.social_harmony < 0.55 and candidate.action_type == "defer_insufficient_evidence":
             return 0.35
         return 0.0
 

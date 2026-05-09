@@ -25,7 +25,7 @@ def prescreen_candidates(candidates: list[ThoughtCandidate], keep_fraction: floa
     keep = max(min_keep, int(round(len(candidates) * keep_fraction)))
     def score(c: ThoughtCandidate) -> float:
         internal_penalty = 0.8 if c.action_type == "internal_diagnostic" else 0.0
-        safe_action_bonus = 0.15 if c.action_type in {"ask_clarification", "retrieve_memory", "refuse_ungrounded", "repair", "summarize"} else 0.0
+        safe_action_bonus = 0.15 if c.action_type in {"ask_clarification", "retrieve_memory", "refuse_unsafe", "defer_insufficient_evidence", "summarize"} else 0.0
         return (
             c.predicted_effects.get("truth_support", 0.5)
             + c.predicted_effects.get("utility", 0.5)
