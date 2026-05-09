@@ -317,7 +317,31 @@ fn cmd_proof(args: &[String]) {
     let mv2_files = find_mv2(&PathBuf::from("."));
     let mv2_ok = mv2_files.is_empty();
 
-    // 5. Symbolic smoke
+    // 5. Evidence vault integrity
+    let mut evidence_vault = evidence::EvidenceVault::new();
+    evidence_vault.append(
+        "proof_evidence_1",
+        evidence::EvidenceSource::Observation,
+        serde_json::json!({"proof": true, "phase": "evidence_vault"}),
+        0.95,
+    );
+    evidence_vault.append(
+        "proof_evidence_2",
+        evidence::EvidenceSource::InternalDiagnostic,
+        serde_json::json!({"check": "integrity_test"}),
+        0.80,
+    );
+    let integrity_report = evidence_vault.verify_integrity();
+    let evidence_ok = integrity_report.all_valid;
+    let _ = std::fs::write(
+        format!("{out_dir}/evidence_integrity_report.json"),
+        serde_json::to_string_pretty(&integrity_report).unwrap_or_default(),
+    );
+    if strict && !evidence_ok {
+        all_ok = false;
+    }
+
+    // 6. Symbolic smoke
     let mut graph = symbolic::SymbolGraph::new();
     let sym = symbolic::Symbol::new(
         symbolic::SymbolId::from("proof_sym"),
@@ -329,7 +353,7 @@ fn cmd_proof(args: &[String]) {
     graph.validate(&symbolic::SymbolId::from("proof_sym"));
     let sym_ok = graph.authoritative_symbols().len() == 1;
 
-    let all_ok = all_ok && sim_ok && schema_ok && mv2_ok && sym_ok;
+    let all_ok = all_ok && sim_ok && schema_ok && mv2_ok && evidence_ok && sym_ok;
 
     let output = serde_json::json!({
         "command": "proof",
@@ -357,6 +381,10 @@ fn cmd_proof(args: &[String]) {
             "no_fake_mv2": {
                 "status": if mv2_ok { "pass" } else { "fail" },
                 "mv2_files_found": mv2_files.len(),
+            },
+            "evidence_integrity": {
+                "status": if evidence_ok { "pass" } else { "fail" },
+                "report": to_json(&integrity_report),
             },
             "symbolic_smoke": {
                 "status": if sym_ok { "pass" } else { "fail" },

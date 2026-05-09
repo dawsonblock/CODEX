@@ -83,6 +83,11 @@ pub struct RuntimeState {
     pub archive_commits: u64,
     pub last_frame_id: Option<String>,
 
+    // Evidence vault tracking
+    pub evidence_entries: u64,
+    pub evidence_tampered: u64,
+    pub evidence_integrity_all_valid: bool,
+
     // Scratchpad
     pub scratchpad_entry_count: usize,
 }
@@ -142,6 +147,9 @@ impl Default for RuntimeState {
             matched_expected_count: 0,
             archive_commits: 0,
             last_frame_id: None,
+            evidence_entries: 0,
+            evidence_tampered: 0,
+            evidence_integrity_all_valid: true,
             scratchpad_entry_count: 0,
         }
     }

@@ -99,6 +99,22 @@ pub enum RuntimeEvent {
         claim_b: String,
         subject: String,
     },
+    /// Evidence was stored in the evidence vault.
+    EvidenceStored {
+        cycle_id: u64,
+        entry_id: String,
+        source: String,
+        confidence: f64,
+        content_hash: String,
+    },
+    /// An evidence vault integrity check was performed.
+    EvidenceIntegrityChecked {
+        cycle_id: u64,
+        total: usize,
+        valid: usize,
+        tampered: usize,
+        all_valid: bool,
+    },
     /// A contradiction was resolved (old claim superseded).
     ContradictionResolved {
         cycle_id: u64,
@@ -175,6 +191,8 @@ impl RuntimeEvent {
             | Self::ScratchpadUpdated { cycle_id, .. }
             | Self::ErrorOccurred { cycle_id, .. }
             | Self::ArchiveCommitted { cycle_id, .. }
+            | Self::EvidenceStored { cycle_id, .. }
+            | Self::EvidenceIntegrityChecked { cycle_id, .. }
             | Self::ContradictionDetected { cycle_id, .. }
             | Self::ContradictionResolved { cycle_id, .. }
             | Self::SymbolActivated { cycle_id, .. }

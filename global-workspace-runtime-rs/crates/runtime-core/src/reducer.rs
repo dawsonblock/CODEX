@@ -143,6 +143,22 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.last_frame_id = Some(frame_id.clone());
         }
 
+        RuntimeEvent::EvidenceStored { cycle_id, .. } => {
+            state.cycle_id = *cycle_id;
+            state.evidence_entries = state.evidence_entries.saturating_add(1);
+        }
+
+        RuntimeEvent::EvidenceIntegrityChecked {
+            cycle_id,
+            all_valid,
+            tampered,
+            ..
+        } => {
+            state.cycle_id = *cycle_id;
+            state.evidence_integrity_all_valid = *all_valid;
+            state.evidence_tampered = *tampered as u64;
+        }
+
         RuntimeEvent::ContradictionDetected { cycle_id, .. } => {
             state.cycle_id = *cycle_id;
             state.contradictions_detected = state.contradictions_detected.saturating_add(1);

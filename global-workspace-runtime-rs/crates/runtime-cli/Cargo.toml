@@ -14,6 +14,7 @@ modulation   = { path = "../modulation" }
 cognition    = { path = "../cognition" }
 symbolic     = { path = "../symbolic" }
 memory       = { path = "../memory" }
+evidence     = { path = "../evidence" }
 gw-workspace = { path = "../gw-workspace" }
 serde        = { workspace = true }
 serde_json   = { workspace = true }

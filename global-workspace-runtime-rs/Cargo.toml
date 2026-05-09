@@ -6,6 +6,7 @@ members = [
     "crates/cognition",
     "crates/symbolic",
     "crates/memory",
+    "crates/evidence",
     "crates/gw-workspace",
     "crates/runtime-cli",
 ]

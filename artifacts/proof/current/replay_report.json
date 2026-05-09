@@ -58,6 +58,9 @@
     "matched_expected_count": 25,
     "archive_commits": 25,
     "last_frame_id": "frame_24",
+    "evidence_entries": 0,
+    "evidence_tampered": 0,
+    "evidence_integrity_all_valid": true,
     "scratchpad_entry_count": 0
   },
   "checks": [

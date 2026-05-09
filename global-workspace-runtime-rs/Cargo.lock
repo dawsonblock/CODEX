@@ -131,6 +131,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "evidence"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "runtime-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -544,6 +556,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cognition",
+ "evidence",
  "gw-workspace",
  "memory",
  "modulation",
