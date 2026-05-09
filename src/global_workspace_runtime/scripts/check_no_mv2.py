@@ -1,4 +1,7 @@
-"""CI guard: assert no .mv2 file references remain in Python or Markdown.
+"""CI guard: assert no .mv2 file references in Python, docs, config, or CI files.
+
+Scope: Python, Markdown, reST, TOML, YAML — excludes vendor/memvid-main/
+(which is vendored upstream source and expected to contain .mv2 references).
 
 Usage::
 
@@ -46,7 +49,7 @@ def main() -> None:
         print("\n".join(violations))
         sys.exit(1)
 
-    print(f"PASS: no .mv2 references found ({sum(1 for _ in _iter_files(_ROOT))} files scanned)")
+    print(f"PASS: no .mv2 references in Python/docs/config ({sum(1 for _ in _iter_files(_ROOT))} files scanned; vendor/memvid-main excluded)")
 
 
 if __name__ == "__main__":

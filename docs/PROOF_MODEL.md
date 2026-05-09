@@ -56,7 +56,6 @@ that the runtime is not simply echoing `expected_action`.
 
 ```bash
 cd global-workspace-runtime-rs
-cargo test --workspace --all-targets --all-features
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets --all-features

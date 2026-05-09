@@ -43,7 +43,7 @@ def test_event_log_persists_to_disk():
         path = Path(tmp) / "sub" / "test.evlog"
         log = EventLog(path=path)
         log.append(1, "cycle_start", {"text": "persisted"})
-        log.append(1, "candidate_selected", {"action_type": "defer"})
+        log.append(1, "candidate_selected", {"action_type": "defer_insufficient_evidence"})
 
         assert path.exists()
         lines = path.read_text().splitlines()

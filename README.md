@@ -32,7 +32,6 @@ cargo run -p runtime-cli -- replay --events artifacts/proof/event_log.jsonl
 cargo run -p runtime-cli -- check-action-schema
 cargo run -p runtime-cli -- check-no-fake-mv2
 cargo run -p runtime-cli -- symbolic-smoke
-cargo run -p runtime-cli -- proof
 ```
 
 All CLI commands output JSON by default.
