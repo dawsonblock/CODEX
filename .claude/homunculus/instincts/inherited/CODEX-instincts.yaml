@@ -1,0 +1,335 @@
+# Instincts generated from https://github.com/dawsonblock/CODEX
+# Generated: 2026-05-09T19:36:52.336Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: CODEX-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, docs
+
+## Evidence
+
+- 2 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat: add learning loop, claim memory, and natural-language SimWorld scenarios, docs: clarify confidence magic numbers and test seed in review comments
+
+---
+id: CODEX-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Commit Length
+
+## Action
+
+Write moderate-length commit messages (~75 characters)
+
+## Evidence
+
+- Average commit message length: 75 chars
+- Based on 2 commits
+
+---
+id: CODEX-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: CODEX-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: CODEX-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: CODEX-workflow-feature-implementation-with-tests-and-docs
+trigger: "when doing feature implementation with tests and docs"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Workflow Feature Implementation With Tests And Docs
+
+## Action
+
+Follow the feature-implementation-with-tests-and-docs workflow:
+1. Implement feature logic in relevant src files.
+2. Add or update unit/integration tests in the corresponding tests/ directory.
+3. Update documentation files (e.g., ARCHITECTURE.md, LIMITATIONS.md) to reflect the new feature or changes.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: global-workspace-runtime-rs/crates/*/src/*.rs, global-workspace-runtime-rs/crates/*/tests/*.rs, docs/ARCHITECTURE.md
+
+---
+id: CODEX-workflow-test-and-docs-minor-update
+trigger: "when doing test and docs minor update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Workflow Test And Docs Minor Update
+
+## Action
+
+Follow the test-and-docs-minor-update workflow:
+1. Edit code comments or inline documentation in src files.
+2. Update or clarify test logic in tests/ files.
+3. Optionally update documentation files to clarify behavior or rationale.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: global-workspace-runtime-rs/crates/*/src/*.rs, global-workspace-runtime-rs/crates/*/tests/*.rs, docs/*.md
+
+---
+id: codex-instinct-naming-conventions
+trigger: "When creating or renaming files, functions, classes, or constants in Rust code"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Naming Conventions
+
+## Action
+
+Use camelCase for files and functions, PascalCase for classes, and SCREAMING_SNAKE_CASE for constants
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions
+- Seen in global-workspace-runtime-rs/crates/*/src/*.rs
+
+---
+id: codex-instinct-import-style
+trigger: "When importing modules in Rust source files"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Import Style
+
+## Action
+
+Use relative imports
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+- Seen in global-workspace-runtime-rs/crates/*/src/*.rs
+
+---
+id: codex-instinct-export-style
+trigger: "When exporting items from modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+- Seen in global-workspace-runtime-rs/crates/*/src/*.rs
+
+---
+id: codex-instinct-test-location
+trigger: "When adding or updating tests for a feature or module"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Test Location
+
+## Action
+
+Place tests in the corresponding tests/ directory within the crate
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+- Files: global-workspace-runtime-rs/crates/*/tests/*.rs
+
+---
+id: codex-instinct-test-update-with-feature
+trigger: "When implementing a new feature"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Test Update With Feature
+
+## Action
+
+Add or update unit/integration tests in the corresponding tests/ directory
+
+## Evidence
+
+- Workflow: feature-implementation-with-tests-and-docs
+- Commit sequence: Add or update unit/integration tests
+
+---
+id: codex-instinct-commit-format
+trigger: "When writing a git commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Commit Format
+
+## Action
+
+Use the Conventional Commits format with prefixes like feat or docs, followed by a colon and a concise message
+
+## Evidence
+
+- Pattern in commits.type: conventional
+- Examples: 'feat: add learning loop...', 'docs: clarify confidence magic numbers...'
+
+---
+id: codex-instinct-commit-length
+trigger: "When composing a commit message"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Commit Length
+
+## Action
+
+Keep the commit message around 75 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength
+- Examples in commit messages
+
+---
+id: codex-instinct-feature-workflow
+trigger: "When someone wants to add a new capability or major feature to the codebase"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Feature Workflow
+
+## Action
+
+Implement feature logic in src files, add/update tests in tests/ directory, and update documentation (ARCHITECTURE.md, LIMITATIONS.md)
+
+## Evidence
+
+- Workflow: feature-implementation-with-tests-and-docs
+- Commit sequence and files involved
+
+---
+id: codex-instinct-test-docs-minor-update-workflow
+trigger: "When someone wants to clarify implementation details, magic numbers, or test setup in code and documentation"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Test Docs Minor Update Workflow
+
+## Action
+
+Edit code comments or inline docs in src files, update or clarify test logic in tests/ files, and optionally update documentation files
+
+## Evidence
+
+- Workflow: test-and-docs-minor-update
+- Commit sequence and files involved
+
