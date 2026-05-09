@@ -5,6 +5,16 @@
 //! symbolic activations, policy scores, and all events.
 //!
 //! Now wired with ObservationInterpreter, MemoryProvider, and SymbolicActivator.
+//!
+//! ## Learning loop
+//!
+//! `apply_outcome` feeds SimWorld (or any evaluator) feedback back into the
+//! runtime.  Each call adjusts a per-action bias stored in `outcome_biases`.
+//! Biases are bounded to ±0.2 and decay toward zero over time so that the
+//! policy can recover from transient bad outcomes.  The learning rate is small
+//! (0.05 per cycle) so that a single mistake does not derail the policy.
+
+use std::collections::HashMap;
 
 use crate::action::ActionType;
 use crate::event::RuntimeEvent;
@@ -15,6 +25,13 @@ use crate::symbolic_activator::SymbolicActivator;
 use crate::types::InternalState;
 use chrono::Utc;
 
+/// Maximum absolute value for any per-action outcome bias.
+const BIAS_CAP: f64 = 0.2;
+/// Learning rate applied to each outcome feedback call.
+const LEARNING_RATE: f64 = 0.05;
+/// Passive decay applied to all biases each cycle so old adjustments fade.
+const BIAS_DECAY: f64 = 0.98;
+
 pub struct RuntimeLoop {
     pub internal_state: InternalState,
     pub interpreter: ObservationInterpreter,
@@ -24,6 +41,9 @@ pub struct RuntimeLoop {
     pub last_context: Option<ObservationContext>,
     /// Symbolic activations for current cycle (used in scoring)
     pub symbolic_activations: Vec<crate::runtime_step_result::SymbolActivation>,
+    /// Per-action outcome biases accumulated via `apply_outcome`.
+    /// Positive bias → action performed well historically; negative → performed poorly.
+    pub outcome_biases: HashMap<ActionType, f64>,
 }
 
 impl RuntimeLoop {
@@ -35,6 +55,7 @@ impl RuntimeLoop {
             activator: SymbolicActivator::new(),
             last_context: None,
             symbolic_activations: Vec::new(),
+            outcome_biases: HashMap::new(),
         }
     }
 
@@ -158,6 +179,25 @@ impl RuntimeLoop {
         result
     }
 
+    /// Feed a SimWorld (or any evaluator) outcome back into the policy.
+    ///
+    /// `outcome_score` should be in [0, 1].  A score above 0.5 means the
+    /// action performed well; below 0.5 means it performed poorly.
+    ///
+    /// The bias for `action` is adjusted by `(outcome_score − 0.5) × LEARNING_RATE`
+    /// and then clamped to ±`BIAS_CAP`.  All biases are also decayed by
+    /// `BIAS_DECAY` on every call so old adjustments fade over time.
+    pub fn apply_outcome(&mut self, action: &ActionType, outcome_score: f64) {
+        // Decay all existing biases first.
+        for v in self.outcome_biases.values_mut() {
+            *v *= BIAS_DECAY;
+        }
+        // Compute the delta: positive when the action worked well.
+        let delta = (outcome_score - 0.5) * LEARNING_RATE;
+        let entry = self.outcome_biases.entry(action.clone()).or_insert(0.0);
+        *entry = (*entry + delta).clamp(-BIAS_CAP, BIAS_CAP);
+    }
+
     fn score_all_candidates(&self) -> Vec<(ActionType, f64)> {
         ActionType::all_strs()
             .iter()
@@ -246,6 +286,10 @@ impl RuntimeLoop {
             .count() as f64
             * 0.05;
         bonus += symbolic_bonus;
+
+        // Add accumulated outcome bias (bounded to ±BIAS_CAP).
+        let bias = self.outcome_biases.get(action).copied().unwrap_or(0.0);
+        bonus += bias;
 
         (base + bonus).clamp(0.0, 1.0)
     }

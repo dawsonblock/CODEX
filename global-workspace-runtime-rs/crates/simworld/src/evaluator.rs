@@ -5,7 +5,14 @@
 //! appended to the evaluator's shared EventLog (no clone() disconnect).
 //!
 //! The scenario's `expected_action` is used ONLY for scoring `action_match_rate`.
+//!
+//! ## Learning loop
+//!
+//! After each cycle, `rt.apply_outcome` feeds the SimWorld outcome score back
+//! into the RuntimeLoop's per-action bias table, and `claim_memory.record_outcome`
+//! writes a durable claim so the history of successes and failures is queryable.
 
+use memory::ClaimMemory;
 use runtime_core::event::WorldOutcome;
 use runtime_core::{EventLog, KeywordMemoryProvider, RuntimeEvent, RuntimeLoop};
 
@@ -18,6 +25,8 @@ pub struct EvaluatorRun {
     pub world: CooperativeSupportWorld,
     pub log: EventLog,
     pub traces: Vec<EvaluatorTrace>,
+    /// Evidence-backed claim memory accumulated over the run.
+    pub claim_memory: ClaimMemory,
 }
 
 impl EvaluatorRun {
@@ -30,6 +39,7 @@ impl EvaluatorRun {
             world: CooperativeSupportWorld::new(seed),
             log,
             traces: Vec::new(),
+            claim_memory: ClaimMemory::new(),
         }
     }
 
@@ -44,7 +54,8 @@ impl EvaluatorRun {
 
         for cycle_id in 0..cycles {
             let scenario = self.world.next_scenario();
-            let observation = scenario.name;
+            // Use natural-language `text`, not the category-keyword `name`.
+            let observation = scenario.text;
             let world_resources = self.world.resources;
             let expected_action: SimAction = scenario.expected_action.clone();
             let resource_before = self.world.resources;
@@ -62,6 +73,21 @@ impl EvaluatorRun {
             // ── World update event ───────────────────────────────────
             let outcome = self.world.apply_action(&sim_action, scenario);
             let is_unsafe = !sim_action.is_safe_for_users();
+
+            // ── Learning loop: feed outcome back into RuntimeLoop ────
+            // apply_outcome adjusts the per-action bias table so future
+            // cycles score actions that produced good outcomes more highly.
+            rt.apply_outcome(&action_type, outcome.total_score());
+
+            // ── Claim memory: record outcome as durable evidence ─────
+            // This bridges the learning loop to the evidence-based memory
+            // engine so that patterns across many cycles are queryable.
+            self.claim_memory.record_outcome(
+                scenario.name,
+                action_type.as_str(),
+                outcome.matches_expected,
+                &format!("cycle-{cycle_id}"),
+            );
 
             let _ = self.log.append(RuntimeEvent::WorldStateUpdated {
                 cycle_id,

@@ -34,11 +34,26 @@ validated by the critic. The symbolic layer is not deeply wired into
 RuntimeLoop selection — traces record what was activated, but the graph
 does not directly drive decisions.
 
-## SimWorld is synthetic
+## SimWorld is synthetic (but no longer oracle-labelled)
 
-The SimWorld uses 7 deterministic scenario templates. It is a closed-world
-simulation, not a real environment. Results should not be interpreted as
-evidence of general capability.
+The SimWorld uses 7 scenario templates, each with a natural-language `text`
+field.  The evaluator passes the text, not the category-keyword name, to the
+runtime so the system must infer the correct action from language.  The
+environment is still closed and deterministic — results should not be
+interpreted as evidence of general capability.
+
+## Learning loop is in-session only
+
+`RuntimeLoop.apply_outcome` adjusts per-action biases within a single
+evaluation run.  Biases are not persisted between runs.  This is in-session
+policy adjustment, not cross-session learning from a durable dataset.
+
+## ClaimMemory is in-process only
+
+`ClaimMemory` records outcome claims during a run and detects contradictions,
+but it is not yet connected to the `JsonlArchiveBackend` for cross-run
+persistence.  Durable claim memory requires wiring `ClaimMemory::record_outcome`
+to an `ArchiveBackend` write call.
 
 ## Performance score is not general intelligence
 

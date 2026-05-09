@@ -386,6 +386,261 @@ impl SemanticCache {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ClaimMemory — evidence-backed claim store with contradiction detection
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Active claim memory: stores `MemoryClaim`s backed by `Evidence`, detects
+/// contradictions when new claims conflict with active ones, and supersedes
+/// stale claims when fresher evidence arrives for the same subject.
+///
+/// This is the core of the evidence-based memory engine described in the
+/// architecture plan.  It is a bounded, in-process store; persistence is
+/// handled by wiring it to an `ArchiveBackend`.
+///
+/// # Contradiction detection
+///
+/// Two claims about the same `subject` are considered contradictory when their
+/// predicates differ AND both are currently `Active`.  When a contradiction is
+/// detected the older claim is marked `Contradicted` and a `Contradiction`
+/// record is appended.  The newer claim remains `Active`.
+///
+/// # Supersession
+///
+/// If a new claim has the same `subject` AND the same `predicate` as an
+/// existing `Active` claim, the old claim is marked `Superseded` (pointing to
+/// the new claim id) rather than `Contradicted`.
+#[derive(Debug, Default)]
+pub struct ClaimMemory {
+    claims: Vec<MemoryClaim>,
+    evidence: Vec<Evidence>,
+    pub contradictions: Vec<Contradiction>,
+    next_id: u64,
+}
+
+impl ClaimMemory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Add a piece of raw evidence and return its assigned id.
+    pub fn add_evidence(
+        &mut self,
+        source: impl Into<String>,
+        content: impl Into<String>,
+        timestamp: impl Into<String>,
+        confidence: f64,
+    ) -> String {
+        let id = format!("ev-{}", self.next_id);
+        self.next_id += 1;
+        self.evidence.push(Evidence {
+            id: id.clone(),
+            source: source.into(),
+            content: content.into(),
+            timestamp: timestamp.into(),
+            confidence,
+        });
+        id
+    }
+
+    /// Assert a claim with supporting evidence links.
+    ///
+    /// Checks for contradictions and supersessions against existing active
+    /// claims on the same subject before inserting.  Returns the new claim id.
+    pub fn assert_claim(
+        &mut self,
+        subject: impl Into<String>,
+        predicate: impl Into<String>,
+        evidence_links: Vec<ClaimEvidenceLink>,
+        timestamp: impl Into<String>,
+    ) -> String {
+        let subject = subject.into();
+        let predicate = predicate.into();
+        let new_id = format!("cl-{}", self.next_id);
+        self.next_id += 1;
+        let ts = timestamp.into();
+
+        // Find all active claims on the same subject.
+        let conflicting: Vec<usize> = self
+            .claims
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.subject == subject && c.status == ClaimStatus::Active)
+            .map(|(i, _)| i)
+            .collect();
+
+        for idx in conflicting {
+            let old_predicate = self.claims[idx].predicate.clone();
+            let old_id = self.claims[idx].id.clone();
+
+            if old_predicate == predicate {
+                // Same predicate — supersede the older claim.
+                self.claims[idx].status = ClaimStatus::Superseded;
+                self.claims[idx].superseded_by = Some(new_id.clone());
+            } else {
+                // Different predicate — contradiction.
+                self.claims[idx].status = ClaimStatus::Contradicted;
+                self.contradictions.push(Contradiction {
+                    claim_a_id: old_id,
+                    claim_b_id: new_id.clone(),
+                    subject: subject.clone(),
+                    detected_at: ts.clone(),
+                    resolved: false,
+                    resolution: None,
+                });
+            }
+        }
+
+        self.claims.push(MemoryClaim {
+            id: new_id.clone(),
+            subject,
+            predicate,
+            status: ClaimStatus::Active,
+            evidence_links,
+            created_at: ts,
+            superseded_by: None,
+        });
+
+        new_id
+    }
+
+    /// Record a SimWorld (or any evaluator) outcome as a claim.
+    ///
+    /// This is the bridge between the learning loop and durable memory.
+    /// A call records: "In scenario `scenario_name`, action `action` produced
+    /// a `good_outcome`."  Later cycles can retrieve these claims to inform
+    /// scoring decisions.
+    pub fn record_outcome(
+        &mut self,
+        scenario_name: impl Into<String>,
+        action: impl Into<String>,
+        good_outcome: bool,
+        timestamp: impl Into<String>,
+    ) -> String {
+        let subject = scenario_name.into();
+        let action = action.into();
+        let predicate = if good_outcome {
+            format!("action_{action}_succeeded")
+        } else {
+            format!("action_{action}_failed")
+        };
+        // Add a small auto-evidence entry so the claim is not evidence-free.
+        let ts = timestamp.into();
+        let ev_id = self.add_evidence(
+            "simworld_outcome",
+            format!("{subject}:{action}:{}", if good_outcome { "ok" } else { "fail" }),
+            ts.clone(),
+            if good_outcome { 0.85 } else { 0.35 },
+        );
+        self.assert_claim(
+            subject,
+            predicate,
+            vec![ClaimEvidenceLink {
+                evidence_id: ev_id,
+                weight: 1.0,
+            }],
+            ts,
+        )
+    }
+
+    /// Retrieve claims and evidence relevant to `query_subject`.
+    ///
+    /// Returns active claims whose subject contains `query_subject`, together
+    /// with their linked evidence.
+    pub fn retrieve(&self, query_subject: &str) -> RetrievalPacket {
+        let lower = query_subject.to_lowercase();
+        let related_claims: Vec<MemoryClaim> = self
+            .claims
+            .iter()
+            .filter(|c| {
+                c.status == ClaimStatus::Active && c.subject.to_lowercase().contains(&lower)
+            })
+            .cloned()
+            .collect();
+
+        // Collect all evidence linked by the matching claims.
+        let ev_ids: std::collections::HashSet<&str> = related_claims
+            .iter()
+            .flat_map(|c| c.evidence_links.iter().map(|l| l.evidence_id.as_str()))
+            .collect();
+        let evidence: Vec<Evidence> = self
+            .evidence
+            .iter()
+            .filter(|e| ev_ids.contains(e.id.as_str()))
+            .cloned()
+            .collect();
+
+        // Produce a lightweight keyword hit for each claim so callers that
+        // only use `SemanticHit`s can still consume the result.
+        let hits: Vec<SemanticHit> = related_claims
+            .iter()
+            .map(|c| SemanticHit {
+                key: c.id.clone(),
+                value: format!("{}: {}", c.subject, c.predicate),
+                score: 1,
+            })
+            .collect();
+
+        RetrievalPacket {
+            hits,
+            evidence,
+            related_claims,
+        }
+    }
+
+    /// Returns aggregate memory health statistics.
+    pub fn status(&self) -> MemoryStatus {
+        MemoryStatus {
+            total_claims: self.claims.len(),
+            active_claims: self
+                .claims
+                .iter()
+                .filter(|c| c.status == ClaimStatus::Active)
+                .count(),
+            contradicted_claims: self
+                .claims
+                .iter()
+                .filter(|c| c.status == ClaimStatus::Contradicted)
+                .count(),
+            superseded_claims: self
+                .claims
+                .iter()
+                .filter(|c| c.status == ClaimStatus::Superseded)
+                .count(),
+            unverified_claims: self
+                .claims
+                .iter()
+                .filter(|c| c.status == ClaimStatus::Unverified)
+                .count(),
+            total_evidence: self.evidence.len(),
+        }
+    }
+
+    /// Unresolved contradictions (not yet marked resolved).
+    pub fn open_contradictions(&self) -> Vec<&Contradiction> {
+        self.contradictions
+            .iter()
+            .filter(|c| !c.resolved)
+            .collect()
+    }
+
+    /// Mark a contradiction as resolved with an optional explanation.
+    pub fn resolve_contradiction(
+        &mut self,
+        claim_a_id: &str,
+        claim_b_id: &str,
+        resolution: impl Into<String>,
+    ) {
+        let resolution_str = resolution.into();
+        for c in &mut self.contradictions {
+            if c.claim_a_id == claim_a_id && c.claim_b_id == claim_b_id {
+                c.resolved = true;
+                c.resolution = Some(resolution_str.clone());
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Tests
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -463,5 +718,87 @@ mod tests {
         };
         let err = backend.write_frame(&frame).unwrap_err();
         assert!(matches!(err, ArchiveError::NotImplemented(_)));
+    }
+
+    // ── ClaimMemory tests ────────────────────────────────────────────────────
+
+    #[test]
+    fn claim_memory_records_and_retrieves_active_claims() {
+        let mut cm = ClaimMemory::new();
+        cm.assert_claim("scenario_a", "action_answer_succeeded", vec![], "t0");
+        let packet = cm.retrieve("scenario_a");
+        assert_eq!(packet.related_claims.len(), 1);
+        assert_eq!(packet.related_claims[0].status, ClaimStatus::Active);
+    }
+
+    #[test]
+    fn claim_memory_detects_contradiction() {
+        let mut cm = ClaimMemory::new();
+        cm.assert_claim("sensor_1", "reading_is_high", vec![], "t0");
+        cm.assert_claim("sensor_1", "reading_is_low", vec![], "t1");
+
+        let status = cm.status();
+        assert_eq!(status.contradicted_claims, 1);
+        assert_eq!(status.active_claims, 1); // only the newer claim is active
+        assert_eq!(cm.open_contradictions().len(), 1);
+    }
+
+    #[test]
+    fn claim_memory_supersedes_same_predicate() {
+        let mut cm = ClaimMemory::new();
+        cm.assert_claim("resource_level", "is_normal", vec![], "t0");
+        cm.assert_claim("resource_level", "is_normal", vec![], "t1");
+
+        let status = cm.status();
+        assert_eq!(status.superseded_claims, 1);
+        assert_eq!(status.active_claims, 1);
+        assert_eq!(cm.open_contradictions().len(), 0); // same predicate → not a contradiction
+    }
+
+    #[test]
+    fn record_outcome_adds_claim_and_evidence() {
+        let mut cm = ClaimMemory::new();
+        cm.record_outcome("factual_query", "answer", true, "t0");
+        let status = cm.status();
+        assert_eq!(status.total_claims, 1);
+        assert_eq!(status.total_evidence, 1);
+        assert_eq!(status.active_claims, 1);
+    }
+
+    #[test]
+    fn consecutive_failures_contradicted_by_success() {
+        let mut cm = ClaimMemory::new();
+        cm.record_outcome("unsafe_request", "answer", false, "t0");
+        cm.record_outcome("unsafe_request", "refuse_unsafe", true, "t1");
+
+        // The failure predicate is contradicted by the success predicate
+        // (different predicates on same subject).
+        let status = cm.status();
+        assert_eq!(status.contradicted_claims, 1);
+        assert_eq!(status.active_claims, 1);
+    }
+
+    #[test]
+    fn contradiction_can_be_resolved() {
+        let mut cm = ClaimMemory::new();
+        cm.assert_claim("state_x", "is_true", vec![], "t0");
+        let new_id = cm.assert_claim("state_x", "is_false", vec![], "t1");
+
+        assert_eq!(cm.open_contradictions().len(), 1);
+        let old_id = cm.contradictions[0].claim_a_id.clone();
+        cm.resolve_contradiction(&old_id, &new_id, "newer observation overrides");
+        assert_eq!(cm.open_contradictions().len(), 0);
+    }
+
+    #[test]
+    fn retrieve_returns_only_active_claims() {
+        let mut cm = ClaimMemory::new();
+        cm.assert_claim("topic_a", "predicate_1", vec![], "t0");
+        cm.assert_claim("topic_a", "predicate_2", vec![], "t1"); // contradicts predicate_1
+
+        let packet = cm.retrieve("topic_a");
+        // Only the active claim (predicate_2) should be returned.
+        assert_eq!(packet.related_claims.len(), 1);
+        assert_eq!(packet.related_claims[0].status, ClaimStatus::Active);
     }
 }
