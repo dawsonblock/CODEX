@@ -72,7 +72,7 @@ check(os.path.isdir(proof_dir), "Proof artifacts directory missing")
 
 # Report
 if violations:
-    print(f"\n{violations_count} ARCHITECTURE VIOLATIONS:")
+    print(f"\n{len(violations)} ARCHITECTURE VIOLATION(S):")
     for v in violations:
         print(f"  - {v}")
     sys.exit(1)

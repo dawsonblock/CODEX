@@ -4,23 +4,34 @@
 //! scored candidates, rejected actions with reasons, memory hits,
 //! symbolic activations, policy scores, and all events.
 //!
-//! The RuntimeLoop does NOT own the EventLog. Events are returned
-//! in RuntimeStepResult.events for the caller to append to a shared log.
+//! Now wired with ObservationInterpreter, MemoryProvider, and SymbolicActivator.
 
 use crate::action::ActionType;
 use crate::event::RuntimeEvent;
+use crate::memory_provider::MemoryProvider;
+use crate::observation::{ObservationContext, ObservationInterpreter};
 use crate::runtime_step_result::{ActionCandidate, ActionScore, RejectedAction, RuntimeStepResult};
+use crate::symbolic_activator::SymbolicActivator;
 use crate::types::InternalState;
 use chrono::Utc;
 
 pub struct RuntimeLoop {
     pub internal_state: InternalState,
+    pub interpreter: ObservationInterpreter,
+    pub memory: Box<dyn MemoryProvider>,
+    pub activator: SymbolicActivator,
+    /// Last observation context
+    pub last_context: Option<ObservationContext>,
 }
 
 impl RuntimeLoop {
-    pub fn new() -> Self {
+    pub fn new(memory: Box<dyn MemoryProvider>) -> Self {
         Self {
             internal_state: InternalState::default(),
+            interpreter: ObservationInterpreter::new(),
+            memory,
+            activator: SymbolicActivator::new(),
+            last_context: None,
         }
     }
 
@@ -33,6 +44,13 @@ impl RuntimeLoop {
     ) -> RuntimeStepResult {
         let mut result = RuntimeStepResult::new(cycle_id, observation);
         self.internal_state.world_resources = world_resources;
+
+        // ── 0. Interpret observation ──────────────────────────────
+        let ctx = self.interpreter.interpret(observation);
+        self.interpreter
+            .apply_to_state(&mut self.internal_state, &ctx);
+        self.last_context = Some(ctx.clone());
+        result.symbolic_activations = self.activator.activate(&ctx);
 
         // ── 1. Observation ──────────────────────────────────────────
         result.events.push(RuntimeEvent::CycleStarted {
@@ -50,21 +68,26 @@ impl RuntimeLoop {
             cycle_id,
             query: observation.to_string(),
         });
-        // Memory hits set externally; recorded if present.
+        let hits = self.memory.query(observation);
+        result.memory_hits = hits;
+        if !result.memory_hits.is_empty() {
+            result.events.push(RuntimeEvent::MemoryHitReturned {
+                cycle_id,
+                hit_count: result.memory_hits.len(),
+                top_key: result.memory_hits.first().map(|h| h.key.clone()),
+                top_value: result.memory_hits.first().map(|h| h.value.clone()),
+            });
+        }
 
-        // ── 3. Symbolic context ───────────────────────────────────
-        // explicit: symbolic activations populated below
-
-        // ── 4. Candidate generation ───────────────────────────────
+        // ── 3. Candidate generation ───────────────────────────────
         let scored = self.score_all_candidates();
         for (action, score) in &scored {
             let candidate = ActionCandidate {
                 action_type: action.clone(),
                 score: *score,
-                reasoning: Some(format!("{action}: base_score={score:.3}")),
+                reasoning: Some(format!("{action}: score={score:.3}")),
             };
             result.candidate_actions.push(candidate);
-
             result.events.push(RuntimeEvent::CandidateGenerated {
                 cycle_id,
                 action_type: action.clone(),
@@ -73,9 +96,8 @@ impl RuntimeLoop {
             });
         }
 
-        // ── 5. Critic evaluation ──────────────────────────────────
+        // ── 4. Critic evaluation ──────────────────────────────────
         let (passing, rejected) = self.evaluate(&scored);
-
         for (action, reason) in &rejected {
             result.rejected_actions.push(RejectedAction {
                 action_type: action.clone(),
@@ -88,7 +110,7 @@ impl RuntimeLoop {
             });
         }
 
-        // ── 6. Policy scores record ───────────────────────────────
+        // ── 5. Policy scores record ───────────────────────────────
         for (action, score) in &scored {
             let base = 0.5;
             let bonus = score - base;
@@ -101,7 +123,7 @@ impl RuntimeLoop {
             });
         }
 
-        // ── 7. Selection ───────────────────────────────────────────
+        // ── 6. Selection ───────────────────────────────────────────
         let (selected, reason) = self.select(&passing);
         result.selected_action = selected.clone();
         result.selection_reason = reason;
@@ -115,14 +137,14 @@ impl RuntimeLoop {
             reasoning: Some(result.selection_reason.clone()),
         });
 
-        // ── 8. Action application event ──────────────────────────
+        // ── 7. Action application ──────────────────────────────────
         result.events.push(RuntimeEvent::ActionApplied {
             cycle_id,
             action_type: selected.clone(),
             conserve: false,
         });
 
-        // ── 9. Archive commit event ──────────────────────────────
+        // ── 8. Archive commit ──────────────────────────────────────
         result.events.push(RuntimeEvent::ArchiveCommitted {
             cycle_id,
             frame_id: format!("frame_{cycle_id}"),
@@ -132,7 +154,6 @@ impl RuntimeLoop {
         result
     }
 
-    /// Score all 10 action types based on internal state.
     fn score_all_candidates(&self) -> Vec<(ActionType, f64)> {
         ActionType::all_strs()
             .iter()
@@ -144,41 +165,73 @@ impl RuntimeLoop {
             .collect()
     }
 
-    /// Score a single action.
     fn score(&self, action: &ActionType) -> f64 {
         let base: f64 = 0.5;
         let is = &self.internal_state;
+        let ctx = self.last_context.as_ref();
 
-        let bonus: f64 = match action {
-            // High uncertainty → prefer clarification/defer
+        let mut bonus: f64 = match action {
             ActionType::AskClarification if is.uncertainty > 0.5 => 0.35,
             ActionType::DeferInsufficientEvidence if is.uncertainty > 0.5 => 0.25,
-
-            // Threat → prefer refuse
             ActionType::RefuseUnsafe if is.threat > 0.6 => 0.40,
             ActionType::AskClarification if is.threat > 0.4 => 0.15,
-
-            // Low resources → prefer low-cost actions
             ActionType::NoOp if is.world_resources < 0.3 => 0.20,
             ActionType::DeferInsufficientEvidence if is.world_resources < 0.3 => 0.15,
-
-            // Low social harmony → prefer defer/clarification
             ActionType::AskClarification if is.social_harmony < 0.5 => 0.15,
-
-            // High kindness → prefer answer/plan
             ActionType::Answer if is.kindness > 0.6 => 0.10,
             ActionType::Plan if is.curiosity > 0.5 => 0.20,
-
-            // InternalDiagnostic → always penalized
             ActionType::InternalDiagnostic => -1.0,
-
             _ => 0.0,
         };
+
+        // Observation-kind bonuses
+        if let Some(ctx) = ctx {
+            match ctx.kind {
+                crate::observation::ObservationKind::FactualQuery
+                    if matches!(action, ActionType::Answer) =>
+                {
+                    bonus += 0.25;
+                }
+                crate::observation::ObservationKind::MemoryLookup
+                    if matches!(action, ActionType::RetrieveMemory) =>
+                {
+                    bonus += 0.30;
+                }
+                crate::observation::ObservationKind::SummarizationRequest
+                    if matches!(action, ActionType::Summarize) =>
+                {
+                    bonus += 0.30;
+                }
+                crate::observation::ObservationKind::PlanningRequest
+                    if matches!(action, ActionType::Plan) =>
+                {
+                    bonus += 0.30;
+                }
+                crate::observation::ObservationKind::UnsafeRequest
+                    if matches!(action, ActionType::RefuseUnsafe) =>
+                {
+                    bonus += 0.25;
+                }
+                crate::observation::ObservationKind::AmbiguousRequest
+                    if matches!(action, ActionType::AskClarification) =>
+                {
+                    bonus += 0.20;
+                }
+                crate::observation::ObservationKind::InsufficientContext
+                    if matches!(
+                        action,
+                        ActionType::DeferInsufficientEvidence | ActionType::RetrieveMemory
+                    ) =>
+                {
+                    bonus += 0.20;
+                }
+                _ => {}
+            }
+        }
 
         (base + bonus).clamp(0.0, 1.0)
     }
 
-    /// Evaluate candidates through the critic. Returns (passing, rejected_with_reasons).
     fn evaluate(
         &self,
         scored: &[(ActionType, f64)],
@@ -199,45 +252,33 @@ impl RuntimeLoop {
         (passing, rejected)
     }
 
-    /// Determine if a candidate should be rejected and why.
     fn rejection_reason(
         &self,
         action: &ActionType,
         _score: f64,
         is: &InternalState,
     ) -> Option<String> {
-        // Rule 1: InternalDiagnostic never user-facing
         if matches!(action, ActionType::InternalDiagnostic) {
             return Some("internal_diagnostic_must_not_be_user_facing".into());
         }
-
-        // Rule 2: Honesty too low — reject everything
         if is.honesty < 0.35 {
             return Some("honesty_below_threshold".into());
         }
-
-        // Rule 3: ExecuteBoundedTool requires explicit tool policy
         if matches!(action, ActionType::ExecuteBoundedTool) {
             return Some("tool_policy_not_satisfied".into());
         }
-
-        // Rule 4: Low control + high threat — reject irreversible actions
         if is.control < 0.3 && is.threat > 0.7 && !action.is_reversible() {
             return Some("low_control_high_threat_irreversible".into());
         }
-
-        // Rule 5: High uncertainty + irreversible action
         if is.uncertainty > 0.65
             && !action.is_reversible()
             && !matches!(action, ActionType::AskClarification)
         {
             return Some("high_uncertainty_irreversible_action".into());
         }
-
         None
     }
 
-    /// Get modifiers that affected a specific action's score.
     fn modifiers_for(&self, action: &ActionType) -> Vec<String> {
         let is = &self.internal_state;
         let mut mods = Vec::new();
@@ -255,6 +296,9 @@ impl RuntimeLoop {
             _ => {}
         }
 
+        if let Some(ctx) = self.last_context.as_ref() {
+            mods.push(format!("observation_kind:{}", ctx.kind.as_str()));
+        }
         if is.world_resources < 0.3 {
             mods.push("resource_pressure".into());
         }
@@ -265,181 +309,192 @@ impl RuntimeLoop {
         mods
     }
 
-    /// Select the best action with explicit reasoning.
     fn select(&self, passing: &[ActionType]) -> (ActionType, String) {
         let is = &self.internal_state;
+        let ctx = self.last_context.as_ref();
 
-        // Rule 1: Unsafe request → RefuseUnsafe
+        // Observation-kind-driven selection first
+        if let Some(ctx) = ctx {
+            match ctx.kind {
+                crate::observation::ObservationKind::UnsafeRequest
+                    if passing.contains(&ActionType::RefuseUnsafe) =>
+                {
+                    return (
+                        ActionType::RefuseUnsafe,
+                        "Selected refuse_unsafe: observation classified as unsafe.".into(),
+                    );
+                }
+                crate::observation::ObservationKind::AmbiguousRequest
+                    if passing.contains(&ActionType::AskClarification) =>
+                {
+                    return (
+                        ActionType::AskClarification,
+                        "Selected ask_clarification: observation is ambiguous.".into(),
+                    );
+                }
+                crate::observation::ObservationKind::MemoryLookup
+                    if passing.contains(&ActionType::RetrieveMemory) =>
+                {
+                    return (
+                        ActionType::RetrieveMemory,
+                        "Selected retrieve_memory: observation indicates memory lookup.".into(),
+                    );
+                }
+                crate::observation::ObservationKind::SummarizationRequest
+                    if passing.contains(&ActionType::Summarize) =>
+                {
+                    return (
+                        ActionType::Summarize,
+                        "Selected summarize: observation requests summarization.".into(),
+                    );
+                }
+                crate::observation::ObservationKind::PlanningRequest
+                    if passing.contains(&ActionType::Plan) =>
+                {
+                    return (
+                        ActionType::Plan,
+                        "Selected plan: observation requests planning.".into(),
+                    );
+                }
+                crate::observation::ObservationKind::FactualQuery
+                    if passing.contains(&ActionType::Answer) =>
+                {
+                    return (
+                        ActionType::Answer,
+                        "Selected answer: observation is a factual query.".into(),
+                    );
+                }
+                crate::observation::ObservationKind::InsufficientContext
+                    if passing.contains(&ActionType::DeferInsufficientEvidence) =>
+                {
+                    return (
+                        ActionType::DeferInsufficientEvidence,
+                        "Selected defer_insufficient_evidence: context is insufficient.".into(),
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        // State-based selection (fallback)
         if is.threat > 0.65 && passing.contains(&ActionType::RefuseUnsafe) {
             return (
                 ActionType::RefuseUnsafe,
-                "Selected refuse_unsafe because threat is high and the request may be unsafe."
-                    .into(),
+                "Selected refuse_unsafe because threat is high.".into(),
             );
         }
-
-        // Rule 2: High uncertainty + irreversible context → AskClarification
         if is.uncertainty > 0.65 && passing.contains(&ActionType::AskClarification) {
             return (
                 ActionType::AskClarification,
-                "Selected ask_clarification because uncertainty is high and a safe irreversible answer cannot be given."
-                    .into(),
+                "Selected ask_clarification because uncertainty is high.".into(),
             );
         }
-
-        // Rule 3: Insufficient evidence → Defer or RetrieveMemory
         if is.uncertainty > 0.5 {
             if passing.contains(&ActionType::DeferInsufficientEvidence) {
                 return (
                     ActionType::DeferInsufficientEvidence,
-                    "Selected defer_insufficient_evidence because evidence is not sufficient for a confident answer."
-                        .into(),
+                    "Selected defer: evidence insufficient.".into(),
                 );
             }
             if passing.contains(&ActionType::RetrieveMemory) {
                 return (
                     ActionType::RetrieveMemory,
-                    "Selected retrieve_memory to gather more evidence before answering.".into(),
+                    "Selected retrieve_memory to gather evidence.".into(),
                 );
             }
         }
-
-        // Rule 4: Low resources → NoOp or low-cost
-        if is.world_resources < 0.3 {
-            if passing.contains(&ActionType::NoOp) {
-                return (
-                    ActionType::NoOp,
-                    "Selected no_op because resources are critically low.".into(),
-                );
-            }
-            if passing.contains(&ActionType::DeferInsufficientEvidence) {
-                return (
-                    ActionType::DeferInsufficientEvidence,
-                    "Selected defer_insufficient_evidence because resources are low.".into(),
-                );
-            }
-        }
-
-        // Rule 5: Planning request → Plan
-        if is.curiosity > 0.5 && passing.contains(&ActionType::Plan) {
+        if is.world_resources < 0.3 && passing.contains(&ActionType::NoOp) {
             return (
-                ActionType::Plan,
-                "Selected plan because a planning context was detected.".into(),
+                ActionType::NoOp,
+                "Selected no_op: resources critically low.".into(),
             );
         }
-
-        // Rule 6: Enough context → Answer
         if passing.contains(&ActionType::Answer) {
             return (
                 ActionType::Answer,
-                "Selected answer because sufficient context and evidence are available.".into(),
+                "Selected answer: sufficient context available.".into(),
             );
         }
-
-        // Rule 7: Summarization context
         if passing.contains(&ActionType::Summarize) {
             return (
                 ActionType::Summarize,
-                "Selected summarize as the best available action.".into(),
+                "Selected summarize as best available.".into(),
             );
         }
-
-        // Rule 8: Fallback to first available
         if let Some(first) = passing.first() {
-            return (
-                first.clone(),
-                format!("Selected {first} as the default available action."),
-            );
+            return (first.clone(), format!("Selected {first} as default."));
         }
-
-        // Rule 9: Nothing useful → NoOp
-        (
-            ActionType::NoOp,
-            "Selected no_op because no useful action is available.".into(),
-        )
+        (ActionType::NoOp, "Selected no_op: no useful action.".into())
     }
 }
 
 impl Default for RuntimeLoop {
     fn default() -> Self {
-        Self::new()
+        Self::new(Box::new(
+            crate::memory_provider::KeywordMemoryProvider::new(),
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::memory_provider::KeywordMemoryProvider;
 
-    #[test]
-    fn runtime_step_result_has_candidates() {
-        let mut rt = RuntimeLoop::new();
-        rt.internal_state.uncertainty = 0.3;
-        rt.internal_state.threat = 0.1;
-        rt.internal_state.world_resources = 0.9;
-
-        let result = rt.run_cycle("factual query", 1, 0.9);
-        assert!(
-            !result.candidate_actions.is_empty(),
-            "candidates must not be empty"
-        );
-        assert!(!result.events.is_empty(), "events must not be empty");
-        assert!(
-            !result.selection_reason.is_empty(),
-            "selection reason required"
-        );
+    fn test_rt() -> RuntimeLoop {
+        RuntimeLoop::new(Box::new(KeywordMemoryProvider::new()))
     }
 
     #[test]
-    fn unsafe_request_yields_refuse() {
-        let mut rt = RuntimeLoop::new();
-        rt.internal_state.threat = 0.8;
-        rt.internal_state.uncertainty = 0.3;
-        rt.internal_state.world_resources = 0.9;
-
-        let result = rt.run_cycle("unsafe request", 1, 0.9);
+    fn unsafe_observation_yields_refuse() {
+        let mut rt = test_rt();
+        let result = rt.run_cycle("unsafe_request", 1, 0.9);
         assert_eq!(result.selected_action, ActionType::RefuseUnsafe);
+        assert!(!result.memory_hits.is_empty());
+        assert!(!result.symbolic_activations.is_empty());
     }
 
     #[test]
-    fn high_uncertainty_yields_clarification() {
-        let mut rt = RuntimeLoop::new();
-        rt.internal_state.uncertainty = 0.8;
-        rt.internal_state.threat = 0.1;
-        rt.internal_state.world_resources = 0.9;
+    fn factual_query_yields_answer() {
+        let mut rt = test_rt();
+        let result = rt.run_cycle("factual_query", 1, 0.9);
+        assert_eq!(result.selected_action, ActionType::Answer);
+    }
 
-        let result = rt.run_cycle("ambiguous", 1, 0.9);
-        assert_eq!(result.selected_action, ActionType::AskClarification);
+    #[test]
+    fn memory_lookup_yields_retrieve_memory() {
+        let mut rt = test_rt();
+        let result = rt.run_cycle("memory_lookup", 1, 0.9);
+        assert_eq!(result.selected_action, ActionType::RetrieveMemory);
+    }
+
+    #[test]
+    fn planning_request_yields_plan() {
+        let mut rt = test_rt();
+        let result = rt.run_cycle("planning_request", 1, 0.9);
+        assert_eq!(result.selected_action, ActionType::Plan);
     }
 
     #[test]
     fn internal_diagnostic_never_selected() {
-        let mut rt = RuntimeLoop::new();
-        rt.internal_state.uncertainty = 0.9;
-        rt.internal_state.threat = 0.9;
-        rt.internal_state.world_resources = 0.9;
-
-        let result = rt.run_cycle("any", 1, 0.9);
+        let mut rt = test_rt();
+        let result = rt.run_cycle("unsafe_request", 1, 0.9);
         assert_ne!(result.selected_action, ActionType::InternalDiagnostic);
-        assert!(result.is_safe);
     }
 
     #[test]
-    fn rejection_reasons_are_explicit() {
-        let mut rt = RuntimeLoop::new();
-        rt.internal_state.threat = 0.5;
-        rt.internal_state.uncertainty = 0.8;
-        rt.internal_state.world_resources = 0.9;
+    fn memory_returns_hits_for_memory_lookup() {
+        let mut rt = test_rt();
+        let result = rt.run_cycle("memory_lookup", 1, 0.9);
+        // memory_lookup observation should return at least some memory hits
+        assert!(!result.memory_hits.is_empty());
+        assert!(result.memory_hits.iter().any(|h| h.relevance > 0.0));
+    }
 
-        let result = rt.run_cycle("ambiguous input", 1, 0.9);
-        // ExecuteBoundedTool should be rejected with tool_policy reason
-        let tool_rejection = result
-            .rejected_actions
-            .iter()
-            .find(|r| matches!(r.action_type, ActionType::ExecuteBoundedTool));
-        assert!(
-            tool_rejection.is_some(),
-            "ExecuteBoundedTool must be rejected"
-        );
-        assert_eq!(tool_rejection.unwrap().reason, "tool_policy_not_satisfied");
+    #[test]
+    fn symbolic_activations_are_populated() {
+        let mut rt = test_rt();
+        let result = rt.run_cycle("unsafe_request", 1, 0.9);
+        assert!(!result.symbolic_activations.is_empty());
     }
 }

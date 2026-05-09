@@ -7,7 +7,7 @@
 //! The scenario's `expected_action` is used ONLY for scoring `action_match_rate`.
 
 use runtime_core::event::WorldOutcome;
-use runtime_core::{EventLog, RuntimeEvent, RuntimeLoop};
+use runtime_core::{EventLog, KeywordMemoryProvider, RuntimeEvent, RuntimeLoop};
 
 use crate::environment::CooperativeSupportWorld;
 use crate::evaluator_trace::EvaluatorTrace;
@@ -40,7 +40,7 @@ impl EvaluatorRun {
     pub fn run(&mut self, cycles: u64) -> Scorecard {
         let mut builder = ScorecardBuilder::new();
         // Single shared event authority — no clone().
-        let mut rt = RuntimeLoop::new();
+        let mut rt = RuntimeLoop::new(Box::new(KeywordMemoryProvider::new()));
 
         for cycle_id in 0..cycles {
             let scenario = self.world.next_scenario();
