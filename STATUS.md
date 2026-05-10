@@ -1,9 +1,9 @@
 # STATUS.md — Current state of the CODEX runtime
 
-**Last updated:** 2026-05-09
+**Last updated:** 2026-05-09 (live-verified)
 **Codename:** CODEX-main 32
 **Note:** Uploaded ZIP filenames may differ from the internal codename. Current internal codename is CODEX-main 32.
-**Rust:** Live-verified (cargo 1.95.0, rustc 1.95.0). 139 tests pass across 9 crates. Strict proof passes with --long-horizon --nl.
+**Rust:** Live-verified. Toolchain: cargo 1.95.0, rustc 1.95.0. Tests: 139 pass across 9 crates. Strict proof: PASS (--long-horizon --nl).
 **Official proof:** `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`
 
 ## Runtime authority

@@ -1,8 +1,8 @@
 # Current Proof Summary
 
-**Regenerated:** 2026-05-09
+**Regenerated:** 2026-05-09 (live-verified)
 **Command:** `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`
-**Toolchain:** `cargo` and `rustc` (CI: rust 1.85.0)
+**Toolchain:** cargo 1.95.0 (f2d3ce0bd 2026-03-21), rustc 1.95.0 (59807616e 2026-04-14)
 
 ## Rust authoritative proof metrics
 
