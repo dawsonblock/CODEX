@@ -1,0 +1,38 @@
+Obtaining file:///Users/dawsonblock/Downloads/CODEX-main-2
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: pytest>=8.0 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from global-workspace-runtime==0.6.0) (8.4.2)
+Requirement already satisfied: exceptiongroup>=1 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from pytest>=8.0->global-workspace-runtime==0.6.0) (1.3.1)
+Requirement already satisfied: iniconfig>=1 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from pytest>=8.0->global-workspace-runtime==0.6.0) (2.1.0)
+Requirement already satisfied: packaging>=20 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from pytest>=8.0->global-workspace-runtime==0.6.0) (25.0)
+Requirement already satisfied: pluggy<2,>=1.5 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from pytest>=8.0->global-workspace-runtime==0.6.0) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from pytest>=8.0->global-workspace-runtime==0.6.0) (2.19.2)
+Requirement already satisfied: tomli>=1 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from pytest>=8.0->global-workspace-runtime==0.6.0) (2.3.0)
+Requirement already satisfied: typing-extensions>=4.6.0 in /Users/dawsonblock/.pyenv/versions/3.9.7/lib/python3.9/site-packages (from exceptiongroup>=1->pytest>=8.0->global-workspace-runtime==0.6.0) (4.15.0)
+Building wheels for collected packages: global-workspace-runtime
+  Building editable for global-workspace-runtime (pyproject.toml): started
+  Building editable for global-workspace-runtime (pyproject.toml): finished with status 'done'
+  Created wheel for global-workspace-runtime: filename=global_workspace_runtime-0.6.0-0.editable-py3-none-any.whl size=1528 sha256=958983c193c7de67af8d27933dd0ad10f59705a56656cc4983c8d92aaa7b6ecd
+  Stored in directory: /private/var/folders/xt/jh84t2kj6hl26tk5qx3m_28h0000gn/T/pip-ephem-wheel-cache-re1tp1sm/wheels/8e/ab/6c/d3dcee96016ce73d33f90dcfb7c420d19553fd67450082595c
+Successfully built global-workspace-runtime
+Installing collected packages: global-workspace-runtime
+  Attempting uninstall: global-workspace-runtime
+    Found existing installation: global-workspace-runtime 0.6.0
+    Uninstalling global-workspace-runtime-0.6.0:
+      Successfully uninstalled global-workspace-runtime-0.6.0
+Successfully installed global-workspace-runtime-0.6.0
+PASS: ActionType enum and schema are in sync (10 values: ['answer', 'ask_clarification', 'defer_insufficient_evidence', 'execute_bounded_tool', 'internal_diagnostic', 'no_op', 'plan', 'refuse_unsafe', 'retrieve_memory', 'summarize'])
+PASS: no sentience-claim phrases found (97 files checked)
+PASS: no .mv2 references in Python/docs/config (118 files scanned; vendor/memvid-main excluded)
+PASS: resources=0.755 after 25 cycles (seed=5, threshold=0.25)
+...................................                                      [100%]
+35 passed in 0.55s
+Cleaned: 9 __pycache__ dirs, 76 .pyc files
+  All architecture guards pass.
+  All architecture guards pass.
