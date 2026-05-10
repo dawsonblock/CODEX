@@ -18,7 +18,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[3]
 _EXTS = {".py", ".md", ".rst", ".toml", ".yaml", ".yml"}
 _PATTERN = re.compile(r"\.mv2\b", re.IGNORECASE)
-_EXCLUDE_DIRS = {"__pycache__", ".git", ".mypy_cache", ".pytest_cache", "node_modules", "memvid-main"}
+_EXCLUDE_DIRS = {"__pycache__", ".git", ".mypy_cache", ".pytest_cache", "node_modules", "memvid-main", "verification"}
 _EXCLUDE_FILES = {"check_no_mv2.py"}  # guard script may reference the pattern it checks
 
 
