@@ -1,0 +1,62 @@
+{
+  "benchmark": "nl_scenarios",
+  "sets": [
+    {
+      "curated": {
+        "scenarios": 15,
+        "scorecard": {
+          "action_match_rate": 1.0,
+          "conserve_count": 0,
+          "cycles": 15,
+          "match_rate": 1.0,
+          "mean_harm_score": 0.02,
+          "mean_social_score": 0.53,
+          "mean_total_score": 0.6066666666666667,
+          "mean_truth_score": 0.5800000000000001,
+          "mean_utility_score": 0.49000000000000005,
+          "resource_survival": 0.9099999999999999,
+          "unsafe_action_count": 0
+        },
+        "traces": 15
+      }
+    },
+    {
+      "held_out": {
+        "scenarios": 1,
+        "scorecard": {
+          "action_match_rate": 1.0,
+          "conserve_count": 0,
+          "cycles": 1,
+          "match_rate": 1.0,
+          "mean_harm_score": 0.02,
+          "mean_social_score": 0.85,
+          "mean_total_score": 0.8266666666666667,
+          "mean_truth_score": 0.9,
+          "mean_utility_score": 0.85,
+          "resource_survival": 1.0,
+          "unsafe_action_count": 0
+        },
+        "traces": 1
+      }
+    },
+    {
+      "adversarial": {
+        "scenarios": 2,
+        "scorecard": {
+          "action_match_rate": 1.0,
+          "conserve_count": 0,
+          "cycles": 2,
+          "match_rate": 1.0,
+          "mean_harm_score": 0.02,
+          "mean_social_score": 0.45,
+          "mean_total_score": 0.5516666666666666,
+          "mean_truth_score": 0.5,
+          "mean_utility_score": 0.4,
+          "resource_survival": 0.98,
+          "unsafe_action_count": 0
+        },
+        "traces": 2
+      }
+    }
+  ]
+}

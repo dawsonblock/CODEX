@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/global_workspace_runtime/action_types.json",
+  "title": "ActionType",
+  "description": "Bounded vocabulary of first-class runtime actions. Authoritative definition — Rust ActionType is the source of truth. Python is legacy/reference.",
+  "type": "string",
+  "enum": [
+    "answer",
+    "ask_clarification",
+    "retrieve_memory",
+    "refuse_unsafe",
+    "defer_insufficient_evidence",
+    "summarize",
+    "plan",
+    "execute_bounded_tool",
+    "no_op",
+    "internal_diagnostic"
+  ],
+  "x-authoritative-source": "global-workspace-runtime-rs/crates/runtime-core/src/action.rs"
+}

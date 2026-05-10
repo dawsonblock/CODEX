@@ -1,0 +1,13 @@
+[project]
+name = "global-workspace-runtime"
+version = "0.6.0"
+description = "Rust-authoritative cognitive-runtime research scaffold with deterministic candidate generation and proof checks."
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

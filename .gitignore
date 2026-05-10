@@ -1,0 +1,29 @@
+# Rust build artifacts
+target/
+
+# Runtime artifacts (generated logs)
+*.gwlog
+artifacts/memory/
+artifacts/test_traces/
+artifacts/traces/
+global-workspace-runtime-rs/artifacts/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
