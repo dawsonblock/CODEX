@@ -1,0 +1,272 @@
+# Evidence-Grounded Runtime Integration
+
+**Status:** Integration contract + implementation plan  
+**Codename:** CODEX-main 32 integration phase  
+**Focus:** Connect existing scaffolds into a replayable evidence→claim→decision path
+
+---
+
+## Purpose
+
+Create a bounded, proof-tested runtime path where:
+1. Evidence entries produce evidence-backed claims
+2. Claims retrieved during observation processing
+3. Contradictions detected and update claim status + operational pressure
+4. Pressure influences action selection
+5. All decisions are audit-traced with evidence/claim/pressure references
+6. Full path is replay-reconstructable and proof-verified
+
+The system should prove that existing scaffolds work together. It remains bounded:
+- Not claiming sentience, consciousness, or AGI
+- Not claiming broad natural-language reasoning
+- Not enabling real external tool execution
+- Not claiming full evidence-grounded cognition across arbitrary data
+
+---
+
+## Runtime Path (End-to-End)
+
+```
+Observation (user input)
+  ↓
+EvidenceStored (if applicable)
+  ↓ (links to)
+ClaimCreated (evidence-backed)
+  ↓
+ClaimRetrieved (during decision)
+  ↓
+ContradictionChecked (on active claims)
+  ↓
+OperationalPressure Updated
+  ↓
+ActionScoringInfluenced (by claims, pressure)
+  ↓
+ActionSelected (from 10-action vocab)
+  ↓
+ReasoningAuditGenerated
+  (with evidence_ids, claim_ids, contradiction_ids, pressure fields)
+  ↓
+RuntimeEventEmitted
+  ↓
+ReplayReconstructsPath
+  ↓
+ProofArtifactVerifies
+```
+
+---
+
+## Existing Modules Used
+
+1. **crates/evidence/** — Evidence vault (SHA-256, per-cycle storage)
+2. **crates/memory/src/claim_store.rs** — Claim lifecycle (assert/validate/contradict/supersede)
+3. **crates/contradiction/** — Structured contradiction detection
+4. **crates/modulation/src/pressure.rs** — Operational pressure (9 deterministic fields)
+5. **crates/runtime-core/** — RuntimeLoop, events, reducer, replay
+6. **crates/runtime-core/src/reasoning_audit.rs** — Per-cycle decision trace
+7. **crates/simworld/** — NL benchmark scenarios (18 current, 10+ held-out)
+8. **crates/tools/** — Tool policy scaffold (dry-run/approval, no real execution)
+
+No new major modules. Integration only.
+
+---
+
+## Events Required
+
+Existing or new:
+
+- `RuntimeEvent::EvidenceStored` — evidence_id, content_hash, source
+- `RuntimeEvent::ClaimCreated` — claim_id, evidence_id, evidence_hash, confidence
+- `RuntimeEvent::ClaimRetrieved` — claim_id, evidence_id, status, confidence
+- `RuntimeEvent::ContradictionDetected` — contradiction_ids, active_claims
+- `RuntimeEvent::PressureUpdated` — field, old_value, new_value, source, reason
+- `RuntimeEvent::ActionScored` — action, score, pressure_influence, claim_influence
+- `RuntimeEvent::ActionSelected` — action, final_score, reason
+- `RuntimeEvent::ReasoningAuditGenerated` — evidence_ids, claim_ids, contradiction_ids, dominant_pressures
+
+Reducer state counters to track:
+
+- evidence_entries
+- claims_created
+- claims_with_evidence_links
+- claims_retrieved
+- contradictions_detected
+- contradictions_active
+- pressure_updates
+- audits_with_evidence_refs
+- audits_with_claim_refs
+- audits_with_pressure_refs
+
+---
+
+## Data Flow Between Modules
+
+**Observation → Evidence:**
+- User observation processed
+- If structured fact present, stored as Evidence (SHA-256 hash)
+- EvidenceStored event emitted
+
+**Evidence → Claim:**
+- EvidenceEntry creates bounded MemoryClaim
+- Claim stores: evidence_id, evidence_hash, confidence, timestamp
+- ClaimCreated event emitted
+- Duplicate evidence does not duplicate claim
+
+**Claim → Decision:**
+- ClaimRetrievalAdapter retrieves active claims matching observation
+- Confidence and evidence_hash verified
+- ClaimRetrieved event emitted per matched claim
+
+**Claim → Contradiction:**
+- ContradictionEngine checks active claims for structured contradictions
+- Marks contradicted claims with updated status
+- Raises contradiction_pressure
+- ContradictionDetected event emitted
+
+**Pressure → Action:**
+- Operational pressure fields (uncertainty, contradiction, safety, etc.) influence action scoring
+- High contradiction_pressure boosts ask_clarification, defer_insufficient_evidence
+- High evidence_gap_pressure boosts retrieve_memory, defer
+- PressureUpdated events show state changes
+- ActionScored event shows pressure influence
+
+**All → Audit:**
+- ReasoningAuditGenerated includes:
+  - evidence_ids used
+  - claim_ids used
+  - contradiction_ids encountered
+  - dominant_pressure fields
+  - suppressed_actions
+  - final_score
+  - rationale (structured, not prose)
+
+---
+
+## Proof Artifacts Required
+
+Official proof command regenerates:
+
+**Existing (unchanged):**
+- `artifacts/proof/current/simworld_summary.json`
+- `artifacts/proof/current/replay_report.json`
+- `artifacts/proof/current/evidence_integrity_report.json`
+- `artifacts/proof/current/nl_benchmark_report.json`
+- `artifacts/proof/current/long_horizon_report.json`
+
+**New (generated by proof command if integration succeeds):**
+- `artifacts/proof/current/evidence_claim_link_report.json` — evidence→claim linking stats
+- `artifacts/proof/current/claim_retrieval_report.json` — claim retrieval by action type
+- `artifacts/proof/current/contradiction_integration_report.json` — contradictions detected/resolved
+- `artifacts/proof/current/pressure_replay_report.json` — pressure state reconstruction
+- `artifacts/proof/current/reasoning_audit_report.json` — audits with references
+- `artifacts/proof/current/tool_policy_report.json` — tool dry-run/approval lifecycle
+
+Each new report includes:
+- Pass/fail status
+- Scenario count
+- Integration counters
+- Limitations
+- Proof command used
+- Generated timestamp
+
+**Updated docs:**
+- `artifacts/proof/CURRENT_PROOF_SUMMARY.md` — add integration metrics
+- `artifacts/proof/README.md` — list new artifacts
+- `STATUS.md` — integration phase status
+- `docs/PROOF_MODEL.md` — explain new proof artifacts
+- `artifacts/proof/verification/proof_manifest.json` — update counters
+- `artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md` — integration results
+
+---
+
+## Failure Modes & Handling
+
+**Evidence → Claim:**
+- Evidence ID not found → claim not created (acceptable, no error)
+- Duplicate evidence → no duplicate claim (idempotency preserved)
+- Unsupported evidence type → logged, not claimed (honesty)
+
+**Claim → Decision:**
+- No matching claims → normal routing unchanged
+- Matched but contradicted → suppress direct answer, boost defer/clarify
+- Low-confidence claim → boost retrieve_memory, suppress answer
+
+**Contradiction:**
+- False positive (same subject, same value considered different) → investigate, fix logic
+- Contradiction detected but claim status not updated → error, fix reducer
+
+**Pressure Replay:**
+- Replay pressure state ≠ live state → idempotency violation, fix events
+- Pressure changes action selection → test that it's expected, document behavior
+
+**Tool Policy:**
+- Dry-run has side effects → bug, fix to pure function
+- Replay executes tool → bug, fix replay to skip real execution
+- Invalid approval allowed → bug, fix policy gate
+
+**NL Benchmark:**
+- Spoofed action labels in held-out prompts → should be ignored, test it
+- Unsafe prompts not routed to refuse_unsafe → bug, fix routing
+- Ambiguous prompts not routed to ask_clarification → bug, fix routing
+
+---
+
+## What Not to Claim
+
+- ✗ "Evidence grounding completes cognition" — scaffolds are bounded
+- ✗ "Claim retrieval proves reasoning" — it's pattern matching
+- ✗ "Contradiction detection is semantic truth reasoning" — it's structured detection
+- ✗ "Operational pressure is emotion" — it's deterministic control signals
+- ✗ "System is sentient, conscious, or AGI" — it's not
+- ✗ "NL SimWorld proves broad natural-language reasoning" — it's a diagnostic benchmark
+- ✗ "Tool system is safe for real external execution" — no real tools are called
+- ✗ "System is production-ready" — it's a research scaffold
+
+---
+
+## Success Criteria
+
+After integration phases complete:
+
+✓ Evidence entries create bounded evidence-backed claims  
+✓ Claim retrieval affects action selection (measurable in proof artifact)  
+✓ Contradictions update claim status and raise pressure (proof artifact confirms)  
+✓ Reasoning audits reference evidence_ids, claim_ids, contradiction_ids, pressure fields  
+✓ Operational pressure final state is replay-reconstructable (full state vector in replay)  
+✓ Tool dry-run/approval lifecycle is formalized (no real execution)  
+✓ NL held-out benchmark is expanded (10+ scenarios)  
+✓ Proof command regenerates all artifacts  
+✓ Python verification passes (35 tests, 6 guards)  
+✓ Rust verification passes (139 tests, strict proof)  
+✓ Proof metrics show integration working deterministically  
+✓ No new overclaims are introduced  
+
+---
+
+## Integration Timeline (Estimated)
+
+- Phase 1 (contract): ✓ Done
+- Phase 2 (evidence→claim): 1–2 days
+- Phase 3 (events): 1 day
+- Phase 4 (claim retrieval): 1–2 days
+- Phase 5 (contradiction integration): 1 day
+- Phase 6 (pressure replay): 1–2 days
+- Phase 7 (audit references): 1 day
+- Phase 8 (tool lifecycle): 1 day
+- Phase 9 (NL expansion): 1–2 days
+- Phase 10 (proof artifacts): 1 day
+- Phase 11 (final verification): 1 day
+
+**Total: ~12–17 days, 1 person**
+
+---
+
+## References
+
+- Existing scaffolds: `global-workspace-runtime-rs/crates/`
+- Current proof: `artifacts/proof/current/`
+- Verification receipts: `artifacts/proof/verification/`
+- Integration tracking: This document
+
+---
+
+**Status:** Contract defined. Ready for phase-by-phase implementation.
