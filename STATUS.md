@@ -1,11 +1,32 @@
 # STATUS.md — Current state of the CODEX runtime
 
-**Last updated:** 2026-05-09 (live-verified, see artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md)
+**Last updated:** 2026-05-09 (verification-receipt-backed)
 **Codename:** CODEX-main 32
+**Status:** Freeze candidate
 **Note:** Uploaded ZIP filenames may differ from the internal codename. Current internal codename is CODEX-main 32.
-**Rust:** Live-verified. Toolchain: cargo 1.95.0, rustc 1.95.0. Tests: 139 pass across 9 crates. Strict proof: PASS (--long-horizon --nl).
-**Verification receipts:** `artifacts/proof/verification/`
+**Rust:** Verification-receipt-backed. Toolchain: cargo 1.95.0, rustc 1.95.0. Tests: 139 pass across 9 crates. Strict proof: PASS (--long-horizon --nl). See artifacts/proof/verification/ for details.
 **Official proof:** `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`
+
+## Freeze status: CODEX-main 32
+
+This package is a freeze candidate. It is:
+
+- A Rust-authoritative cognitive-runtime scaffold
+- Schema-consistent on the 10-action vocabulary
+- Proof-receipt-backed (verification receipts in `artifacts/proof/verification/`)
+- Artifact-clean (all 5 proof artifacts current and consistent)
+- NL diagnostic benchmarked (18 scenarios: 15 curated, 1 held-out, 2 adversarial)
+- Long-horizon runner tested (3 episodes, 150 cycles, 0 violations)
+- Operational-pressure modulated (9 deterministic control fields)
+
+This package is not:
+
+- Sentient, conscious, or AGI
+- Production-ready
+- A safe autonomous external tool executor
+- A complete evidence-grounded cognitive agent
+- A semantic contradiction reasoning engine
+- Proof of broad natural-language reasoning
 
 ## Runtime authority
 
@@ -30,7 +51,7 @@ no_op, internal_diagnostic
 | Claim store | ✓ confidence | 28 | ✓ scoring | ✓ | JSONL | Influences action selection |
 | Contradiction engine | ✓ structured | 8 | ✓ every 10th | ✓ | — | Same-subject/different-predicate only |
 | Self-model | ✓ ring buffer | 4 | ✓ per-cycle | — | — | No persistence yet |
-| NL SimWorld | ✓ 15 scenarios | 4 | ✓ --nl | ✓ (nl) | — | Keyword routing, match 1.00 (all 18 scenarios) |
+| NL SimWorld | ✓ 18 diagnostic (15 curated, 1 held-out, 2 adversarial) | 4 | ✓ --nl | ✓ (nl) | — | Keyword routing, match 1.00 over 18 diagnostic scenarios |
 | Reasoning audit | ✓ trace | 3 | ✓ per-cycle | ✓ | — | Per-cycle output |
 | Tool scaffold | ✓ enforced | 8 | ✓ critic gate | ✓ | — | Policy-gated, no real execution |
 | Long-horizon eval | ✓ full traces | 3 | ✓ --long-horizon | ✓ (lh) | — | Multi-episode runner |
