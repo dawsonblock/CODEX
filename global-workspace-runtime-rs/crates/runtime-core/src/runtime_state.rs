@@ -122,6 +122,15 @@ pub struct RuntimeState {
 
     // Scratchpad
     pub scratchpad_entry_count: usize,
+
+    // Provider tracking (Live counters for non-authoritative metrics)
+    pub provider_local_requests: u64,
+    pub provider_local_successes: u64,
+    pub provider_local_failures: u64,
+    pub provider_local_disabled_blocks: u64,
+    pub provider_cloud_requests: u64,
+    pub provider_external_requests: u64,
+    pub provider_feature_enabled: bool,
 }
 
 impl Default for RuntimeState {
@@ -206,6 +215,13 @@ impl Default for RuntimeState {
             last_pressure_urgency: 0.0,
             last_pressure_coherence: 0.0,
             scratchpad_entry_count: 0,
+            provider_local_requests: 0,
+            provider_local_successes: 0,
+            provider_local_failures: 0,
+            provider_local_disabled_blocks: 0,
+            provider_cloud_requests: 0,
+            provider_external_requests: 0,
+            provider_feature_enabled: false,
         }
     }
 }
