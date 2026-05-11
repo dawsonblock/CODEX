@@ -72,6 +72,26 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
         dominant_pressures.push("coherence".to_string());
     }
 
+    // Wire live metadata from the runtime step into the trace.
+    // evidence_ids: keys of memory hits retrieved during this cycle.
+    let evidence_ids: Vec<String> = step.memory_hits.iter().map(|h| h.key.clone()).collect();
+    // evidence_hashes: relevance scores as bounded decimal strings (not cryptographic).
+    let evidence_hashes: Vec<String> = step
+        .memory_hits
+        .iter()
+        .map(|h| format!("rel:{:.4}", h.relevance))
+        .collect();
+    // claim_ids: symbol IDs activated during this cycle.
+    let claim_ids: Vec<String> = step
+        .symbolic_activations
+        .iter()
+        .map(|a| a.symbol_id.clone())
+        .collect();
+    // contradiction_ids: not tracked per single-cycle in RuntimeLoop; remains empty.
+    let contradiction_ids: Vec<String> = vec![];
+    // audit_id: deterministic from cycle_id.
+    let audit_id = Some(format!("audit_{}", step.cycle_id));
+
     let selected_action = step.selected_action.as_str().to_string();
     let message = local_message_for_action(&step.selected_action, &step.selection_reason);
     let missing_evidence_reason = if step.selected_action == ActionType::DeferInsufficientEvidence {
@@ -88,11 +108,11 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
             .to_string(),
         trace: RuntimeTraceSummary {
             selected_action,
-            evidence_ids: vec![],
-            evidence_hashes: vec![],
-            claim_ids: vec![],
-            contradiction_ids: vec![],
-            audit_id: None,
+            evidence_ids,
+            evidence_hashes,
+            claim_ids,
+            contradiction_ids,
+            audit_id,
             dominant_pressures,
             pressure_updates: 1,
             policy_bias_applications: 0,
@@ -388,6 +408,19 @@ mod tests {
         let out = client.send_user_message("what is the current status of deployment x right now?");
         assert_eq!(out.selected_action, "defer_insufficient_evidence");
         assert!(out.trace.replay_safe);
+        // Audit ID is now wired from the cycle: must be present and cycle-derived.
+        assert!(
+            out.trace
+                .audit_id
+                .as_deref()
+                .map_or(false, |id| id.starts_with("audit_")),
+            "audit_id should be wired from cycle_id"
+        );
+        // contradiction_ids remains empty per single-cycle runtime (honest boundary).
+        assert!(
+            out.trace.contradiction_ids.is_empty(),
+            "contradiction_ids should be empty in single-cycle mode"
+        );
     }
 
     #[test]
