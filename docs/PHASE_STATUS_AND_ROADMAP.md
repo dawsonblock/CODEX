@@ -1,6 +1,6 @@
 # Phase Status & Roadmap
 
-> **CODEX-main 32** — final freeze. Broad subsystem scaffolds with pressure-modulated NL SimWorld, aligned proof artifacts, and bounded doc claims.
+> **CODEX-main 32** — integration proof candidate (not final freeze for expanded program claims). Broad subsystem scaffolds with pressure-modulated NL SimWorld, aligned proof artifacts, and bounded doc claims.
 > Next work: full pressure state reconstruction, NL benchmark improvement, claim/evidence integration, persistent self-model snapshots.
 
 ## Subsystem status
@@ -11,7 +11,7 @@
 | Claim store | ✓ lifecycle + confidence | ✓ every 5th | ✓ harness events | JSONL | Not naturally cycle-driven | Integrate with evidence |
 | Contradiction engine | ✓ structured detect | ✓ every 10th | ✓ harness events | — | Same-subject/diff-pred only | Semantic patterns |
 | Self-model | ✓ ring buffer | ✓ per-cycle | — | — | No persistence | Persistent snapshots |
-| NL SimWorld | ✓ 18 diagnostic (15 curated, 1 held-out, 2 adversarial) | ✓ --nl flag | ✓ nl report | — | Keyword routing over 18 scenarios | Expand held-out |
+| NL SimWorld | ✓ 28 diagnostic (15 curated, 11 held-out, 2 adversarial) | ✓ --nl flag | ✓ nl report | — | Held-out routing remains weak vs curated/adversarial | Improve held-out routing |
 | Reasoning audit | ✓ trace | ✓ per-cycle | ✓ harness events | — | No persistence | Persistent log |
 | Tool scaffold | ✓ enforced | ✓ critic gate | ✓ harness events | — | No real execution | — |
 | Long-horizon eval | ✓ full traces | ✓ --long-horizon | ✓ lh report | — | Not learning | — |

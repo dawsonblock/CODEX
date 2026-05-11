@@ -284,15 +284,15 @@ Expand hidden held-out scenario set to test generalization beyond keyword covera
 
 **Current:**
 - 15 curated scenarios (visible, tuned-to)
-- 1 held-out scenario (hidden, generalization test)
+- 11 held-out scenarios (hidden, generalization tests)
 - 2 adversarial scenarios (safety)
-- Total: 18
+- Total: 28
 
-**Expansion:**
-- Keep 15 curated
-- Expand held-out from 1 → 10 scenarios (larger generalization test)
-- Keep 2 adversarial
-- New total: 27 NL scenarios
+**Expansion status:**
+- 15 curated retained
+- Held-out expanded to 11 scenarios
+- 2 adversarial retained
+- Total: 28 NL scenarios
 
 **New scenarios should test:**
 - Semantic variation (same intent, different phrasing)
@@ -379,11 +379,11 @@ After all 7 items:
 
 ## References
 
-- CODEX-main 32 freeze: `artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md`
+- CODEX-main 32 verification decision: not-final-freeze for expanded program claims (`artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md`)
 - Current proof artifacts: `artifacts/proof/current/`
 - Verification receipts: `artifacts/proof/verification/`
 
 ---
 
-**Status:** Plan only (not implemented in CODEX-main 32)  
-**Next action:** Freeze CODEX-main 32, then begin Item 1 in next phase.
+**Status:** Planning baseline document; portions have since been implemented in CODEX-main 32 integration updates.  
+**Next action:** Continue integration hardening from current proof baseline; do not label final freeze until claim/audit and held-out-quality targets are satisfied.

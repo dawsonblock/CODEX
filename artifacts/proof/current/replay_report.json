@@ -70,7 +70,7 @@
     "contradictions_checked": 6,
     "reasoning_audits": 31,
     "audits_with_evidence_refs": 28,
-    "audits_with_claim_refs": 0,
+    "audits_with_claim_refs": 3,
     "tools_executed": 1,
     "tools_blocked": 1,
     "pressure_updates": 78,

@@ -2,6 +2,13 @@
 
 Corrected merged build generated from the uploaded v0.5 SimWorld package.
 
+## Focused integration follow-up
+
+1. **Claim retrieval -> reasoning audit linkage repaired in proof path**
+   - Proof flow now carries retrieved claim IDs into `ReasoningAuditGenerated` events.
+   - This restores the intended evidence -> claim -> audit chain for replay counters.
+   - Expected invariant in proof outputs: when claims are retrieved, `audits_with_claim_refs` is greater than zero.
+
 ## Blockers fixed
 
 1. **SelfModel telemetry hijack**

@@ -76,7 +76,7 @@ Observation
 4. **crates/modulation/src/pressure.rs** — Operational pressure (9 deterministic fields)
 5. **crates/runtime-core/** — RuntimeLoop, events, reducer, replay
 6. **crates/runtime-core/src/reasoning_audit.rs** — Per-cycle decision trace
-7. **crates/simworld/** — NL benchmark scenarios (18 current, 10+ held-out)
+7. **crates/simworld/** — NL benchmark scenarios (28 total: 15 curated, 11 held-out, 2 adversarial)
 8. **crates/tools/** — Tool policy scaffold (dry-run/approval, no real execution)
 
 No new major modules. Integration only.
@@ -248,7 +248,7 @@ After integration phases complete:
 ✓ Reasoning audits reference evidence_ids, claim_ids, contradiction_ids, pressure fields  
 ✓ Operational pressure final state is replay-reconstructable (full state vector in replay)  
 ✓ Tool dry-run/approval lifecycle is formalized (no real execution)  
-✓ NL held-out benchmark is expanded (10+ scenarios)  
+✓ NL held-out benchmark is expanded (11 scenarios)  
 ✓ Proof command regenerates all artifacts  
 ✓ Python verification passes (35 tests, 6 guards)  
 ✓ Rust verification passes (139 tests, strict proof)  

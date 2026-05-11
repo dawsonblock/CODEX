@@ -83,6 +83,17 @@ fn write_integration_report(
     );
 }
 
+fn proof_audit_claim_ids(retrieved_claim_ids: &[String]) -> Vec<String> {
+    // Preserve first-seen order while removing duplicates for stable audit references.
+    let mut unique_ids = Vec::new();
+    for claim_id in retrieved_claim_ids {
+        if !unique_ids.contains(claim_id) {
+            unique_ids.push(claim_id.clone());
+        }
+    }
+    unique_ids
+}
+
 // ─── simworld ────────────────────────────────────────────────────────────
 
 fn cmd_simworld(args: &[String]) {
@@ -495,6 +506,8 @@ fn cmd_proof(args: &[String]) {
         status: "active".into(),
         confidence: 0.7,
     });
+    let retrieved_claim_ids = vec!["proof_claim_1".to_string(), "proof_claim_2".to_string()];
+    let audit_claim_ids = proof_audit_claim_ids(&retrieved_claim_ids);
 
     // ── Contradiction detection ──────────────────────────────────────
     let mut contradiction_engine = contradiction::ContradictionEngine::new();
@@ -560,7 +573,7 @@ fn cmd_proof(args: &[String]) {
             audit_id: audit.audit_id.clone(),
             selected_action: ActionType::Answer.to_string(),
             evidence_ids: vec![],
-            claim_ids: vec![],
+            claim_ids: audit_claim_ids.clone(),
             contradiction_ids: vec![],
             dominant_pressures: vec!["safety".into()],
             audit_text: audit.to_text(),
@@ -796,5 +809,29 @@ fn cmd_proof(args: &[String]) {
 
     if !all_ok {
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::proof_audit_claim_ids;
+
+    #[test]
+    fn proof_audit_claim_ids_preserve_order_and_dedupe() {
+        let ids = vec![
+            "claim_1".to_string(),
+            "claim_2".to_string(),
+            "claim_1".to_string(),
+        ];
+        assert_eq!(
+            proof_audit_claim_ids(&ids),
+            vec!["claim_1".to_string(), "claim_2".to_string()]
+        );
+    }
+
+    #[test]
+    fn proof_audit_claim_ids_empty_when_none_retrieved() {
+        let ids: Vec<String> = Vec::new();
+        assert!(proof_audit_claim_ids(&ids).is_empty());
     }
 }

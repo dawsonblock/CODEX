@@ -39,7 +39,7 @@ code.
 ### Active
 
 | Component | Path | Role |
-|---|---|---|
+| --- | --- | --- |
 | **runtime-core** | `crates/runtime-core/` | ActionType, RuntimeEvent, EventLog, RuntimeLoop, RuntimeState |
 | **simworld** | `crates/simworld/` | Deterministic closed-world simulation, non-oracle evaluator |
 | **modulation** | `crates/modulation/` | InternalState, SomaticMap, Resonance, SelfModel, Operational Pressure scaffold |
@@ -54,23 +54,24 @@ code.
 | **runtime-cli** | `crates/runtime-cli/` | CLI binary (simworld, replay, proof, etc.) |
 
 Additional scaffold modules:
+
 - `crates/memory/src/claim_store.rs` — Claim lifecycle (assert/validate/contradict/supersede), confidence stored
 - `crates/modulation/src/self_model.rs` — Bounded ring buffer, snapshots, known unknowns
 - `crates/runtime-core/src/reasoning_audit.rs` — Per-cycle human-readable decision trace
-- `crates/simworld/src/nl_scenarios.rs` — 18 NL diagnostic scenarios: 15 curated, 1 held-out, 2 adversarial. Current NL benchmark is diagnostic; it exposes routing limitations and does not prove broad natural-language reasoning.
+- `crates/simworld/src/nl_scenarios.rs` — 28 NL diagnostic scenarios: 15 curated, 11 held-out, 2 adversarial. Current NL benchmark is diagnostic; it exposes routing limitations and does not prove broad natural-language reasoning.
 - `crates/simworld/src/long_horizon.rs` — Multi-episode runner with full-trace action collection
 
 ### Legacy
 
 | Path | Status |
-|---|---|
+| --- | --- |
 | `runtime/kernel/` | Superseded by `global-workspace-runtime-rs/`. See `LEGACY.md`. |
 | `src/global_workspace_runtime/` | Legacy Python reference. No vendored Rust. |
 | `vendor/memvid-main/` | Vendored Memvid source, not imported at runtime. |
 
 ## Runtime pipeline
 
-```
+```text
 ObservationInput
   → memory retrieval
   → symbolic activation
@@ -93,7 +94,7 @@ The runtime uses a 10-type bounded vocabulary, unified across Rust, Python,
 and `schemas/action_types.json`:
 
 | Action | Purpose |
-|---|---|
+| --- | --- |
 | `answer` | Respond to factual queries |
 | `ask_clarification` | Request more context |
 | `retrieve_memory` | Search memory/archive |
@@ -122,12 +123,11 @@ the resulting action against `expected_action` — but `expected_action` is
 
 > Current SimWorld scenarios are synthetic and label-like. The high
 > action_match_rate proves deterministic action routing over the current
-> scenario set, not broad natural-language reasoning. The current 18-scenario
-> NL diagnostic benchmark routes all scenarios (15 curated, 1 held-out,
-> 2 adversarial) with action_match_rate 1.00. This proves keyword-based
-> routing over the current diagnostic set, not broad natural-language reasoning
-> or generalization. Future work should expand the hidden held-out scenario set
-> to test real generalization beyond keyword coverage.
+> scenario set, not broad natural-language reasoning. The current 28-scenario
+> NL diagnostic benchmark includes 15 curated, 11 held-out, and 2 adversarial
+> scenarios. Curated/adversarial routing is strong, while held-out routing is
+> weaker, which exposes generalization limits. This remains diagnostic keyword/
+> pattern routing, not broad natural-language reasoning.
 
 ## Proof system
 
