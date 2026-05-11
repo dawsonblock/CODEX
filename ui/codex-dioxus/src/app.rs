@@ -286,7 +286,8 @@ pub fn App() -> Element {
                                         s.runtime_bridge_mode = match s.runtime_bridge_mode {
                                             RuntimeBridgeMode::MockUiMode => RuntimeBridgeMode::LocalCodexRuntimeReadOnly,
                                             RuntimeBridgeMode::LocalCodexRuntimeReadOnly => RuntimeBridgeMode::LocalOllamaProvider,
-                                            RuntimeBridgeMode::LocalOllamaProvider => RuntimeBridgeMode::ExternalProviderDisabled,
+                                            RuntimeBridgeMode::LocalOllamaProvider => RuntimeBridgeMode::LocalTurboquantProvider,
+                                            RuntimeBridgeMode::LocalTurboquantProvider => RuntimeBridgeMode::ExternalProviderDisabled,
                                             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeBridgeMode::MockUiMode,
                                         };
                                     });

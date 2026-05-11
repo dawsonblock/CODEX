@@ -31,7 +31,8 @@ impl RuntimeClient {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => mock_runtime_response(input),
             RuntimeBridgeMode::LocalCodexRuntimeReadOnly => local_runtime_response(input),
-            RuntimeBridgeMode::LocalOllamaProvider => ollama_runtime_response(input).await,
+            RuntimeBridgeMode::LocalOllamaProvider => ollama_runtime_response(input, "llama3").await,
+            RuntimeBridgeMode::LocalTurboquantProvider => ollama_runtime_response(input, "turboquant").await,
             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
                 message: "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string(),
                 selected_action: "defer_insufficient_evidence".to_string(),
@@ -355,7 +356,7 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
     }
 }
 
-async fn ollama_runtime_response(input: &str) -> RuntimeChatResponse {
+async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatResponse {
     #[derive(serde::Serialize)]
     struct OllamaRequest<'a> {
         model: &'a str,
@@ -369,7 +370,7 @@ async fn ollama_runtime_response(input: &str) -> RuntimeChatResponse {
     }
 
     let req = OllamaRequest {
-        model: "llama3",
+        model: model_name,
         prompt: input,
         stream: false,
     };
@@ -392,10 +393,16 @@ async fn ollama_runtime_response(input: &str) -> RuntimeChatResponse {
         Err(e) => format!("Error connecting to Ollama: {}", e),
     };
 
+    let bridge_mode_label = if model_name == "turboquant" {
+        RuntimeBridgeMode::LocalTurboquantProvider.label().to_string()
+    } else {
+        RuntimeBridgeMode::LocalOllamaProvider.label().to_string()
+    };
+
     RuntimeChatResponse {
         message,
         selected_action: "answer".to_string(),
-        bridge_mode: RuntimeBridgeMode::LocalOllamaProvider.label().to_string(),
+        bridge_mode: bridge_mode_label,
         trace: RuntimeTraceSummary {
             selected_action: "answer".to_string(),
             evidence_ids: vec![],
