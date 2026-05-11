@@ -1,7 +1,12 @@
 pub mod action_schema_panel;
+pub mod action_trace_panel;
 pub mod audit_panel;
+pub mod chat_input;
+pub mod chat_view;
 pub mod console_panel;
 pub mod evidence_panel;
+pub mod message_bubble;
 pub mod pressure_panel;
 pub mod proof_dashboard;
 pub mod runtime_status;
+pub mod settings_panel;

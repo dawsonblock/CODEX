@@ -4,7 +4,7 @@
     "claims_with_evidence_links": 2,
     "evidence_entries": 30
   },
-  "generated_timestamp": 1778459106,
+  "generated_timestamp": 1778467547,
   "limitations": [
     "Bounded structured evidence linking only.",
     "No arbitrary free-form semantic extraction."

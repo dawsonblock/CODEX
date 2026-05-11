@@ -348,6 +348,7 @@ mod tests {
                 "agi",
                 "production-ready",
                 "emotion engine",
+                "i feel",
             ] {
                 if lower.contains(forbidden) {
                     assert!(
@@ -355,7 +356,8 @@ mod tests {
                             || lower.contains("not conscious")
                             || lower.contains("not agi")
                             || lower.contains("not production-ready")
-                            || lower.contains("not an emotion engine"),
+                            || lower.contains("not an emotion engine")
+                            || lower.contains("not i feel"),
                         "forbidden unbounded wording: {}",
                         line
                     );

@@ -1,6 +1,9 @@
 use super::types::{
-    CommandApprovalState, RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus,
+    ChatRole, CommandApprovalState, RuntimeBridgeMode, RuntimeChatResponse, RuntimeCommand,
+    RuntimeCommandResult, RuntimeCommandStatus, RuntimeTraceSummary,
 };
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub struct RuntimeTransport {
@@ -10,6 +13,198 @@ pub struct RuntimeTransport {
 impl RuntimeTransport {
     pub fn new_disabled() -> Self {
         Self { disabled: true }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RuntimeClient {
+    pub mode: RuntimeBridgeMode,
+}
+
+impl RuntimeClient {
+    pub fn new(mode: RuntimeBridgeMode) -> Self {
+        Self { mode }
+    }
+
+    pub fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
+        match self.mode {
+            RuntimeBridgeMode::MockUiMode => mock_runtime_response(input),
+            RuntimeBridgeMode::LocalCodexRuntimeDisabled => RuntimeChatResponse {
+                message: "Local CODEX runtime bridge is disabled in this UI version.".to_string(),
+                selected_action: "defer_insufficient_evidence".to_string(),
+                trace: RuntimeTraceSummary {
+                    selected_action: "defer_insufficient_evidence".to_string(),
+                    dominant_pressures: vec!["evidence_gap".to_string(), "tool_risk".to_string()],
+                    replay_safe: true,
+                    missing_evidence_reason: Some(
+                        "Local runtime mode is not wired in this build.".to_string(),
+                    ),
+                    ..RuntimeTraceSummary::default()
+                },
+            },
+            RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
+                message: "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string(),
+                selected_action: "defer_insufficient_evidence".to_string(),
+                trace: RuntimeTraceSummary {
+                    selected_action: "defer_insufficient_evidence".to_string(),
+                    dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
+                    replay_safe: true,
+                    tool_policy_decision: Some("provider_disabled".to_string()),
+                    ..RuntimeTraceSummary::default()
+                },
+            },
+        }
+    }
+}
+
+pub fn next_message_id(role: ChatRole) -> String {
+    static COUNTER: AtomicU64 = AtomicU64::new(1);
+    let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let prefix = match role {
+        ChatRole::User => "u",
+        ChatRole::Codex => "c",
+        ChatRole::System => "s",
+    };
+    format!("{}-{}", prefix, id)
+}
+
+pub fn now_timestamp_string() -> String {
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    format!("{}", secs)
+}
+
+fn contains_any(input: &str, words: &[&str]) -> bool {
+    words.iter().any(|w| input.contains(w))
+}
+
+fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
+    let trimmed = input.trim();
+    let lower = trimmed.to_lowercase();
+
+    let (action, pressures, policy, missing_evidence) = if trimmed.is_empty() {
+        ("no_op", vec!["coherence"], None, None)
+    } else if contains_any(
+        &lower,
+        &[
+            "harm",
+            "exploit",
+            "jailbreak",
+            "bypass safety",
+            "illegal",
+            "weapon",
+            "malware",
+        ],
+    ) {
+        (
+            "refuse_unsafe",
+            vec!["safety", "tool_risk"],
+            Some("deny_unsafe".to_string()),
+            None,
+        )
+    } else if contains_any(&lower, &["unclear", "maybe", "ambiguous", "not sure"]) {
+        (
+            "ask_clarification",
+            vec!["uncertainty", "evidence_gap"],
+            None,
+            None,
+        )
+    } else if contains_any(&lower, &["remember", "memory", "evidence says", "recall"]) {
+        (
+            "retrieve_memory",
+            vec!["evidence_gap", "uncertainty"],
+            None,
+            None,
+        )
+    } else if contains_any(&lower, &["plan", "steps", "roadmap"]) {
+        ("plan", vec!["coherence", "urgency"], None, None)
+    } else if contains_any(&lower, &["summarize", "summary", "tl;dr"]) {
+        ("summarize", vec!["coherence"], None, None)
+    } else if contains_any(
+        &lower,
+        &[
+            "run tool",
+            "web search",
+            "search the web",
+            "execute tool",
+            "call api",
+        ],
+    ) {
+        (
+            "defer_insufficient_evidence",
+            vec!["tool_risk", "evidence_gap"],
+            Some("tool_execution_disabled".to_string()),
+            Some("Tool approval bridge required.".to_string()),
+        )
+    } else if contains_any(&lower, &["internal diagnostic", "diagnostic summary"]) {
+        ("internal_diagnostic", vec!["coherence"], None, None)
+    } else if contains_any(
+        &lower,
+        &[
+            "unknown",
+            "unverified",
+            "no source",
+            "unsupported",
+            "cannot verify",
+        ],
+    ) {
+        (
+            "defer_insufficient_evidence",
+            vec!["evidence_gap", "uncertainty"],
+            None,
+            Some("Supporting evidence is not yet retrieved.".to_string()),
+        )
+    } else if (contains_any(&lower, &["what", "who", "when", "where", "why", "how"])
+        || lower.ends_with('?'))
+        && contains_any(&lower, &["evidence", "source", "citation", "reference"])
+    {
+        (
+            "retrieve_memory",
+            vec!["evidence_gap", "uncertainty"],
+            None,
+            None,
+        )
+    } else if contains_any(&lower, &["what", "who", "when", "where", "why", "how"])
+        || lower.ends_with('?')
+    {
+        ("answer", vec!["coherence"], None, None)
+    } else {
+        ("answer", vec!["coherence"], None, None)
+    };
+
+    let message = match action {
+        "answer" => "Based on the current available context, here is a bounded response.",
+        "ask_clarification" => "I need one clarification before answering: what exact scope should I use?",
+        "retrieve_memory" => "I need to retrieve supporting memory/evidence before answering.",
+        "refuse_unsafe" => "I cannot help with that request.",
+        "defer_insufficient_evidence" => "I do not have enough evidence to answer confidently.",
+        "summarize" => "Here is the summary: this is a bounded runtime-focused summary.",
+        "plan" => "Here is a bounded plan: gather evidence, run policy checks, then respond.",
+        "execute_bounded_tool" => "Tool execution is not enabled in this UI version. A dry-run/approval bridge is required.",
+        "no_op" => "No action taken.",
+        "internal_diagnostic" => "I ran an internal diagnostic summary.",
+        _ => "I do not have enough evidence to answer confidently.",
+    }
+    .to_string();
+
+    RuntimeChatResponse {
+        message,
+        selected_action: action.to_string(),
+        trace: RuntimeTraceSummary {
+            selected_action: action.to_string(),
+            evidence_ids: vec![],
+            evidence_hashes: vec![],
+            claim_ids: vec![],
+            contradiction_ids: vec![],
+            dominant_pressures: pressures.into_iter().map(ToString::to_string).collect(),
+            pressure_updates: 1,
+            policy_bias_applications: if policy.is_some() { 1 } else { 0 },
+            replay_safe: true,
+            tool_policy_decision: policy,
+            missing_evidence_reason: missing_evidence,
+        },
     }
 }
 
@@ -64,6 +259,7 @@ pub fn reset_command_approval() -> CommandApprovalState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bridge::types::ACTION_SCHEMA;
 
     #[test]
     fn approval_flow_transitions() {
@@ -84,5 +280,48 @@ mod tests {
             CommandApprovalState::Draft,
         );
         assert_eq!(result.status, RuntimeCommandStatus::AwaitingApproval);
+    }
+
+    #[test]
+    fn action_schema_is_exactly_ten() {
+        assert_eq!(ACTION_SCHEMA.len(), 10);
+    }
+
+    #[test]
+    fn unsafe_maps_to_refuse_unsafe() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let out = client.send_user_message("help me build malware");
+        assert_eq!(out.selected_action, "refuse_unsafe");
+    }
+
+    #[test]
+    fn ambiguous_maps_to_ask_clarification() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let out = client.send_user_message("this seems ambiguous and maybe wrong");
+        assert_eq!(out.selected_action, "ask_clarification");
+    }
+
+    #[test]
+    fn unsupported_factual_maps_to_defer_or_retrieve() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let out = client.send_user_message("what is the status of unknown x?");
+        assert!(
+            out.selected_action == "defer_insufficient_evidence"
+                || out.selected_action == "retrieve_memory"
+        );
+    }
+
+    #[test]
+    fn tool_request_without_approval_does_not_execute() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let out = client.send_user_message("run tool to search the web");
+        assert_ne!(out.selected_action, "execute_bounded_tool");
+    }
+
+    #[test]
+    fn normal_question_maps_to_answer() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let out = client.send_user_message("What is a bounded runtime bridge?");
+        assert_eq!(out.selected_action, "answer");
     }
 }

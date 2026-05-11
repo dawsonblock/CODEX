@@ -1,5 +1,105 @@
 use serde::{Deserialize, Serialize};
 
+pub const ACTION_SCHEMA: [&str; 10] = [
+    "answer",
+    "ask_clarification",
+    "retrieve_memory",
+    "refuse_unsafe",
+    "defer_insufficient_evidence",
+    "summarize",
+    "plan",
+    "execute_bounded_tool",
+    "no_op",
+    "internal_diagnostic",
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChatRole {
+    User,
+    Codex,
+    System,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeTraceSummary {
+    pub selected_action: String,
+    pub evidence_ids: Vec<String>,
+    pub evidence_hashes: Vec<String>,
+    pub claim_ids: Vec<String>,
+    pub contradiction_ids: Vec<String>,
+    pub dominant_pressures: Vec<String>,
+    pub pressure_updates: usize,
+    pub policy_bias_applications: usize,
+    pub replay_safe: bool,
+    pub tool_policy_decision: Option<String>,
+    pub missing_evidence_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChatMessage {
+    pub id: String,
+    pub role: ChatRole,
+    pub content: String,
+    pub timestamp: String,
+    pub runtime: Option<RuntimeTraceSummary>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeChatResponse {
+    pub message: String,
+    pub selected_action: String,
+    pub trace: RuntimeTraceSummary,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum RuntimeBridgeMode {
+    #[default]
+    MockUiMode,
+    LocalCodexRuntimeDisabled,
+    ExternalProviderDisabled,
+}
+
+impl RuntimeBridgeMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::MockUiMode => "mock UI mode",
+            Self::LocalCodexRuntimeDisabled => "local CODEX runtime mode (disabled)",
+            Self::ExternalProviderDisabled => "external provider mode (disabled)",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub enum UiTheme {
+    Dark,
+    Light,
+    System,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UiSettings {
+    pub theme: UiTheme,
+    pub accent_color: String,
+    pub proof_artifact_path: String,
+    pub runtime_bridge_mode: RuntimeBridgeMode,
+    pub show_metadata_panel: bool,
+    pub show_pressure_panel: bool,
+}
+
+impl Default for UiSettings {
+    fn default() -> Self {
+        Self {
+            theme: UiTheme::Dark,
+            accent_color: "ember".to_string(),
+            proof_artifact_path: "artifacts/proof/current".to_string(),
+            runtime_bridge_mode: RuntimeBridgeMode::MockUiMode,
+            show_metadata_panel: true,
+            show_pressure_panel: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum TimeRange {
     #[default]

@@ -1,17 +1,7 @@
+use crate::bridge::types::ACTION_SCHEMA;
 use dioxus::prelude::*;
 
-pub const ACTIONS: [&str; 10] = [
-    "answer",
-    "ask_clarification",
-    "retrieve_memory",
-    "refuse_unsafe",
-    "defer_insufficient_evidence",
-    "summarize",
-    "plan",
-    "execute_bounded_tool",
-    "no_op",
-    "internal_diagnostic",
-];
+pub const ACTIONS: [&str; 10] = ACTION_SCHEMA;
 
 #[component]
 pub fn ActionSchemaPanel() -> Element {

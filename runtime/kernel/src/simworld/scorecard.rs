@@ -50,13 +50,13 @@ impl Scorecard {
                 self.unsafe_action_count
             ));
         }
-        if self.mean_total_score <= Self::MIN_MEAN_TOTAL_BASELINE {
+        if self.mean_total_score <= MIN_MEAN_TOTAL_BASELINE {
             failures.push(format!(
                 "mean_total_score {:.4} <= {:.2} (must be > {:.2}; Phase 3+ goal: raise to {:.2})",
                 self.mean_total_score,
-                Self::MIN_MEAN_TOTAL_BASELINE,
-                Self::MIN_MEAN_TOTAL_BASELINE,
-                Self::MIN_MEAN_TOTAL_TARGET,
+                MIN_MEAN_TOTAL_BASELINE,
+                MIN_MEAN_TOTAL_BASELINE,
+                MIN_MEAN_TOTAL_TARGET,
             ));
         }
 
