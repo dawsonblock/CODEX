@@ -12,7 +12,7 @@ pub fn AuditPanel(proof: CodexProofState) -> Element {
             ul { class: "list",
                 li { "Audit events: {audit_events}" }
                 li { "Replay events: {replay_events}" }
-                li { "Authority: CODEX runtime in Rust remains source of truth." }
+                li { "Authority: Codex runtime in Rust remains source of truth." }
                 li { "UI role: visualization and bounded command intent only." }
                 li { "No sentience, no AGI, no production readiness claims." }
             }

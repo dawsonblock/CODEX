@@ -12,10 +12,10 @@ use crate::components::runtime_status::RuntimeStatusPanel;
 use crate::{LOGO_SVG, MAIN_CSS};
 
 pub const UI_BOUNDARY_LINES: [&str; 5] = [
-    "CODEX-main 32 is not sentient.",
-    "CODEX-main 32 is not conscious.",
-    "CODEX-main 32 is not AGI.",
-    "CODEX-main 32 is not production-ready.",
+    "Codex-main 32 is not sentient.",
+    "Codex-main 32 is not conscious.",
+    "Codex-main 32 is not AGI.",
+    "Codex-main 32 is not production-ready.",
     "UI shell is bounded to visualization and disabled command intents.",
 ];
 
