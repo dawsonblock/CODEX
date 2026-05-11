@@ -231,22 +231,27 @@ pub fn App() -> Element {
                                     runtime: None,
                                 };
 
-                                let client = RuntimeClient::new(settings().runtime_bridge_mode);
-                                let response = client.send_user_message(&text);
-                                let assistant_message = ChatMessage {
-                                    id: next_message_id(ChatRole::Codex),
-                                    role: ChatRole::Codex,
-                                    content: response.message,
-                                    timestamp: now_timestamp_string(),
-                                    runtime: Some(response.trace),
-                                };
+                                messages.with_mut(|m| m.push(user_message));
 
-                                let selected_id = assistant_message.id.clone();
-                                messages.with_mut(|m| {
-                                    m.push(user_message);
-                                    m.push(assistant_message);
+                                let mode = settings().runtime_bridge_mode;
+                                let mut messages = messages.clone();
+                                let mut selected_message_id = selected_message_id.clone();
+
+                                spawn(async move {
+                                    let client = RuntimeClient::new(mode);
+                                    let response = client.send_user_message(&text).await;
+                                    let assistant_message = ChatMessage {
+                                        id: next_message_id(ChatRole::Codex),
+                                        role: ChatRole::Codex,
+                                        content: response.message,
+                                        timestamp: now_timestamp_string(),
+                                        runtime: Some(response.trace),
+                                    };
+
+                                    let selected_id = assistant_message.id.clone();
+                                    messages.with_mut(|m| m.push(assistant_message));
+                                    selected_message_id.set(Some(selected_id));
                                 });
-                                selected_message_id.set(Some(selected_id));
                             }
                         }
                     }
@@ -280,7 +285,8 @@ pub fn App() -> Element {
                                     settings.with_mut(|s| {
                                         s.runtime_bridge_mode = match s.runtime_bridge_mode {
                                             RuntimeBridgeMode::MockUiMode => RuntimeBridgeMode::LocalCodexRuntimeReadOnly,
-                                            RuntimeBridgeMode::LocalCodexRuntimeReadOnly => RuntimeBridgeMode::ExternalProviderDisabled,
+                                            RuntimeBridgeMode::LocalCodexRuntimeReadOnly => RuntimeBridgeMode::LocalOllamaProvider,
+                                            RuntimeBridgeMode::LocalOllamaProvider => RuntimeBridgeMode::ExternalProviderDisabled,
                                             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeBridgeMode::MockUiMode,
                                         };
                                     });

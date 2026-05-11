@@ -79,6 +79,7 @@ pub enum RuntimeBridgeMode {
     #[default]
     MockUiMode,
     LocalCodexRuntimeReadOnly,
+    LocalOllamaProvider,
     ExternalProviderDisabled,
 }
 
@@ -87,6 +88,7 @@ impl RuntimeBridgeMode {
         match self {
             Self::MockUiMode => "mock UI mode",
             Self::LocalCodexRuntimeReadOnly => "local CODEX runtime mode (read-only)",
+            Self::LocalOllamaProvider => "local Ollama provider mode",
             Self::ExternalProviderDisabled => "external provider mode (disabled)",
         }
     }
@@ -318,6 +320,10 @@ mod tests {
         assert_eq!(
             RuntimeBridgeMode::LocalCodexRuntimeReadOnly.label(),
             "local CODEX runtime mode (read-only)"
+        );
+        assert_eq!(
+            RuntimeBridgeMode::LocalOllamaProvider.label(),
+            "local Ollama provider mode"
         );
         assert_eq!(
             RuntimeBridgeMode::ExternalProviderDisabled.label(),

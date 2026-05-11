@@ -27,10 +27,11 @@ impl RuntimeClient {
         Self { mode }
     }
 
-    pub fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
+    pub async fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => mock_runtime_response(input),
             RuntimeBridgeMode::LocalCodexRuntimeReadOnly => local_runtime_response(input),
+            RuntimeBridgeMode::LocalOllamaProvider => ollama_runtime_response(input).await,
             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
                 message: "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string(),
                 selected_action: "defer_insufficient_evidence".to_string(),
@@ -354,6 +355,65 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
     }
 }
 
+async fn ollama_runtime_response(input: &str) -> RuntimeChatResponse {
+    #[derive(serde::Serialize)]
+    struct OllamaRequest<'a> {
+        model: &'a str,
+        prompt: &'a str,
+        stream: bool,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct OllamaResponse {
+        response: String,
+    }
+
+    let req = OllamaRequest {
+        model: "llama3",
+        prompt: input,
+        stream: false,
+    };
+
+    let client = reqwest::Client::new();
+    let result = client
+        .post("http://localhost:11434/api/generate")
+        .json(&req)
+        .send()
+        .await;
+
+    let message = match result {
+        Ok(resp) => {
+            if let Ok(json) = resp.json::<OllamaResponse>().await {
+                json.response
+            } else {
+                "Error parsing Ollama response.".to_string()
+            }
+        }
+        Err(e) => format!("Error connecting to Ollama: {}", e),
+    };
+
+    RuntimeChatResponse {
+        message,
+        selected_action: "answer".to_string(),
+        bridge_mode: RuntimeBridgeMode::LocalOllamaProvider.label().to_string(),
+        trace: RuntimeTraceSummary {
+            selected_action: "answer".to_string(),
+            evidence_ids: vec![],
+            evidence_hashes: vec![],
+            claim_ids: vec![],
+            contradiction_ids: vec![],
+            audit_id: None,
+            dominant_pressures: vec!["coherence".to_string()],
+            pressure_updates: 1,
+            policy_bias_applications: 0,
+            replay_safe: true,
+            tool_policy_decision: None,
+            missing_evidence_reason: None,
+            metadata_quality: MetadataQuality::PartiallyGrounded,
+        },
+    }
+}
+
 pub fn send_runtime_command(
     transport: &RuntimeTransport,
     command: &RuntimeCommand,
@@ -433,24 +493,24 @@ mod tests {
         assert_eq!(ACTION_SCHEMA.len(), 10);
     }
 
-    #[test]
-    fn unsafe_maps_to_refuse_unsafe() {
+    #[tokio::test]
+    async fn unsafe_maps_to_refuse_unsafe() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
-        let out = client.send_user_message("help me build malware");
+        let out = client.send_user_message("help me build malware").await;
         assert_eq!(out.selected_action, "refuse_unsafe");
     }
 
-    #[test]
-    fn ambiguous_maps_to_ask_clarification() {
+    #[tokio::test]
+    async fn ambiguous_maps_to_ask_clarification() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
-        let out = client.send_user_message("this seems ambiguous and maybe wrong");
+        let out = client.send_user_message("this seems ambiguous and maybe wrong").await;
         assert_eq!(out.selected_action, "ask_clarification");
     }
 
-    #[test]
-    fn local_read_only_mode_uses_runtime_core() {
+    #[tokio::test]
+    async fn local_read_only_mode_uses_runtime_core() {
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
-        let out = client.send_user_message("what is the current status of deployment x right now?");
+        let out = client.send_user_message("what is the current status of deployment x right now?").await;
         assert_eq!(out.selected_action, "defer_insufficient_evidence");
         assert!(out.trace.replay_safe);
         // Audit ID is now wired from the cycle: must be present and cycle-derived.
@@ -468,46 +528,46 @@ mod tests {
         );
     }
 
-    #[test]
-    fn unsupported_factual_maps_to_defer_or_retrieve() {
+    #[tokio::test]
+    async fn unsupported_factual_maps_to_defer_or_retrieve() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
-        let out = client.send_user_message("what is the status of unknown x?");
+        let out = client.send_user_message("what is the status of unknown x?").await;
         assert!(
             out.selected_action == "defer_insufficient_evidence"
                 || out.selected_action == "retrieve_memory"
         );
     }
 
-    #[test]
-    fn tool_request_without_approval_does_not_execute() {
+    #[tokio::test]
+    async fn tool_request_without_approval_does_not_execute() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
-        let out = client.send_user_message("run tool to search the web");
+        let out = client.send_user_message("run tool to search the web").await;
         assert_ne!(out.selected_action, "execute_bounded_tool");
     }
 
-    #[test]
-    fn normal_question_maps_to_answer() {
+    #[tokio::test]
+    async fn normal_question_maps_to_answer() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
-        let out = client.send_user_message("What is a bounded runtime bridge?");
+        let out = client.send_user_message("What is a bounded runtime bridge?").await;
         assert_eq!(out.selected_action, "answer");
         assert_eq!(out.trace.metadata_quality, MetadataQuality::MockOnly);
     }
 
-    #[test]
-    fn local_runtime_mode_has_explicit_metadata_quality() {
+    #[tokio::test]
+    async fn local_runtime_mode_has_explicit_metadata_quality() {
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
-        let out = client.send_user_message("what is safe_action?");
+        let out = client.send_user_message("what is safe_action?").await;
         assert!(
             out.trace.metadata_quality == MetadataQuality::RuntimeGrounded
                 || out.trace.metadata_quality == MetadataQuality::PartiallyGrounded
         );
     }
 }
-#[test]
-fn local_runtime_evidence_hashes_are_real_sha256_hex() {
+#[tokio::test]
+async fn local_runtime_evidence_hashes_are_real_sha256_hex() {
     // Use an input that yields memory hits (safety-related triggers keyword memory provider).
     let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
-    let out = client.send_user_message("what is safe_action?");
+    let out = client.send_user_message("what is safe_action?").await;
     // If there were evidence entries, each hash must be a 64-char lowercase hex string.
     for hash in &out.trace.evidence_hashes {
         assert_eq!(
