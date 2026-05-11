@@ -55,7 +55,7 @@ pub struct RuntimeChatResponse {
 pub enum RuntimeBridgeMode {
     #[default]
     MockUiMode,
-    LocalCodexRuntimeDisabled,
+    LocalCodexRuntimeReadOnly,
     ExternalProviderDisabled,
 }
 
@@ -63,7 +63,7 @@ impl RuntimeBridgeMode {
     pub fn label(self) -> &'static str {
         match self {
             Self::MockUiMode => "mock UI mode",
-            Self::LocalCodexRuntimeDisabled => "local CODEX runtime mode (disabled)",
+            Self::LocalCodexRuntimeReadOnly => "local CODEX runtime mode (read-only)",
             Self::ExternalProviderDisabled => "external provider mode (disabled)",
         }
     }

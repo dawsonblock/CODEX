@@ -34,7 +34,7 @@ pub fn SettingsPanel(
                     if settings.show_pressure_panel { "Hide Pressure" } else { "Show Pressure" }
                 }
             }
-            p { class: "muted", "Provider execution is disabled in this version. CODEX runtime remains authoritative." }
+            p { class: "muted", "Local CODEX runtime mode is read-only. Provider execution remains disabled in this version." }
             p { class: "muted", "No real external tool execution is enabled in this pass." }
         }
     }

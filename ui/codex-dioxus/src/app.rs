@@ -279,8 +279,8 @@ pub fn App() -> Element {
                                 on_cycle_bridge_mode: move |_| {
                                     settings.with_mut(|s| {
                                         s.runtime_bridge_mode = match s.runtime_bridge_mode {
-                                            RuntimeBridgeMode::MockUiMode => RuntimeBridgeMode::LocalCodexRuntimeDisabled,
-                                            RuntimeBridgeMode::LocalCodexRuntimeDisabled => RuntimeBridgeMode::ExternalProviderDisabled,
+                                            RuntimeBridgeMode::MockUiMode => RuntimeBridgeMode::LocalCodexRuntimeReadOnly,
+                                            RuntimeBridgeMode::LocalCodexRuntimeReadOnly => RuntimeBridgeMode::ExternalProviderDisabled,
                                             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeBridgeMode::MockUiMode,
                                         };
                                     });

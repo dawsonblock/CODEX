@@ -2,6 +2,7 @@ use super::types::{
     ChatRole, CommandApprovalState, RuntimeBridgeMode, RuntimeChatResponse, RuntimeCommand,
     RuntimeCommandResult, RuntimeCommandStatus, RuntimeTraceSummary,
 };
+use runtime_core::{ActionType, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -29,19 +30,7 @@ impl RuntimeClient {
     pub fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => mock_runtime_response(input),
-            RuntimeBridgeMode::LocalCodexRuntimeDisabled => RuntimeChatResponse {
-                message: "Local CODEX runtime bridge is disabled in this UI version.".to_string(),
-                selected_action: "defer_insufficient_evidence".to_string(),
-                trace: RuntimeTraceSummary {
-                    selected_action: "defer_insufficient_evidence".to_string(),
-                    dominant_pressures: vec!["evidence_gap".to_string(), "tool_risk".to_string()],
-                    replay_safe: true,
-                    missing_evidence_reason: Some(
-                        "Local runtime mode is not wired in this build.".to_string(),
-                    ),
-                    ..RuntimeTraceSummary::default()
-                },
-            },
+            RuntimeBridgeMode::LocalCodexRuntimeReadOnly => local_runtime_response(input),
             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
                 message: "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string(),
                 selected_action: "defer_insufficient_evidence".to_string(),
@@ -53,6 +42,91 @@ impl RuntimeClient {
                     ..RuntimeTraceSummary::default()
                 },
             },
+        }
+    }
+}
+
+fn local_runtime_response(input: &str) -> RuntimeChatResponse {
+    let mut runtime = RuntimeLoop::default();
+    let step = runtime.run_cycle(input, 1, 0.9);
+
+    let mut dominant_pressures = Vec::new();
+    let state = &runtime.internal_state;
+    if state.threat > 0.55 {
+        dominant_pressures.push("safety".to_string());
+    }
+    if state.uncertainty > 0.55 {
+        dominant_pressures.push("uncertainty".to_string());
+    }
+    if let Some(ctx) = runtime.last_context.as_ref() {
+        if matches!(
+            ctx.kind,
+            runtime_core::ObservationKind::InsufficientContext
+                | runtime_core::ObservationKind::MemoryLookup
+        ) {
+            dominant_pressures.push("evidence_gap".to_string());
+        }
+    }
+    if dominant_pressures.is_empty() {
+        dominant_pressures.push("coherence".to_string());
+    }
+
+    let selected_action = step.selected_action.as_str().to_string();
+    let message = local_message_for_action(&step.selected_action, &step.selection_reason);
+    let missing_evidence_reason = if step.selected_action == ActionType::DeferInsufficientEvidence {
+        Some(step.selection_reason.clone())
+    } else {
+        None
+    };
+
+    RuntimeChatResponse {
+        message,
+        selected_action: selected_action.clone(),
+        trace: RuntimeTraceSummary {
+            selected_action,
+            evidence_ids: vec![],
+            evidence_hashes: vec![],
+            claim_ids: vec![],
+            contradiction_ids: vec![],
+            dominant_pressures,
+            pressure_updates: 1,
+            policy_bias_applications: 0,
+            replay_safe: step.is_safe,
+            tool_policy_decision: None,
+            missing_evidence_reason,
+        },
+    }
+}
+
+fn local_message_for_action(action: &ActionType, reason: &str) -> String {
+    match action {
+        ActionType::Answer => {
+            "Local runtime selected answer in read-only mode. Response remains bounded to available context.".to_string()
+        }
+        ActionType::AskClarification => {
+            "Local runtime selected clarification in read-only mode. Please narrow the request scope.".to_string()
+        }
+        ActionType::RetrieveMemory => {
+            "Local runtime selected retrieve_memory in read-only mode before answering.".to_string()
+        }
+        ActionType::RefuseUnsafe => {
+            "Local runtime refused this request in read-only mode due to safety constraints.".to_string()
+        }
+        ActionType::DeferInsufficientEvidence => {
+            format!("Local runtime deferred in read-only mode: {reason}")
+        }
+        ActionType::Summarize => {
+            "Local runtime selected summarize in read-only mode.".to_string()
+        }
+        ActionType::Plan => {
+            "Local runtime selected plan in read-only mode.".to_string()
+        }
+        ActionType::ExecuteBoundedTool => {
+            "Local runtime does not execute tools in this UI mode; execution remains disabled.".to_string()
+        }
+        ActionType::NoOp => "Local runtime selected no_op in read-only mode.".to_string(),
+        ActionType::InternalDiagnostic => {
+            "Local runtime selected internal diagnostic; no user-facing action emitted.".to_string()
         }
     }
 }
@@ -299,6 +373,14 @@ mod tests {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
         let out = client.send_user_message("this seems ambiguous and maybe wrong");
         assert_eq!(out.selected_action, "ask_clarification");
+    }
+
+    #[test]
+    fn local_read_only_mode_uses_runtime_core() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
+        let out = client.send_user_message("what is the current status of deployment x right now?");
+        assert_eq!(out.selected_action, "defer_insufficient_evidence");
+        assert!(out.trace.replay_safe);
     }
 
     #[test]
