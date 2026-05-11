@@ -1,3 +1,4 @@
+use crate::bridge::runtime_client::live_provider_counters;
 use crate::bridge::types::UiSettings;
 use dioxus::prelude::*;
 
@@ -9,6 +10,8 @@ pub fn SettingsPanel(
     on_toggle_provider_gate: EventHandler<()>,
     on_cycle_bridge_mode: EventHandler<()>,
 ) -> Element {
+    let counters = live_provider_counters();
+
     rsx! {
         section { class: "card",
             h3 { "Settings" }
@@ -51,6 +54,36 @@ pub fn SettingsPanel(
                     class: "btn",
                     onclick: move |_| on_toggle_pressure.call(()),
                     if settings.show_pressure_panel { "Hide Pressure" } else { "Show Pressure" }
+                }
+            }
+
+            // Live provider event-loop counters
+            section { class: "card",
+                h4 { "Provider Event-Loop Counters (live)" }
+                p { class: "muted", "Status: {counters.status_label()}" }
+                ul { class: "list",
+                    li { "Local requests: {counters.local_requests}" }
+                    li { "Local successes: {counters.local_successes}" }
+                    li { "Local failures: {counters.local_failures}" }
+                    li { "Local disabled blocks: {counters.local_disabled_blocks}" }
+                    li {
+                        span {
+                            class: if counters.boundary_ok() { "badge success" } else { "badge danger" },
+                            "Cloud requests: {counters.cloud_requests}"
+                        }
+                    }
+                    li {
+                        span {
+                            class: if counters.boundary_ok() { "badge success" } else { "badge danger" },
+                            "External requests: {counters.external_requests}"
+                        }
+                    }
+                    li { "Feature compiled: {counters.feature_enabled}" }
+                }
+                if !counters.boundary_ok() {
+                    div { class: "error-box",
+                        strong { "⛔ BOUNDARY VIOLATION: cloud or external provider requests detected!" }
+                    }
                 }
             }
 

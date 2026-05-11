@@ -1,6 +1,7 @@
 use super::types::{
-    ChatRole, CommandApprovalState, MetadataQuality, RuntimeBridgeMode, RuntimeChatResponse,
-    RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus, RuntimeTraceSummary,
+    ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary,
+    RuntimeBridgeMode, RuntimeChatResponse, RuntimeCommand, RuntimeCommandResult,
+    RuntimeCommandStatus, RuntimeTraceSummary,
 };
 use runtime_core::{ActionType, RuntimeEvent, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -46,7 +47,20 @@ pub fn provider_counters_snapshot() -> ProviderCounterSnapshot {
     }
 }
 
-
+/// Returns a lightweight `ProviderCountersSummary` from the live atomic counters.
+/// This is embedded in every `RuntimeTraceSummary` so the UI can display live
+/// provider event-loop state per-message.
+pub fn live_provider_counters() -> ProviderCountersSummary {
+    ProviderCountersSummary {
+        local_requests: PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed),
+        local_successes: PROVIDER_LOCAL_SUCCESSES.load(Ordering::Relaxed),
+        local_failures: PROVIDER_LOCAL_FAILURES.load(Ordering::Relaxed),
+        local_disabled_blocks: PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed),
+        cloud_requests: PROVIDER_CLOUD_REQUESTS.load(Ordering::Relaxed),
+        external_requests: PROVIDER_EXTERNAL_REQUESTS.load(Ordering::Relaxed),
+        feature_enabled: cfg!(feature = "ui-local-providers"),
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct RuntimeTransport {
@@ -92,6 +106,7 @@ impl RuntimeClient {
                     tool_policy_decision: Some("provider_disabled".to_string()),
                     metadata_quality: MetadataQuality::Unavailable,
                     provider_executions_local: 0,
+                    provider_counters: live_provider_counters(),
                     ..RuntimeTraceSummary::default()
                 },
             },
@@ -169,6 +184,7 @@ impl RuntimeClient {
                         tool_policy_decision: Some("provider_disabled".to_string()),
                         metadata_quality: MetadataQuality::Unavailable,
                         provider_executions_local: 0,
+                        provider_counters: live_provider_counters(),
                         ..RuntimeTraceSummary::default()
                     },
                 }
@@ -293,6 +309,7 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
             missing_evidence_reason,
             metadata_quality,
             provider_executions_local: 0,
+            provider_counters: live_provider_counters(),
         },
     }
 }
@@ -481,6 +498,7 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
             missing_evidence_reason: missing_evidence,
             metadata_quality: MetadataQuality::MockOnly,
             provider_executions_local: 0,
+            provider_counters: live_provider_counters(),
         },
     }
 }
@@ -550,6 +568,7 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatRe
             missing_evidence_reason: None,
             metadata_quality: MetadataQuality::PartiallyGrounded,
             provider_executions_local: 0,
+            provider_counters: live_provider_counters(),
         },
     }
 }
@@ -648,6 +667,7 @@ async fn ollama_runtime_stream(
             missing_evidence_reason: None,
             metadata_quality: MetadataQuality::PartiallyGrounded,
             provider_executions_local: 0,
+            provider_counters: live_provider_counters(),
         },
     }
 }

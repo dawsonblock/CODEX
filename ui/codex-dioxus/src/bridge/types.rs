@@ -36,6 +36,9 @@ pub struct RuntimeTraceSummary {
     pub missing_evidence_reason: Option<String>,
     pub provider_executions_local: usize,
     pub metadata_quality: MetadataQuality,
+    /// Live snapshot of provider event-loop counters at the time this trace was generated.
+    #[serde(default)]
+    pub provider_counters: ProviderCountersSummary,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -223,6 +226,43 @@ pub struct LocalProviderCounters {
     pub cloud_provider_requests: usize,
     /// Must always be 0 — enforced by consistency script.
     pub external_provider_requests: usize,
+}
+
+/// Lightweight, serializable snapshot of the live provider event-loop counters.
+/// Populated from the AtomicU64 counters in runtime_client.rs at each response.
+/// All cloud/external fields must always be 0.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProviderCountersSummary {
+    pub local_requests: u64,
+    pub local_successes: u64,
+    pub local_failures: u64,
+    pub local_disabled_blocks: u64,
+    /// Hard invariant: always 0.
+    pub cloud_requests: u64,
+    /// Hard invariant: always 0.
+    pub external_requests: u64,
+    pub feature_enabled: bool,
+}
+
+impl ProviderCountersSummary {
+    /// Returns true if the hard boundary invariants hold:
+    /// cloud_requests == 0 and external_requests == 0.
+    pub fn boundary_ok(&self) -> bool {
+        self.cloud_requests == 0 && self.external_requests == 0
+    }
+
+    /// Human-readable status for UI display.
+    pub fn status_label(&self) -> &'static str {
+        if !self.feature_enabled {
+            "Provider disabled (default build)"
+        } else if self.local_requests == 0 {
+            "Provider enabled, no requests yet"
+        } else if self.local_failures > 0 {
+            "Provider active (with failures)"
+        } else {
+            "Provider active"
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -468,6 +508,70 @@ mod tests {
         let c = LocalProviderCounters::default();
         assert_eq!(c.cloud_provider_requests, 0);
         assert_eq!(c.external_provider_requests, 0);
+    }
+
+    #[test]
+    fn provider_counters_summary_default_is_boundary_ok() {
+        let s = ProviderCountersSummary::default();
+        assert!(s.boundary_ok());
+        assert_eq!(s.cloud_requests, 0);
+        assert_eq!(s.external_requests, 0);
+        assert!(!s.feature_enabled);
+        assert_eq!(s.status_label(), "Provider disabled (default build)");
+    }
+
+    #[test]
+    fn provider_counters_summary_boundary_violation() {
+        let s = ProviderCountersSummary {
+            cloud_requests: 1,
+            ..Default::default()
+        };
+        assert!(!s.boundary_ok());
+
+        let s2 = ProviderCountersSummary {
+            external_requests: 1,
+            ..Default::default()
+        };
+        assert!(!s2.boundary_ok());
+    }
+
+    #[test]
+    fn provider_counters_summary_status_labels() {
+        let enabled_no_requests = ProviderCountersSummary {
+            feature_enabled: true,
+            ..Default::default()
+        };
+        assert_eq!(
+            enabled_no_requests.status_label(),
+            "Provider enabled, no requests yet"
+        );
+
+        let active_with_failures = ProviderCountersSummary {
+            feature_enabled: true,
+            local_requests: 5,
+            local_failures: 2,
+            ..Default::default()
+        };
+        assert_eq!(
+            active_with_failures.status_label(),
+            "Provider active (with failures)"
+        );
+
+        let active_ok = ProviderCountersSummary {
+            feature_enabled: true,
+            local_requests: 3,
+            local_successes: 3,
+            ..Default::default()
+        };
+        assert_eq!(active_ok.status_label(), "Provider active");
+    }
+
+    #[test]
+    fn runtime_trace_summary_default_has_boundary_ok_counters() {
+        let trace = RuntimeTraceSummary::default();
+        assert!(trace.provider_counters.boundary_ok());
+        assert_eq!(trace.provider_counters.cloud_requests, 0);
+        assert_eq!(trace.provider_counters.external_requests, 0);
     }
 }
 

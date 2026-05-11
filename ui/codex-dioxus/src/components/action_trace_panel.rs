@@ -63,6 +63,9 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
             | crate::bridge::types::MetadataQuality::Unavailable
     );
 
+    let pc = &trace.provider_counters;
+    let boundary_status = if pc.boundary_ok() { "✓ OK" } else { "⛔ VIOLATION" };
+
     rsx! {
         section { class: "card",
             h3 { "Action Trace" }
@@ -87,6 +90,17 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
                 li { "tool_policy_decision: {tool_policy}" }
                 li { "missing_evidence_reason: {missing_evidence}" }
                 li { "provider_executions_local: {trace.provider_executions_local}" }
+            }
+            h4 { "Provider Event-Loop Counters" }
+            ul { class: "list",
+                li { "local_requests: {pc.local_requests}" }
+                li { "local_successes: {pc.local_successes}" }
+                li { "local_failures: {pc.local_failures}" }
+                li { "local_disabled_blocks: {pc.local_disabled_blocks}" }
+                li { "cloud_requests: {pc.cloud_requests}" }
+                li { "external_requests: {pc.external_requests}" }
+                li { "feature_enabled: {pc.feature_enabled}" }
+                li { "boundary: {boundary_status}" }
             }
         }
     }
