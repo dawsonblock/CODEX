@@ -587,7 +587,8 @@ impl RuntimeLoop {
                 if passing.contains(&ActionType::RetrieveMemory) {
                     return (
                         ActionType::RetrieveMemory,
-                        "Selected retrieve_memory: factual request lacks evidence-backed claims.".into(),
+                        "Selected retrieve_memory: factual request lacks evidence-backed claims."
+                            .into(),
                     );
                 }
             }

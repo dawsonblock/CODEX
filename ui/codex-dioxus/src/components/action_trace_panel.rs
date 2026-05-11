@@ -12,7 +12,10 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
         };
     };
 
-    let is_grounded = matches!(trace.metadata_quality, crate::bridge::types::MetadataQuality::RuntimeGrounded);
+    let is_grounded = matches!(
+        trace.metadata_quality,
+        crate::bridge::types::MetadataQuality::RuntimeGrounded
+    );
 
     let evidence_ids = if trace.evidence_ids.is_empty() || !is_grounded {
         "not available in current runtime bridge".to_string()
@@ -34,8 +37,12 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
     } else {
         trace.contradiction_ids.join(", ")
     };
-    
-    let audit_label = if is_grounded { "runtime audit ID" } else { "UI trace ID" };
+
+    let audit_label = if is_grounded {
+        "runtime audit ID"
+    } else {
+        "UI trace ID"
+    };
     let audit_id = trace.audit_id.unwrap_or_else(|| "none".to_string());
 
     let dominant_pressures = if trace.dominant_pressures.is_empty() {

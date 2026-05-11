@@ -166,7 +166,7 @@ pub fn App() -> Element {
                     onclick: move |_| active_tab.set(ActiveTab::Settings),
                     "Settings"
                 }
-                
+
                 div { class: "sidebar-footer",
                     "UI shell only. Runtime authority remains in Rust workspace."
                     ul { class: "list",
@@ -311,7 +311,7 @@ pub fn App() -> Element {
                                         spawn(async move {
                                             let client = RuntimeClient::new(mode, settings().provider_gate_enabled);
                                             let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-                                            
+
                                             let text_clone = text.clone();
                                             let producer = tokio::spawn(async move {
                                                 client.send_user_message_stream(&text_clone, tx).await
@@ -385,7 +385,7 @@ pub fn App() -> Element {
                                             record.state = crate::bridge::types::CommandApprovalState::Approved;
                                             let res_msg = "Execution successful (dry-run simulation).".to_string();
                                             record.result = Some(res_msg.clone());
-                                            
+
                                             // Feedback to chat
                                             messages.with_mut(|m| m.push(ChatMessage {
                                                 id: next_message_id(ChatRole::System),

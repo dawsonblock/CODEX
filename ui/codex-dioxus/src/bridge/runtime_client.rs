@@ -26,7 +26,10 @@ pub struct RuntimeClient {
 
 impl RuntimeClient {
     pub fn new(mode: RuntimeBridgeMode, provider_gate: bool) -> Self {
-        Self { mode, provider_gate }
+        Self {
+            mode,
+            provider_gate,
+        }
     }
 
     pub async fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
@@ -98,10 +101,15 @@ impl RuntimeClient {
                 RuntimeChatResponse {
                     message: msg,
                     selected_action: "defer_insufficient_evidence".to_string(),
-                    bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled.label().to_string(),
+                    bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled
+                        .label()
+                        .to_string(),
                     trace: RuntimeTraceSummary {
                         selected_action: "defer_insufficient_evidence".to_string(),
-                        dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
+                        dominant_pressures: vec![
+                            "tool_risk".to_string(),
+                            "evidence_gap".to_string(),
+                        ],
                         replay_safe: true,
                         tool_policy_decision: Some("provider_disabled".to_string()),
                         metadata_quality: MetadataQuality::Unavailable,
@@ -461,7 +469,9 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatRe
     };
 
     let bridge_mode_label = if model_name == "turboquant" {
-        RuntimeBridgeMode::LocalTurboquantProvider.label().to_string()
+        RuntimeBridgeMode::LocalTurboquantProvider
+            .label()
+            .to_string()
     } else {
         RuntimeBridgeMode::LocalOllamaProvider.label().to_string()
     };
@@ -557,7 +567,9 @@ async fn ollama_runtime_stream(
     }
 
     let bridge_mode_label = if model_name == "turboquant" {
-        RuntimeBridgeMode::LocalTurboquantProvider.label().to_string()
+        RuntimeBridgeMode::LocalTurboquantProvider
+            .label()
+            .to_string()
     } else {
         RuntimeBridgeMode::LocalOllamaProvider.label().to_string()
     };
@@ -601,15 +613,21 @@ pub fn send_runtime_command(
     let message = match command {
         RuntimeCommand::ExecuteTool { tool, args } => {
             if transport.disabled {
-                format!("Mock-executing tool '{}' with args '{}'. Result: success (dry-run).", tool, args)
+                format!(
+                    "Mock-executing tool '{}' with args '{}'. Result: success (dry-run).",
+                    tool, args
+                )
             } else {
                 format!("Tool '{}' scheduled for dry-run execution.", tool)
             }
         }
-        _ => if transport.disabled {
-            "Runtime transport disabled; command accepted only as approved dry-run intent.".to_string()
-        } else {
-            "Command accepted in dry-run mode.".to_string()
+        _ => {
+            if transport.disabled {
+                "Runtime transport disabled; command accepted only as approved dry-run intent."
+                    .to_string()
+            } else {
+                "Command accepted in dry-run mode.".to_string()
+            }
         }
     };
 
@@ -683,14 +701,18 @@ mod tests {
     #[tokio::test]
     async fn ambiguous_maps_to_ask_clarification() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
-        let out = client.send_user_message("this seems ambiguous and maybe wrong").await;
+        let out = client
+            .send_user_message("this seems ambiguous and maybe wrong")
+            .await;
         assert_eq!(out.selected_action, "ask_clarification");
     }
 
     #[tokio::test]
     async fn local_read_only_mode_uses_runtime_core() {
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
-        let out = client.send_user_message("what is the current status of deployment x right now?").await;
+        let out = client
+            .send_user_message("what is the current status of deployment x right now?")
+            .await;
         assert_eq!(out.selected_action, "defer_insufficient_evidence");
         assert!(out.trace.replay_safe);
         // Audit ID is now wired from the cycle: must be present and cycle-derived.
@@ -711,7 +733,9 @@ mod tests {
     #[tokio::test]
     async fn unsupported_factual_maps_to_defer_or_retrieve() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
-        let out = client.send_user_message("what is the status of unknown x?").await;
+        let out = client
+            .send_user_message("what is the status of unknown x?")
+            .await;
         assert!(
             out.selected_action == "defer_insufficient_evidence"
                 || out.selected_action == "retrieve_memory"
@@ -728,7 +752,9 @@ mod tests {
     #[tokio::test]
     async fn normal_question_maps_to_answer() {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
-        let out = client.send_user_message("What is a bounded runtime bridge?").await;
+        let out = client
+            .send_user_message("What is a bounded runtime bridge?")
+            .await;
         assert_eq!(out.selected_action, "answer");
         assert_eq!(out.trace.metadata_quality, MetadataQuality::MockOnly);
     }
@@ -743,35 +769,35 @@ mod tests {
         );
     }
     #[tokio::test]
-async fn local_runtime_evidence_hashes_are_real_sha256_hex() {
-    // Use an input that yields memory hits (safety-related triggers keyword memory provider).
-    let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
-    let out = client.send_user_message("what is safe_action?").await;
-    // If there were evidence entries, each hash must be a 64-char lowercase hex string.
-    for hash in &out.trace.evidence_hashes {
-        assert_eq!(
-            hash.len(),
-            64,
-            "evidence_hash should be 64-char SHA-256 hex, got: {hash}"
-        );
+    async fn local_runtime_evidence_hashes_are_real_sha256_hex() {
+        // Use an input that yields memory hits (safety-related triggers keyword memory provider).
+        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
+        let out = client.send_user_message("what is safe_action?").await;
+        // If there were evidence entries, each hash must be a 64-char lowercase hex string.
+        for hash in &out.trace.evidence_hashes {
+            assert_eq!(
+                hash.len(),
+                64,
+                "evidence_hash should be 64-char SHA-256 hex, got: {hash}"
+            );
+            assert!(
+                hash.chars().all(|c| c.is_ascii_hexdigit()),
+                "evidence_hash should be lowercase hex, got: {hash}"
+            );
+        }
+        // audit_id must come from the ReasoningAuditGenerated event.
         assert!(
-            hash.chars().all(|c| c.is_ascii_hexdigit()),
-            "evidence_hash should be lowercase hex, got: {hash}"
+            out.trace
+                .audit_id
+                .as_deref()
+                .map_or(false, |id| id.starts_with("audit_")),
+            "audit_id should be event-derived"
+        );
+        // evidence_ids and evidence_hashes must be the same length.
+        assert_eq!(
+            out.trace.evidence_ids.len(),
+            out.trace.evidence_hashes.len(),
+            "evidence_ids and evidence_hashes must be paired"
         );
     }
-    // audit_id must come from the ReasoningAuditGenerated event.
-    assert!(
-        out.trace
-            .audit_id
-            .as_deref()
-            .map_or(false, |id| id.starts_with("audit_")),
-        "audit_id should be event-derived"
-    );
-    // evidence_ids and evidence_hashes must be the same length.
-    assert_eq!(
-        out.trace.evidence_ids.len(),
-        out.trace.evidence_hashes.len(),
-        "evidence_ids and evidence_hashes must be paired"
-    );
-}
 }

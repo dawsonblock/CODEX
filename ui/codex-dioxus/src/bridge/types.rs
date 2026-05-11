@@ -117,7 +117,10 @@ impl RuntimeBridgeMode {
 
     pub fn is_experimental(self) -> bool {
         #[cfg(feature = "ui-local-providers")]
-        return matches!(self, Self::LocalOllamaProvider | Self::LocalTurboquantProvider);
+        return matches!(
+            self,
+            Self::LocalOllamaProvider | Self::LocalTurboquantProvider
+        );
         #[cfg(not(feature = "ui-local-providers"))]
         return false;
     }
