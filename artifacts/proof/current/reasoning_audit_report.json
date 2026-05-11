@@ -1,15 +1,15 @@
 {
   "counters": {
-    "audits_with_claim_refs": 3,
+    "audits_with_claim_refs": 31,
     "audits_with_contradiction_refs": 0,
-    "audits_with_evidence_refs": 28,
+    "audits_with_evidence_refs": 55,
     "audits_with_pressure_refs": 29,
     "audits_with_tool_policy_refs": 1,
     "audits_without_claim_refs": 28,
-    "audits_without_evidence_refs": 3,
-    "reasoning_audits": 31
+    "audits_without_evidence_refs": 4,
+    "reasoning_audits": 59
   },
-  "generated_timestamp": 1778485748,
+  "generated_timestamp": 1778491119,
   "limitations": [
     "Audit is structured metadata, not hidden chain-of-thought.",
     "Audit references are bounded to event-visible IDs.",

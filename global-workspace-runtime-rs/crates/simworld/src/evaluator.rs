@@ -192,7 +192,9 @@ impl EvaluatorRun {
             if let Some(entry) = evidence_vault.get(ev_idx).cloned() {
                 let structured_entry = evidence::EvidenceEntry {
                     content: serde_json::json!({
-                        "subject": "simworld_observation",
+                        // Keep the claim bounded and retrievable by using the
+                        // observation text itself as the subject.
+                        "subject": observation,
                         "predicate": format!("cycle_{cycle_id}_completed")
                     }),
                     ..entry
@@ -212,6 +214,25 @@ impl EvaluatorRun {
                         .log
                         .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
                 }
+            }
+
+            let post_retrieval = claim_store.retrieve_for_observation(observation);
+            for claim_ref in post_retrieval
+                .matched_claims
+                .iter()
+                .chain(post_retrieval.disputed_claims.iter())
+            {
+                let confidence = claim_store
+                    .get(&claim_ref.claim_id)
+                    .map(|c| c.confidence)
+                    .unwrap_or(0.0);
+                let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
+                    cycle_id,
+                    claim_id: claim_ref.claim_id.clone(),
+                    evidence_id: claim_ref.evidence_id.clone(),
+                    status: format!("{:?}", claim_ref.status).to_lowercase(),
+                    confidence,
+                });
             }
 
             // Contradiction detection: every 10 cycles
@@ -554,7 +575,9 @@ impl EvaluatorRun {
             if let Some(entry) = evidence_vault.get(ev_idx).cloned() {
                 let structured_entry = evidence::EvidenceEntry {
                     content: serde_json::json!({
-                        "subject": "nl_scenario",
+                        // Keep the claim bounded and retrievable by using the
+                        // observation text itself as the subject.
+                        "subject": observation,
                         "predicate": format!("cycle_{cycle_id}")
                     }),
                     ..entry
@@ -574,6 +597,25 @@ impl EvaluatorRun {
                         .log
                         .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
                 }
+            }
+
+            let post_retrieval = claim_store.retrieve_for_observation(observation);
+            for claim_ref in post_retrieval
+                .matched_claims
+                .iter()
+                .chain(post_retrieval.disputed_claims.iter())
+            {
+                let confidence = claim_store
+                    .get(&claim_ref.claim_id)
+                    .map(|c| c.confidence)
+                    .unwrap_or(0.0);
+                let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
+                    cycle_id,
+                    claim_id: claim_ref.claim_id.clone(),
+                    evidence_id: claim_ref.evidence_id.clone(),
+                    status: format!("{:?}", claim_ref.status).to_lowercase(),
+                    confidence,
+                });
             }
 
             if cycle_id % 5 == 0 && cycle_id > 0 {

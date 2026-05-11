@@ -1,12 +1,12 @@
 {
   "counters": {
-    "audits_with_claim_refs": 3,
-    "claims_retrieved": 2,
+    "audits_with_claim_refs": 31,
+    "claims_retrieved": 30,
     "claims_retrieved_without_evidence": 0,
-    "claims_with_evidence_links": 2,
-    "evidence_backed_claims_retrieved": 2
+    "claims_with_evidence_links": 30,
+    "evidence_backed_claims_retrieved": 30
   },
-  "generated_timestamp": 1778485748,
+  "generated_timestamp": 1778491119,
   "limitations": [
     "Retrieval is bounded lexical/structured lookup.",
     "Does not prove broad natural-language reasoning."
