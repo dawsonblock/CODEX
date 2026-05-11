@@ -2,7 +2,7 @@ use super::types::{
     ChatRole, CommandApprovalState, RuntimeBridgeMode, RuntimeChatResponse, RuntimeCommand,
     RuntimeCommandResult, RuntimeCommandStatus, RuntimeTraceSummary,
 };
-use runtime_core::{ActionType, RuntimeLoop};
+use runtime_core::{ActionType, RuntimeEvent, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -51,46 +51,79 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
     let mut runtime = RuntimeLoop::default();
     let step = runtime.run_cycle(input, 1, 0.9);
 
-    let mut dominant_pressures = Vec::new();
-    let state = &runtime.internal_state;
-    if state.threat > 0.55 {
-        dominant_pressures.push("safety".to_string());
-    }
-    if state.uncertainty > 0.55 {
-        dominant_pressures.push("uncertainty".to_string());
-    }
-    if let Some(ctx) = runtime.last_context.as_ref() {
-        if matches!(
-            ctx.kind,
-            runtime_core::ObservationKind::InsufficientContext
-                | runtime_core::ObservationKind::MemoryLookup
-        ) {
-            dominant_pressures.push("evidence_gap".to_string());
+    // Extract real IDs from emitted runtime events.
+    //
+    // evidence_ids / evidence_hashes: from EvidenceStored events (SHA-256 content_hash).
+    // claim_ids: from ClaimRetrieved events (real claim-store IDs, empty if none retrieved).
+    // contradiction_ids: from ContradictionChecked events (empty in single-cycle mode).
+    // audit_id: from ReasoningAuditGenerated event (emitted by runtime_loop stage 8a).
+    let mut evidence_ids: Vec<String> = Vec::new();
+    let mut evidence_hashes: Vec<String> = Vec::new();
+    let mut claim_ids: Vec<String> = Vec::new();
+    let mut contradiction_ids: Vec<String> = Vec::new();
+    let mut audit_id: Option<String> = None;
+    let mut dominant_pressures: Vec<String> = Vec::new();
+
+    for event in &step.events {
+        match event {
+            RuntimeEvent::EvidenceStored {
+                entry_id,
+                content_hash,
+                ..
+            } => {
+                evidence_ids.push(entry_id.clone());
+                evidence_hashes.push(content_hash.clone());
+            }
+            RuntimeEvent::ClaimRetrieved { claim_id, .. } => {
+                if !claim_ids.contains(claim_id) {
+                    claim_ids.push(claim_id.clone());
+                }
+            }
+            RuntimeEvent::ContradictionChecked {
+                contradiction_ids: ids,
+                ..
+            } => {
+                for id in ids {
+                    if !contradiction_ids.contains(id) {
+                        contradiction_ids.push(id.clone());
+                    }
+                }
+            }
+            RuntimeEvent::ReasoningAuditGenerated {
+                audit_id: aid,
+                dominant_pressures: dp,
+                ..
+            } => {
+                audit_id = Some(aid.clone());
+                dominant_pressures = dp.clone();
+            }
+            _ => {}
         }
     }
-    if dominant_pressures.is_empty() {
-        dominant_pressures.push("coherence".to_string());
-    }
 
-    // Wire live metadata from the runtime step into the trace.
-    // evidence_ids: keys of memory hits retrieved during this cycle.
-    let evidence_ids: Vec<String> = step.memory_hits.iter().map(|h| h.key.clone()).collect();
-    // evidence_hashes: relevance scores as bounded decimal strings (not cryptographic).
-    let evidence_hashes: Vec<String> = step
-        .memory_hits
-        .iter()
-        .map(|h| format!("rel:{:.4}", h.relevance))
-        .collect();
-    // claim_ids: symbol IDs activated during this cycle.
-    let claim_ids: Vec<String> = step
-        .symbolic_activations
-        .iter()
-        .map(|a| a.symbol_id.clone())
-        .collect();
-    // contradiction_ids: not tracked per single-cycle in RuntimeLoop; remains empty.
-    let contradiction_ids: Vec<String> = vec![];
-    // audit_id: deterministic from cycle_id.
-    let audit_id = Some(format!("audit_{}", step.cycle_id));
+    // Supplement dominant_pressures if ReasoningAuditGenerated was not emitted
+    // (e.g. evidence_gap from observation context).
+    if dominant_pressures.is_empty() {
+        let state = &runtime.internal_state;
+        if state.threat > 0.55 {
+            dominant_pressures.push("safety".to_string());
+        }
+        if state.uncertainty > 0.55 {
+            dominant_pressures.push("uncertainty".to_string());
+        }
+        if let Some(ctx) = runtime.last_context.as_ref() {
+            if matches!(
+                ctx.kind,
+                runtime_core::ObservationKind::InsufficientContext
+                    | runtime_core::ObservationKind::MemoryLookup
+            ) {
+                dominant_pressures.push("evidence_gap".to_string());
+            }
+        }
+        if dominant_pressures.is_empty() {
+            dominant_pressures.push("coherence".to_string());
+        }
+    }
 
     let selected_action = step.selected_action.as_str().to_string();
     let message = local_message_for_action(&step.selected_action, &step.selection_reason);
@@ -446,4 +479,36 @@ mod tests {
         let out = client.send_user_message("What is a bounded runtime bridge?");
         assert_eq!(out.selected_action, "answer");
     }
+}
+#[test]
+fn local_runtime_evidence_hashes_are_real_sha256_hex() {
+    // Use an input that yields memory hits (safety-related triggers keyword memory provider).
+    let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
+    let out = client.send_user_message("what is safe_action?");
+    // If there were evidence entries, each hash must be a 64-char lowercase hex string.
+    for hash in &out.trace.evidence_hashes {
+        assert_eq!(
+            hash.len(),
+            64,
+            "evidence_hash should be 64-char SHA-256 hex, got: {hash}"
+        );
+        assert!(
+            hash.chars().all(|c| c.is_ascii_hexdigit()),
+            "evidence_hash should be lowercase hex, got: {hash}"
+        );
+    }
+    // audit_id must come from the ReasoningAuditGenerated event.
+    assert!(
+        out.trace
+            .audit_id
+            .as_deref()
+            .map_or(false, |id| id.starts_with("audit_")),
+        "audit_id should be event-derived"
+    );
+    // evidence_ids and evidence_hashes must be the same length.
+    assert_eq!(
+        out.trace.evidence_ids.len(),
+        out.trace.evidence_hashes.len(),
+        "evidence_ids and evidence_hashes must be paired"
+    );
 }

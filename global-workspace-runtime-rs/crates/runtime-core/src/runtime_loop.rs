@@ -14,6 +14,7 @@ use crate::runtime_step_result::{ActionCandidate, ActionScore, RejectedAction, R
 use crate::symbolic_activator::SymbolicActivator;
 use crate::types::InternalState;
 use chrono::Utc;
+use sha2::{Digest, Sha256};
 
 pub struct RuntimeLoop {
     pub internal_state: InternalState,
@@ -116,6 +117,25 @@ impl RuntimeLoop {
                 top_value: result.memory_hits.first().map(|h| h.value.clone()),
             });
         }
+        // Emit EvidenceStored for each memory hit with real SHA-256 content hash.
+        // Hash input: canonical string over observation + hit fields + cycle_id.
+        for (n, hit) in result.memory_hits.iter().enumerate() {
+            let canonical = format!(
+                "obs:{}|key:{}|val:{}|rel:{:.6}|cycle:{}",
+                observation, hit.key, hit.value, hit.relevance, cycle_id
+            );
+            let mut hasher = Sha256::new();
+            hasher.update(canonical.as_bytes());
+            let hash_bytes = hasher.finalize();
+            let content_hash = format!("{:x}", hash_bytes);
+            result.events.push(RuntimeEvent::EvidenceStored {
+                cycle_id,
+                entry_id: format!("evid_{cycle_id}_{n}"),
+                source: "memory_retrieval".to_string(),
+                confidence: hit.relevance,
+                content_hash,
+            });
+        }
 
         // ── 3. Candidate generation ───────────────────────────────
         let scored = self.score_all_candidates(pressure_bias);
@@ -180,6 +200,44 @@ impl RuntimeLoop {
             cycle_id,
             action_type: selected.clone(),
             conserve: false,
+        });
+
+        // ── 8a. Reasoning audit ──────────────────────────────────
+        // Collect evidence IDs and dominant pressures from events already recorded.
+        let emitted_evidence_ids: Vec<String> = result
+            .events
+            .iter()
+            .filter_map(|e| {
+                if let RuntimeEvent::EvidenceStored { entry_id, .. } = e {
+                    Some(entry_id.clone())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let mut audit_pressures: Vec<String> = Vec::new();
+        let is_ref = &self.internal_state;
+        if is_ref.threat > 0.55 {
+            audit_pressures.push("safety".to_string());
+        }
+        if is_ref.uncertainty > 0.55 {
+            audit_pressures.push("uncertainty".to_string());
+        }
+        if is_ref.world_resources < 0.3 {
+            audit_pressures.push("resource".to_string());
+        }
+        if audit_pressures.is_empty() {
+            audit_pressures.push("coherence".to_string());
+        }
+        result.events.push(RuntimeEvent::ReasoningAuditGenerated {
+            cycle_id,
+            audit_id: format!("audit_{cycle_id}"),
+            selected_action: result.selected_action.as_str().to_string(),
+            evidence_ids: emitted_evidence_ids,
+            claim_ids: vec![],
+            contradiction_ids: vec![],
+            dominant_pressures: audit_pressures,
+            audit_text: result.selection_reason.clone(),
         });
 
         // ── 8. Archive commit ──────────────────────────────────────
