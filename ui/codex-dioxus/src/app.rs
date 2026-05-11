@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
-use crate::bridge::proof_reader::load_proof_state;
-use crate::bridge::types::{CodexProofState, ProofManifest};
+use crate::bridge::proof_reader::load_dashboard_state;
+use crate::bridge::types::{CodexProofState, HistoricalSummary, ProofManifest, TimeRange};
 use crate::components::action_schema_panel::ActionSchemaPanel;
 use crate::components::audit_panel::AuditPanel;
 use crate::components::console_panel::ConsolePanel;
@@ -19,10 +19,36 @@ pub const UI_BOUNDARY_LINES: [&str; 5] = [
     "UI shell is bounded to visualization and disabled command intents.",
 ];
 
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn warning_snapshot(errors: &[String]) -> String {
+    if errors.is_empty() {
+        "none".to_string()
+    } else {
+        errors.join(" | ")
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Theme {
     Dark,
     Light,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn warning_snapshot_none() {
+        let errors: Vec<String> = Vec::new();
+        assert_eq!(warning_snapshot(&errors), "none");
+    }
+
+    #[test]
+    fn warning_snapshot_joins_messages() {
+        let errors = vec!["missing report".to_string(), "bad json".to_string()];
+        assert_eq!(warning_snapshot(&errors), "missing report | bad json");
+    }
 }
 
 impl Theme {
@@ -44,10 +70,12 @@ impl Theme {
 #[component]
 pub fn App() -> Element {
     let mut theme = use_signal(|| Theme::Dark);
-    let mut proof_state = use_signal(load_proof_state);
+    let mut time_range = use_signal(|| TimeRange::Current);
+    let mut dashboard_state = use_signal(|| load_dashboard_state(TimeRange::Current));
 
-    let current: Option<CodexProofState> = proof_state().state.clone();
-    let errors = proof_state().errors.clone();
+    let current: Option<CodexProofState> = dashboard_state().proof.clone();
+    let history: HistoricalSummary = dashboard_state().history.clone();
+    let errors = dashboard_state().errors.clone();
     let manifest: Option<ProofManifest> = current.clone().map(|s| s.manifest);
 
     rsx! {
@@ -56,7 +84,7 @@ pub fn App() -> Element {
             aside { class: "sidebar",
                 div { class: "brand",
                     img { src: LOGO_SVG }
-                    h1 { "CODEX" }
+                    h1 { "Codex" }
                 }
                 button { class: "nav-item active", "Dashboard" }
                 button { class: "nav-item", disabled: true, "Logs (planned)" }
@@ -77,10 +105,42 @@ pub fn App() -> Element {
                 }
                 div { class: "header-row",
                     div {
-                        h2 { "Runtime Dashboard" }
+                        h2 { "Codex Dashboard" }
                         p { class: "subtitle", "Evidence-grounded, contradiction-aware, replay-auditable." }
                     }
                     div { class: "toolbar",
+                        button {
+                            class: "btn",
+                            onclick: move |_| {
+                                time_range.set(TimeRange::Current);
+                                dashboard_state.set(load_dashboard_state(TimeRange::Current));
+                            },
+                            "Current"
+                        }
+                        button {
+                            class: "btn",
+                            onclick: move |_| {
+                                time_range.set(TimeRange::Last24Hours);
+                                dashboard_state.set(load_dashboard_state(TimeRange::Last24Hours));
+                            },
+                            "Last 24h"
+                        }
+                        button {
+                            class: "btn",
+                            onclick: move |_| {
+                                time_range.set(TimeRange::Last7Days);
+                                dashboard_state.set(load_dashboard_state(TimeRange::Last7Days));
+                            },
+                            "Last 7d"
+                        }
+                        button {
+                            class: "btn",
+                            onclick: move |_| {
+                                time_range.set(TimeRange::AllHistory);
+                                dashboard_state.set(load_dashboard_state(TimeRange::AllHistory));
+                            },
+                            "All"
+                        }
                         button {
                             class: "btn",
                             onclick: move |_| {
@@ -91,7 +151,7 @@ pub fn App() -> Element {
                         button {
                             class: "btn primary",
                             onclick: move |_| {
-                                proof_state.set(load_proof_state());
+                                dashboard_state.set(load_dashboard_state(time_range()));
                             },
                             "Reload Proof"
                         }
@@ -111,7 +171,11 @@ pub fn App() -> Element {
 
                 div { class: "grid",
                     RuntimeStatusPanel { manifest }
-                    ProofDashboard { state: current.clone() }
+                    ProofDashboard {
+                        state: current.clone(),
+                        history,
+                        range: time_range(),
+                    }
 
                     if let Some(state) = current.clone() {
                         EvidencePanel { proof: state.clone() }

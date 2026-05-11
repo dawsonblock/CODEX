@@ -33,16 +33,32 @@ The UI reads proof/runtime artifact files and renders them in dashboard panels.
 Runtime authority is unchanged:
 
 - Source of truth: `global-workspace-runtime-rs`
-- UI role: visualization and disabled command intents
-- Commands are represented as typed intents but transport is disabled in v1
+- UI role: visualization and gated dry-run command intents
+- Commands are represented as typed intents with explicit approval transitions
 
 ## Bridge Surface (v1)
 
 Bridge modules:
 
 - `src/bridge/types.rs` - typed proof/report and command models
-- `src/bridge/proof_reader.rs` - artifact file loading with graceful error handling
-- `src/bridge/runtime_client.rs` - disabled transport stub for future gated integration
+- `src/bridge/proof_reader.rs` - artifact loading plus historical trace summary and time-range filtering
+- `src/bridge/runtime_client.rs` - gated dry-run approval flow (draft -> awaiting approval -> approved)
+
+## History and Time Windows
+
+Proof dashboard now supports time-windowed historical summaries sourced from:
+
+- `artifacts/proof/history/traces`
+- `artifacts/proof/history/test_traces`
+
+Supported ranges:
+
+- Current
+- Last 24h
+- Last 7d
+- All History
+
+Displayed history metrics include trace counts, async trace count, test trace count, latest epoch, and recent file names.
 
 ## Dashboard Panels (v1)
 
@@ -54,7 +70,18 @@ Implemented panels:
 - Operational pressure metrics
 - Audit and boundary reminders
 - Fixed 10-action schema panel
-- Disabled runtime console
+- Runtime console with gated dry-run approval controls
+
+## Gated Dry-Run Flow
+
+The console command flow is intentionally bounded and non-executing in v1:
+
+1. Select command intent
+2. Request approval (Draft -> AwaitingApproval)
+3. Grant approval (AwaitingApproval -> Approved)
+4. Send command as approved dry-run intent
+
+If approval is not granted, command dispatch is blocked.
 
 ## Safety and Messaging Constraints
 
@@ -67,12 +94,21 @@ UI text keeps bounded language:
 
 A unit test enforces this wording boundary in `proof_reader.rs` tests.
 
+## Snapshot Tests
+
+Snapshot-style text assertions are implemented for:
+
+- Runtime status panel summary
+- Proof dashboard summary
+- Evidence panel summary
+- Proof warning-state formatting
+
 ## Validation Performed
 
 For `ui/codex-dioxus`:
 
-- `cargo fmt --check`
+- `cargo fmt`
 - `cargo check`
 - `cargo test`
 
-All tests passed.
+All checks passed.

@@ -11,7 +11,7 @@ pub const LOGO_SVG: Asset = asset!("/assets/logo.svg");
 
 fn main() {
     let cfg =
-        Config::default().with_window(WindowBuilder::new().with_title("CODEX Runtime Dashboard"));
+        Config::default().with_window(WindowBuilder::new().with_title("Codex Runtime Dashboard"));
     dioxus::LaunchBuilder::desktop()
         .with_cfg(cfg)
         .launch(app::App);

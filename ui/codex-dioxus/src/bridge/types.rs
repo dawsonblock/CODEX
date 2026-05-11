@@ -1,5 +1,25 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum TimeRange {
+    #[default]
+    Current,
+    Last24Hours,
+    Last7Days,
+    AllHistory,
+}
+
+impl TimeRange {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Current => "Current",
+            Self::Last24Hours => "Last 24h",
+            Self::Last7Days => "Last 7d",
+            Self::AllHistory => "All History",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ScorecardMetrics {
     #[serde(default)]
@@ -142,6 +162,24 @@ pub struct ProofLoadResult {
     pub errors: Vec<String>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct HistoricalSummary {
+    pub range: TimeRange,
+    pub total_traces: usize,
+    pub async_traces: usize,
+    pub test_traces: usize,
+    pub earliest_epoch: Option<i64>,
+    pub latest_epoch: Option<i64>,
+    pub latest_files: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct DashboardLoadResult {
+    pub proof: Option<CodexProofState>,
+    pub history: HistoricalSummary,
+    pub errors: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuntimeCommand {
     RefreshProofState,
@@ -151,7 +189,8 @@ pub enum RuntimeCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuntimeCommandStatus {
-    Disabled,
+    AwaitingApproval,
+    ApprovedDryRun,
     DryRunOnly,
 }
 
@@ -160,4 +199,12 @@ pub struct RuntimeCommandResult {
     pub command: RuntimeCommand,
     pub status: RuntimeCommandStatus,
     pub message: String,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum CommandApprovalState {
+    #[default]
+    Draft,
+    AwaitingApproval,
+    Approved,
 }

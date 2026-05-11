@@ -2,6 +2,18 @@ use dioxus::prelude::*;
 
 use crate::bridge::types::ProofManifest;
 
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) fn runtime_status_snapshot(manifest: &ProofManifest) -> String {
+    format!(
+        "codename=CODEX-main 32\nruntime=Rust-authoritative runtime\npython=legacy/reference only\nproof={}\nactions=10\nmemvid=inactive/stubbed\ntools=no real autonomous external tool executor",
+        if manifest.rust_verified {
+            "verified"
+        } else {
+            "unknown"
+        }
+    )
+}
+
 #[component]
 pub fn RuntimeStatusPanel(manifest: Option<ProofManifest>) -> Element {
     let manifest = manifest.unwrap_or_default();
@@ -37,5 +49,21 @@ pub fn RuntimeStatusPanel(manifest: Option<ProofManifest>) -> Element {
             }
             p { class: "muted", "Not sentient. Not conscious. Not AGI. Not production-ready." }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn runtime_status_snapshot_verified() {
+        let manifest = ProofManifest {
+            rust_verified: true,
+            ..ProofManifest::default()
+        };
+        let snapshot = runtime_status_snapshot(&manifest);
+        let expected = "codename=CODEX-main 32\nruntime=Rust-authoritative runtime\npython=legacy/reference only\nproof=verified\nactions=10\nmemvid=inactive/stubbed\ntools=no real autonomous external tool executor";
+        assert_eq!(snapshot, expected);
     }
 }
