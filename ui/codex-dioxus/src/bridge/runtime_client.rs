@@ -48,6 +48,48 @@ impl RuntimeClient {
             },
         }
     }
+
+    pub async fn send_user_message_stream(
+        &self,
+        input: &str,
+        sender: tokio::sync::mpsc::UnboundedSender<String>,
+    ) -> RuntimeChatResponse {
+        match self.mode {
+            RuntimeBridgeMode::MockUiMode => {
+                let resp = mock_runtime_response(input);
+                let _ = sender.send(resp.message.clone());
+                resp
+            }
+            RuntimeBridgeMode::LocalCodexRuntimeReadOnly => {
+                let resp = local_runtime_response(input);
+                let _ = sender.send(resp.message.clone());
+                resp
+            }
+            RuntimeBridgeMode::LocalOllamaProvider => {
+                ollama_runtime_stream(input, "llama3", sender).await
+            }
+            RuntimeBridgeMode::LocalTurboquantProvider => {
+                ollama_runtime_stream(input, "turboquant", sender).await
+            }
+            RuntimeBridgeMode::ExternalProviderDisabled => {
+                let msg = "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string();
+                let _ = sender.send(msg.clone());
+                RuntimeChatResponse {
+                    message: msg,
+                    selected_action: "defer_insufficient_evidence".to_string(),
+                    bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled.label().to_string(),
+                    trace: RuntimeTraceSummary {
+                        selected_action: "defer_insufficient_evidence".to_string(),
+                        dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
+                        replay_safe: true,
+                        tool_policy_decision: Some("provider_disabled".to_string()),
+                        metadata_quality: MetadataQuality::Unavailable,
+                        ..RuntimeTraceSummary::default()
+                    },
+                }
+            }
+        }
+    }
 }
 
 fn local_runtime_response(input: &str) -> RuntimeChatResponse {
@@ -421,6 +463,100 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatRe
     }
 }
 
+async fn ollama_runtime_stream(
+    input: &str,
+    model_name: &str,
+    sender: tokio::sync::mpsc::UnboundedSender<String>,
+) -> RuntimeChatResponse {
+    use futures_util::StreamExt;
+
+    #[derive(serde::Serialize)]
+    struct OllamaRequest<'a> {
+        model: &'a str,
+        prompt: &'a str,
+        stream: bool,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct OllamaResponse {
+        response: String,
+    }
+
+    let req = OllamaRequest {
+        model: model_name,
+        prompt: input,
+        stream: true,
+    };
+
+    let client = reqwest::Client::new();
+    let mut full_message = String::new();
+
+    match client
+        .post("http://localhost:11434/api/generate")
+        .json(&req)
+        .send()
+        .await
+    {
+        Ok(resp) => {
+            let mut stream = resp.bytes_stream();
+            let mut buffer = String::new();
+
+            while let Some(chunk_res) = stream.next().await {
+                if let Ok(chunk) = chunk_res {
+                    if let Ok(text) = std::str::from_utf8(&chunk) {
+                        buffer.push_str(text);
+                        while let Some(pos) = buffer.find('\n') {
+                            let line = buffer[..pos].to_string();
+                            buffer = buffer[pos + 1..].to_string();
+                            if let Ok(json) = serde_json::from_str::<OllamaResponse>(&line) {
+                                full_message.push_str(&json.response);
+                                let _ = sender.send(json.response);
+                            }
+                        }
+                    }
+                }
+            }
+            // Parse any remaining in buffer
+            if let Ok(json) = serde_json::from_str::<OllamaResponse>(&buffer) {
+                full_message.push_str(&json.response);
+                let _ = sender.send(json.response);
+            }
+        }
+        Err(e) => {
+            let err_msg = format!("Error connecting to Ollama: {}", e);
+            let _ = sender.send(err_msg.clone());
+            full_message = err_msg;
+        }
+    }
+
+    let bridge_mode_label = if model_name == "turboquant" {
+        RuntimeBridgeMode::LocalTurboquantProvider.label().to_string()
+    } else {
+        RuntimeBridgeMode::LocalOllamaProvider.label().to_string()
+    };
+
+    RuntimeChatResponse {
+        message: full_message,
+        selected_action: "answer".to_string(),
+        bridge_mode: bridge_mode_label,
+        trace: RuntimeTraceSummary {
+            selected_action: "answer".to_string(),
+            evidence_ids: vec![],
+            evidence_hashes: vec![],
+            claim_ids: vec![],
+            contradiction_ids: vec![],
+            audit_id: None,
+            dominant_pressures: vec!["coherence".to_string()],
+            pressure_updates: 1,
+            policy_bias_applications: 0,
+            replay_safe: true,
+            tool_policy_decision: None,
+            missing_evidence_reason: None,
+            metadata_quality: MetadataQuality::PartiallyGrounded,
+        },
+    }
+}
+
 pub fn send_runtime_command(
     transport: &RuntimeTransport,
     command: &RuntimeCommand,
@@ -434,10 +570,19 @@ pub fn send_runtime_command(
         };
     }
 
-    let message = if transport.disabled {
-        "Runtime transport disabled; command accepted only as approved dry-run intent.".to_string()
-    } else {
-        "Command accepted in dry-run mode.".to_string()
+    let message = match command {
+        RuntimeCommand::ExecuteTool { tool, args } => {
+            if transport.disabled {
+                format!("Mock-executing tool '{}' with args '{}'. Result: success (dry-run).", tool, args)
+            } else {
+                format!("Tool '{}' scheduled for dry-run execution.", tool)
+            }
+        }
+        _ => if transport.disabled {
+            "Runtime transport disabled; command accepted only as approved dry-run intent.".to_string()
+        } else {
+            "Command accepted in dry-run mode.".to_string()
+        }
     };
 
     RuntimeCommandResult {
@@ -569,8 +714,7 @@ mod tests {
                 || out.trace.metadata_quality == MetadataQuality::PartiallyGrounded
         );
     }
-}
-#[tokio::test]
+    #[tokio::test]
 async fn local_runtime_evidence_hashes_are_real_sha256_hex() {
     // Use an input that yields memory hits (safety-related triggers keyword memory provider).
     let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
@@ -601,4 +745,5 @@ async fn local_runtime_evidence_hashes_are_real_sha256_hex() {
         out.trace.evidence_hashes.len(),
         "evidence_ids and evidence_hashes must be paired"
     );
+}
 }

@@ -67,7 +67,7 @@ pub fn ConsolePanel() -> Element {
                 }
             }
             button {
-                class: "btn btn-primary",
+                class: "btn primary",
                 onclick: move |_| {
                     let transport = RuntimeTransport::new_disabled();
                     let result = send_runtime_command(&transport, &command(), approval());

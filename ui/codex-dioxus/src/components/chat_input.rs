@@ -16,7 +16,7 @@ pub fn ChatInput(on_send: EventHandler<String>) -> Element {
                 }
             }
             button {
-                class: "btn btn-primary",
+                class: "btn primary",
                 onclick: move |_| {
                     let trimmed = input().trim().to_string();
                     if !trimmed.is_empty() {

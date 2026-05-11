@@ -343,6 +343,7 @@ pub enum RuntimeCommand {
     RefreshProofState,
     ReplayLast,
     RequestAuditSnapshot,
+    ExecuteTool { tool: String, args: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -359,10 +360,20 @@ pub struct RuntimeCommandResult {
     pub message: String,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CommandApprovalState {
     #[default]
     Draft,
     AwaitingApproval,
     Approved,
+    Rejected,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CommandApprovalRecord {
+    pub id: String,
+    pub command: String, // Stringified for display
+    pub state: CommandApprovalState,
+    pub timestamp: String,
+    pub result: Option<String>,
 }

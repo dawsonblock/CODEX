@@ -20,7 +20,12 @@ pub fn MessageBubble(
             class: "message-wrap {role_class}",
             onclick: move |_| on_select.call(id.clone()),
             div { class: "message-bubble {selected_class}",
-                p { class: "message-content", "{message.content}" }
+                p { class: "message-content",
+                    "{message.content}"
+                    if message.role == ChatRole::Codex && message.runtime.is_none() && !message.content.is_empty() {
+                        span { class: "streaming-caret" }
+                    }
+                }
                 div { class: "message-meta",
                     span { "{message.timestamp}" }
                     if let Some(trace) = &message.runtime {

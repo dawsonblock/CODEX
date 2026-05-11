@@ -10,3 +10,4 @@ pub mod pressure_panel;
 pub mod proof_dashboard;
 pub mod runtime_status;
 pub mod settings_panel;
+pub mod command_queue;
