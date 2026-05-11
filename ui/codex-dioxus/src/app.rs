@@ -77,7 +77,7 @@ impl Theme {
 
 #[component]
 pub fn App() -> Element {
-    let mut theme = use_signal(|| Theme::Dark);
+    let mut theme = use_signal(|| Theme::Light);
     let mut time_range = use_signal(|| TimeRange::Current);
     let mut dashboard_state = use_signal(|| load_dashboard_state(TimeRange::Current));
     let mut settings = use_signal(UiSettings::default);
