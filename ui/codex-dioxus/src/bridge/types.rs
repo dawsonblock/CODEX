@@ -49,9 +49,9 @@ pub enum MetadataQuality {
 impl MetadataQuality {
     pub fn label(self) -> &'static str {
         match self {
-            Self::RuntimeGrounded => "RuntimeGrounded",
-            Self::PartiallyGrounded => "PartiallyGrounded",
-            Self::MockOnly => "MockOnly",
+            Self::RuntimeGrounded => "Runtime-grounded",
+            Self::PartiallyGrounded => "Partial metadata",
+            Self::MockOnly => "Mock metadata",
             Self::Unavailable => "Unavailable",
         }
     }

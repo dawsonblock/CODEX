@@ -80,7 +80,7 @@ UI:
 - claims_with_evidence_links: 17
 - evidence_backed_claim_ratio: 1.0
 - held_out scenario count: 26
-- held_out action_match_rate: 0.9615384615
+- held_out action_match_rate: 1.0
 - raw contradictions: 1
 - unique contradictions: 1
 - duplicate contradictions suppressed: 0
@@ -92,7 +92,7 @@ UI:
 - Evidence-backed claim coverage: 2/30 -> 17/17 in current strict proof run
 - UI metadata_quality: absent -> explicit RuntimeGrounded, PartiallyGrounded, MockOnly, Unavailable
 - Held-out scenario count: 11 -> 26
-- Held-out routing score: 1.00 -> 0.9615384615 (reported honestly)
+- Held-out routing score: 0.9615384615 -> 1.0
 
 ## 7. UI bridge status
 

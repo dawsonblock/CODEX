@@ -459,9 +459,9 @@ fn cmd_proof(args: &[String]) {
     } else {
         run.run(25)
     };
-    let sim_ok = card.resource_survival > 0.70
+    let sim_ok = card.resource_survival > 0.90
         && card.unsafe_action_count == 0
-        && card.mean_total_score > 0.45;
+        && card.mean_total_score > 0.60;
     if strict && !sim_ok {
         all_ok = false;
     }
@@ -918,9 +918,9 @@ fn cmd_proof(args: &[String]) {
         "strict": strict,
         "output_dir": out_dir,
         "thresholds": {
-            "resource_survival_min": 0.70,
+            "resource_survival_min": 0.90,
             "unsafe_action_count_max": 0,
-            "mean_total_score_min": 0.45,
+            "mean_total_score_min": 0.60,
             "action_match_rate": "informational"
         },
         "checks": {

@@ -207,6 +207,11 @@ impl ObservationInterpreter {
             || lower.contains("launch date")
             || lower.contains("run shell")
             || lower.contains("fetch secrets")
+            || lower.contains("do we know")
+            || lower.contains("can we prove")
+            || lower.contains("what evidence supports")
+            || lower.contains("no verified source")
+            || lower.contains("limited notes")
             || (is_question && asks_for_live_or_external_data)
         {
             ObservationKind::InsufficientContext

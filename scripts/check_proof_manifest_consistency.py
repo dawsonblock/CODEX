@@ -173,6 +173,13 @@ def main() -> int:
     print("\nChecking tool_policy_report.json vs proof_manifest.json ...")
     tool = tool_policy.get("counters", {})
     man_tool = manifest.get("tool_policy", {})
+    
+    # Strict boundary enforcement
+    if tool.get("real_external_executions") != 0:
+        failures.append("SECURITY_VIOLATION: real_external_executions must be exactly 0.")
+    if man_tool.get("real_external_executions") != 0:
+        failures.append("SECURITY_VIOLATION: manifest real_external_executions must be exactly 0.")
+
     for field in [
         "real_external_executions",
         "tools_blocked",
@@ -205,6 +212,30 @@ def main() -> int:
             allow_missing=(field in {"contradiction_pressure_peak", "pressure_decay_events", "pressure_reset_events"}),
         )
 
+    print("\nChecking evidence_claim_link_report.json vs proof_manifest.json ...")
+    ecl_path = CURRENT_DIR / "evidence_claim_link_report.json"
+    if ecl_path.exists():
+        ecl = load_json(ecl_path)
+        man_ecl = manifest.get("evidence_claim_link", {})
+        for field in [
+            "claims_asserted",
+            "claims_validated",
+            "claims_with_evidence_links",
+            "evidence_backed_claim_ratio",
+        ]:
+            field_check(failures, f"evidence_claim_link.{field}", ecl.get("counters", {}).get(field), man_ecl.get(field))
+
+    print("\nChecking claim_retrieval_report.json vs proof_manifest.json ...")
+    cr_path = CURRENT_DIR / "claim_retrieval_report.json"
+    if cr_path.exists():
+        cr = load_json(cr_path)
+        man_cr = manifest.get("claim_retrieval", {})
+        for field in [
+            "claims_retrieved",
+            "evidence_backed_claims_retrieved",
+        ]:
+            field_check(failures, f"claim_retrieval.{field}", cr.get("counters", {}).get(field), man_cr.get(field))
+
     print("\nChecking CURRENT_PROOF_SUMMARY.md stale markers ...")
     summary_text = SUMMARY_MD.read_text() if SUMMARY_MD.exists() else ""
     for marker in STALE_MARKERS:
@@ -212,6 +243,45 @@ def main() -> int:
             failures.append(f"STALE_MARKER_FOUND: {marker}")
         else:
             print(f"  OK  missing stale marker: {marker}")
+
+    print("\nChecking rust_strict_proof.log vs current JSON ...")
+    rust_log_path = REPO_ROOT / "artifacts/proof/verification/rust_strict_proof.log"
+    receipt_status_path = REPO_ROOT / "artifacts/proof/verification/RUST_STRICT_PROOF_RECEIPT_STATUS.md"
+    
+    if rust_log_path.exists():
+        log_text = rust_log_path.read_text()
+        
+        # Stale metric scan
+        if '"cycles": 28' in log_text and sim_score.get("cycles") == 15:
+            failures.append("RUST_LOG_STALE: found cycles: 28 but current is 15")
+        if '"event_count": 1132' in log_text and replay.get("event_count") == 541:
+            failures.append("RUST_LOG_STALE: found event_count: 1132 but current is 541")
+        if '"resource_survival": 0.802' in log_text and approx_equal(sim_score.get("resource_survival"), 0.974):
+            failures.append("RUST_LOG_STALE: found resource_survival: 0.8020")
+        if '"mean_total_score": 0.610595238' in log_text and approx_equal(sim_score.get("mean_total_score"), 0.6433333333333332):
+            failures.append("RUST_LOG_STALE: found mean_total_score: 0.6105952381")
+
+        is_historical = receipt_status_path.exists()
+        if not is_historical:
+            # Need to match current JSON exactly
+            for k, expected_v in [
+                ('"cycles":', sim_score.get("cycles")),
+                ('"event_count":', replay.get("event_count")),
+                ('"total_cycles":', replay_state.get("total_cycles")),
+                ('"resource_survival":', sim_score.get("resource_survival")),
+            ]:
+                if expected_v is not None:
+                    expected_str = str(expected_v)
+                    # format might be slightly different for floats, just check simple presence if float
+                    if isinstance(expected_v, float):
+                        expected_str = f"{expected_v:.3f}"[:4]
+                        if expected_str not in log_text:
+                            failures.append(f"RUST_LOG_MISMATCH: {k} missing expected value roughly {expected_str}")
+                    else:
+                        if f'{k} {expected_str}' not in log_text and f'{k} {expected_str},' not in log_text:
+                            failures.append(f"RUST_LOG_MISMATCH: expected {k} {expected_str}")
+        else:
+            print("  WARN rust_strict_proof.log is marked historical/pending. Skipping strict match.")
 
     if failures:
         print("\nFAIL: Consistency mismatches detected:")

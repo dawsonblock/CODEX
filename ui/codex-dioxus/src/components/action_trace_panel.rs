@@ -12,21 +12,32 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
         };
     };
 
-    let evidence_ids = if trace.evidence_ids.is_empty() {
+    let is_grounded = matches!(trace.metadata_quality, crate::bridge::types::MetadataQuality::RuntimeGrounded);
+
+    let evidence_ids = if trace.evidence_ids.is_empty() || !is_grounded {
         "not available in current runtime bridge".to_string()
     } else {
         trace.evidence_ids.join(", ")
     };
-    let claim_ids = if trace.claim_ids.is_empty() {
+    let evidence_hashes = if trace.evidence_hashes.is_empty() || !is_grounded {
+        "not available in current runtime bridge".to_string()
+    } else {
+        trace.evidence_hashes.join(", ")
+    };
+    let claim_ids = if trace.claim_ids.is_empty() || !is_grounded {
         "not available in current runtime bridge".to_string()
     } else {
         trace.claim_ids.join(", ")
     };
-    let contradiction_ids = if trace.contradiction_ids.is_empty() {
+    let contradiction_ids = if trace.contradiction_ids.is_empty() || !is_grounded {
         "not available in current runtime bridge".to_string()
     } else {
         trace.contradiction_ids.join(", ")
     };
+    
+    let audit_label = if is_grounded { "runtime audit ID" } else { "UI trace ID" };
+    let audit_id = trace.audit_id.unwrap_or_else(|| "none".to_string());
+
     let dominant_pressures = if trace.dominant_pressures.is_empty() {
         "not available in current runtime bridge".to_string()
     } else {
@@ -61,8 +72,10 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
                 li { "pressure_updates: {trace.pressure_updates}" }
                 li { "policy_bias_applications: {trace.policy_bias_applications}" }
                 li { "evidence_ids: {evidence_ids}" }
+                li { "evidence_hashes: {evidence_hashes}" }
                 li { "claim_ids: {claim_ids}" }
                 li { "contradiction_ids: {contradiction_ids}" }
+                li { "{audit_label}: {audit_id}" }
                 li { "dominant_pressures: {dominant_pressures}" }
                 li { "tool_policy_decision: {tool_policy}" }
                 li { "missing_evidence_reason: {missing_evidence}" }
