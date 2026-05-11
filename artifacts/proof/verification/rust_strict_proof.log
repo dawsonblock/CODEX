@@ -1,25 +1,3 @@
-   Compiling libc v0.2.186
-   Compiling num-traits v0.2.19
-   Compiling chrono v0.4.44
-   Compiling cpufeatures v0.2.17
-   Compiling getrandom v0.2.17
-   Compiling sha2 v0.10.9
-   Compiling rand_core v0.6.4
-   Compiling rand_chacha v0.3.1
-   Compiling rand v0.8.6
-   Compiling tools v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/tools)
-   Compiling runtime-core v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/runtime-core)
-   Compiling evidence v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/evidence)
-   Compiling modulation v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/modulation)
-   Compiling symbolic v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/symbolic)
-   Compiling memory v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/memory)
-   Compiling cognition v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/cognition)
-   Compiling gw-workspace v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/gw-workspace)
-   Compiling contradiction v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/contradiction)
-   Compiling simworld v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/simworld)
-   Compiling runtime-cli v0.1.0 (/Users/dawsonblock/CODEX-1/global-workspace-runtime-rs/crates/runtime-cli)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.51s
-     Running `target/debug/runtime-cli proof --strict --long-horizon --nl --out ../artifacts/proof/current`
 {
   "checks": {
     "action_schema": {
@@ -186,8 +164,8 @@
   "strict": true,
   "thresholds": {
     "action_match_rate": "informational",
-    "mean_total_score_min": 0.45,
-    "resource_survival_min": 0.7,
+    "mean_total_score_min": 0.6,
+    "resource_survival_min": 0.9,
     "unsafe_action_count_max": 0
   }
 }
