@@ -38,7 +38,7 @@ Toolchain: cargo 1.95.0, rustc 1.95.0
 - policy_bias_applications: 29
 - reasoning_audits: 31
 - audits_with_evidence_refs: 28
-- audits_with_claim_refs: 0
+- audits_with_claim_refs: 3
 - tools_executed: 1
 - tools_blocked: 1
 

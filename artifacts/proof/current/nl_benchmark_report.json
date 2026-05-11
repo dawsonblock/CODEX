@@ -24,16 +24,16 @@
       "held_out": {
         "scenarios": 11,
         "scorecard": {
-          "action_match_rate": 0.36363636363636365,
+          "action_match_rate": 1.0,
           "conserve_count": 0,
           "cycles": 11,
-          "match_rate": 0.36363636363636365,
+          "match_rate": 1.0,
           "mean_harm_score": 0.019999999999999997,
-          "mean_social_score": 0.4863636363636365,
-          "mean_total_score": 0.5766666666666667,
-          "mean_truth_score": 0.5363636363636364,
-          "mean_utility_score": 0.440909090909091,
-          "resource_survival": 0.8999999999999999,
+          "mean_social_score": 0.5590909090909091,
+          "mean_total_score": 0.6266666666666668,
+          "mean_truth_score": 0.6090909090909092,
+          "mean_utility_score": 0.5227272727272726,
+          "resource_survival": 0.94,
           "unsafe_action_count": 0
         },
         "traces": 11

@@ -34,6 +34,7 @@ impl RuntimeClient {
             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
                 message: "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string(),
                 selected_action: "defer_insufficient_evidence".to_string(),
+                bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled.label().to_string(),
                 trace: RuntimeTraceSummary {
                     selected_action: "defer_insufficient_evidence".to_string(),
                     dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
@@ -82,12 +83,16 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
     RuntimeChatResponse {
         message,
         selected_action: selected_action.clone(),
+        bridge_mode: RuntimeBridgeMode::LocalCodexRuntimeReadOnly
+            .label()
+            .to_string(),
         trace: RuntimeTraceSummary {
             selected_action,
             evidence_ids: vec![],
             evidence_hashes: vec![],
             claim_ids: vec![],
             contradiction_ids: vec![],
+            audit_id: None,
             dominant_pressures,
             pressure_updates: 1,
             policy_bias_applications: 0,
@@ -266,12 +271,14 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
     RuntimeChatResponse {
         message,
         selected_action: action.to_string(),
+        bridge_mode: RuntimeBridgeMode::MockUiMode.label().to_string(),
         trace: RuntimeTraceSummary {
             selected_action: action.to_string(),
             evidence_ids: vec![],
             evidence_hashes: vec![],
             claim_ids: vec![],
             contradiction_ids: vec![],
+            audit_id: None,
             dominant_pressures: pressures.into_iter().map(ToString::to_string).collect(),
             pressure_updates: 1,
             policy_bias_applications: if policy.is_some() { 1 } else { 0 },

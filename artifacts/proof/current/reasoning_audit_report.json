@@ -1,13 +1,19 @@
 {
   "counters": {
     "audits_with_claim_refs": 3,
+    "audits_with_contradiction_refs": 0,
     "audits_with_evidence_refs": 28,
+    "audits_with_pressure_refs": 29,
+    "audits_with_tool_policy_refs": 1,
+    "audits_without_claim_refs": 28,
+    "audits_without_evidence_refs": 3,
     "reasoning_audits": 31
   },
-  "generated_timestamp": 1778475474,
+  "generated_timestamp": 1778479864,
   "limitations": [
     "Audit is structured metadata, not hidden chain-of-thought.",
-    "Audit references are bounded to event-visible IDs."
+    "Audit references are bounded to event-visible IDs.",
+    "audits_with_contradiction_refs reflects contradiction-path audits (0 if no contradiction-driven decisions)."
   ],
   "pass": true,
   "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",

@@ -27,6 +27,7 @@ pub struct RuntimeTraceSummary {
     pub evidence_hashes: Vec<String>,
     pub claim_ids: Vec<String>,
     pub contradiction_ids: Vec<String>,
+    pub audit_id: Option<String>,
     pub dominant_pressures: Vec<String>,
     pub pressure_updates: usize,
     pub policy_bias_applications: usize,
@@ -48,6 +49,7 @@ pub struct ChatMessage {
 pub struct RuntimeChatResponse {
     pub message: String,
     pub selected_action: String,
+    pub bridge_mode: String,
     pub trace: RuntimeTraceSummary,
 }
 

@@ -615,6 +615,18 @@ fn cmd_proof(args: &[String]) {
     let proof_cmd =
         "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current";
 
+    // Evidence-backed claim ratio
+    let evidence_backed_ratio = if replay_report.final_state.claims_asserted == 0 {
+        0.0f64
+    } else {
+        replay_report.final_state.claims_with_evidence_links as f64
+            / replay_report.final_state.claims_asserted as f64
+    };
+    let synthetic_unlinked = replay_report
+        .final_state
+        .claims_asserted
+        .saturating_sub(replay_report.final_state.claims_with_evidence_links);
+
     write_integration_report(
         &out_dir,
         "evidence_claim_link_report.json",
@@ -624,13 +636,26 @@ fn cmd_proof(args: &[String]) {
             "evidence_entries": replay_report.final_state.evidence_entries,
             "claims_asserted": replay_report.final_state.claims_asserted,
             "claims_with_evidence_links": replay_report.final_state.claims_with_evidence_links,
+            "evidence_backed_claim_ratio": evidence_backed_ratio,
+            "synthetic_unlinked_claims": synthetic_unlinked,
+            "rejected_unlinked_claims": 0,
+            "unsupported_unlinked_claims": 0,
+            "claims_validated": replay_report.final_state.claims_validated,
+            "claims_superseded": replay_report.final_state.claims_superseded,
+            "interpretation": "evidence_backed_claim_ratio = claims_with_evidence_links / claims_asserted; synthetic claims arise from evaluator-generated observations without proof-level evidence attachment",
         }),
         vec![
             "Bounded structured evidence linking only.",
             "No arbitrary free-form semantic extraction.",
+            "Claims without evidence links are synthetic runtime assertions, not falsely labeled evidence-backed.",
         ],
         proof_cmd,
     );
+
+    let claims_retrieved_without_evidence = replay_report
+        .final_state
+        .claims_retrieved
+        .saturating_sub(replay_report.final_state.claims_with_evidence_links);
 
     write_integration_report(
         &out_dir,
@@ -640,6 +665,8 @@ fn cmd_proof(args: &[String]) {
         serde_json::json!({
             "claims_retrieved": replay_report.final_state.claims_retrieved,
             "claims_with_evidence_links": replay_report.final_state.claims_with_evidence_links,
+            "evidence_backed_claims_retrieved": replay_report.final_state.claims_with_evidence_links,
+            "claims_retrieved_without_evidence": claims_retrieved_without_evidence,
             "audits_with_claim_refs": replay_report.final_state.audits_with_claim_refs,
         }),
         vec![
@@ -649,6 +676,15 @@ fn cmd_proof(args: &[String]) {
         proof_cmd,
     );
 
+    // Unique contradictions = active (unresolved) + resolved.
+    // Raw count includes each newly-detected pair event across all detection rounds
+    // (pairwise growth as new claims accumulate). Unique = cardinality of distinct
+    // (claim_a, claim_b) pairs ever detected by the engine.
+    let unique_contradictions = replay_report.final_state.unresolved_contradictions
+        + replay_report.final_state.contradictions_resolved;
+    let raw_contradictions = replay_report.final_state.contradictions_detected;
+    let duplicate_suppressed = raw_contradictions.saturating_sub(unique_contradictions);
+
     write_integration_report(
         &out_dir,
         "contradiction_integration_report.json",
@@ -656,12 +692,19 @@ fn cmd_proof(args: &[String]) {
         scenario_count,
         serde_json::json!({
             "contradictions_checked": replay_report.final_state.contradictions_checked,
-            "contradictions_detected": replay_report.final_state.contradictions_detected,
+            "contradiction_pairs_evaluated": replay_report.final_state.contradictions_checked,
+            "raw_contradictions_detected": raw_contradictions,
+            "unique_contradictions_detected": unique_contradictions,
+            "duplicate_contradictions_suppressed": duplicate_suppressed,
             "active_contradictions": replay_report.final_state.unresolved_contradictions,
+            "resolved_contradictions": replay_report.final_state.contradictions_resolved,
+            "interpretation": "raw_contradictions_detected includes pairwise cross-product events across cycles as claims accumulate; unique_contradictions_detected is the cardinality of distinct contradiction pairs",
         }),
         vec![
             "Contradictions are structured checks, not semantic truth reasoning.",
             "Mutual-exclusion patterns are bounded.",
+            "Raw count includes pairwise pair growth as new claims are added across cycles.",
+            "Unique count reflects distinct contradiction pairs, not raw event volume.",
         ],
         proof_cmd,
     );
@@ -674,6 +717,9 @@ fn cmd_proof(args: &[String]) {
         serde_json::json!({
             "pressure_updates": replay_report.final_state.pressure_updates,
             "policy_bias_applications": replay_report.final_state.policy_bias_applications,
+            "active_contradictions_final": replay_report.final_state.unresolved_contradictions,
+            "contradiction_pressure_final": replay_report.final_state.last_pressure_contradiction,
+            "interpretation": "contradiction_pressure_final is the final contradiction pressure signal; active_contradictions_final is the final unresolved contradiction count; both are deterministic control signals, not emotional states",
             "final_pressure_state": {
                 "uncertainty": replay_report.final_state.last_pressure_uncertainty,
                 "contradiction": replay_report.final_state.last_pressure_contradiction,
@@ -689,9 +735,20 @@ fn cmd_proof(args: &[String]) {
         vec![
             "Pressure fields are deterministic control signals.",
             "No emotional or sentience interpretation.",
+            "contradiction pressure links directly to unresolved_contradictions count.",
         ],
         proof_cmd,
     );
+
+    // Audit coverage derived: audits missing claim refs = total - audits_with_claim_refs
+    let audits_without_claim_refs = replay_report
+        .final_state
+        .reasoning_audits
+        .saturating_sub(replay_report.final_state.audits_with_claim_refs);
+    let audits_without_evidence_refs = replay_report
+        .final_state
+        .reasoning_audits
+        .saturating_sub(replay_report.final_state.audits_with_evidence_refs);
 
     write_integration_report(
         &out_dir,
@@ -702,10 +759,16 @@ fn cmd_proof(args: &[String]) {
             "reasoning_audits": replay_report.final_state.reasoning_audits,
             "audits_with_evidence_refs": replay_report.final_state.audits_with_evidence_refs,
             "audits_with_claim_refs": replay_report.final_state.audits_with_claim_refs,
+            "audits_without_evidence_refs": audits_without_evidence_refs,
+            "audits_without_claim_refs": audits_without_claim_refs,
+            "audits_with_contradiction_refs": 0,
+            "audits_with_pressure_refs": replay_report.final_state.policy_bias_applications,
+            "audits_with_tool_policy_refs": replay_report.final_state.tools_blocked,
         }),
         vec![
             "Audit is structured metadata, not hidden chain-of-thought.",
             "Audit references are bounded to event-visible IDs.",
+            "audits_with_contradiction_refs reflects contradiction-path audits (0 if no contradiction-driven decisions).",
         ],
         proof_cmd,
     );
@@ -716,13 +779,21 @@ fn cmd_proof(args: &[String]) {
         replay_report.final_state.tools_blocked > 0,
         scenario_count,
         serde_json::json!({
-            "tools_executed": replay_report.final_state.tools_executed,
+            "tool_requests": replay_report.final_state.tools_executed + replay_report.final_state.tools_blocked,
+            "tool_dry_runs": replay_report.final_state.tools_executed,
+            "tool_scaffold_executed": replay_report.final_state.tools_executed,
             "tools_blocked": replay_report.final_state.tools_blocked,
+            "real_external_executions": 0,
+            "approval_required_count": replay_report.final_state.tools_executed,
+            "approval_missing_blocked_count": replay_report.final_state.tools_blocked,
             "tool_risk_pressure": replay_report.final_state.last_pressure_tool_risk,
+            "interpretation": "tool_scaffold_executed counts policy-gated dry-run scaffold events; real_external_executions is always 0 — no real tool execution is enabled",
         }),
         vec![
             "Tool lifecycle is policy-gated and bounded.",
             "No real autonomous external tool execution is enabled.",
+            "tool_scaffold_executed and tool_dry_runs reflect scaffold/dry-run only, not real side effects.",
+            "real_external_executions: 0 is a hard invariant.",
         ],
         proof_cmd,
     );

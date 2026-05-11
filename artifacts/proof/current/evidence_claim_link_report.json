@@ -1,13 +1,21 @@
 {
   "counters": {
     "claims_asserted": 30,
+    "claims_superseded": 0,
+    "claims_validated": 29,
     "claims_with_evidence_links": 2,
-    "evidence_entries": 30
+    "evidence_backed_claim_ratio": 0.06666666666666667,
+    "evidence_entries": 30,
+    "interpretation": "evidence_backed_claim_ratio = claims_with_evidence_links / claims_asserted; synthetic claims arise from evaluator-generated observations without proof-level evidence attachment",
+    "rejected_unlinked_claims": 0,
+    "synthetic_unlinked_claims": 28,
+    "unsupported_unlinked_claims": 0
   },
-  "generated_timestamp": 1778475474,
+  "generated_timestamp": 1778479864,
   "limitations": [
     "Bounded structured evidence linking only.",
-    "No arbitrary free-form semantic extraction."
+    "No arbitrary free-form semantic extraction.",
+    "Claims without evidence links are synthetic runtime assertions, not falsely labeled evidence-backed."
   ],
   "pass": true,
   "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",

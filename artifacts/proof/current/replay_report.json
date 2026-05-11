@@ -1,11 +1,11 @@
 {
-  "event_count": 1123,
+  "event_count": 1132,
   "replay_passes": true,
   "is_idempotent": true,
   "final_state": {
     "cycle_id": 36,
     "total_cycles": 28,
-    "resources": 0.942,
+    "resources": 0.8219999999999998,
     "conserve_actions": 0,
     "unsafe_action_count": 0,
     "false_confidence_count": 0,
@@ -28,7 +28,7 @@
     "last_memory_top_key": "humanity:cooperation",
     "last_memory_top_value": "People often resolve conflict through clarification, repair, mutual aid, and shared rules.",
     "candidates_generated": 280,
-    "candidates_rejected": 56,
+    "candidates_rejected": 65,
     "last_rejection": [
       "internal_diagnostic",
       "internal_diagnostic_must_not_be_user_facing"
@@ -44,19 +44,19 @@
     "compression_applied": 0,
     "last_compression_ratio": 0.0,
     "last_resonance_score": 0.0,
-    "total_score_sum": 107.53,
+    "total_score_sum": 102.58000000000003,
     "total_score_count": 28,
     "last_total_score": 0.75,
     "scored_cycles": 28,
-    "social_harmony": 0.5854028598616843,
-    "truth_score_sum": 17.6,
+    "social_harmony": 0.48810351392418433,
+    "truth_score_sum": 16.400000000000002,
     "kindness_score_sum": 13.440000000000008,
-    "social_score_sum": 16.199999999999992,
-    "logic_score_sum": 17.6,
-    "utility_score_sum": 15.250000000000002,
+    "social_score_sum": 14.999999999999991,
+    "logic_score_sum": 16.400000000000002,
+    "utility_score_sum": 13.900000000000004,
     "harm_score_sum": 0.5600000000000002,
     "outcome_count": 28,
-    "matched_expected_count": 21,
+    "matched_expected_count": 28,
     "archive_commits": 28,
     "last_frame_id": "frame_27",
     "evidence_entries": 30,
@@ -77,7 +77,7 @@
     "policy_bias_applications": 29,
     "last_pressure_safety": 0.5,
     "last_pressure_uncertainty": 1.0,
-    "last_pressure_resource": 0.05800000000000005,
+    "last_pressure_resource": 0.17800000000000016,
     "last_pressure_contradiction": 0.0,
     "last_pressure_evidence_gap": 0.0,
     "last_pressure_social_risk": 0.0,
@@ -110,7 +110,7 @@
     {
       "name": "resources_valid",
       "passed": true,
-      "detail": "resources=0.9420"
+      "detail": "resources=0.8220"
     }
   ]
 }

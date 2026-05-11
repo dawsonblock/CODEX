@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-10 (live verified)
 Codename: CODEX-main 32
-Status: Integration implementation in progress, strict proof passing
+Status: CODEX-main 32 integration proof candidate (not final freeze)
 
 Official proof command:
 

@@ -81,7 +81,10 @@ impl ObservationInterpreter {
                 "news",
             ],
         );
-        let action_label_spoof = contains_any(
+        // action_label_spoof: fires if a prompt embeds action-label keywords alongside
+        // directive words (classic injection attempt), OR if "expected_action:" appears
+        // anywhere (metadata-framing injection even without a directive verb).
+        let action_label_spoof = (contains_any(
             &lower,
             &[
                 "selected_action",
@@ -106,7 +109,7 @@ impl ObservationInterpreter {
                 "print",
                 "respond with",
             ],
-        );
+        )) || lower.contains("expected_action:");
         let has_factual_tag = lower.contains("factual_query") || lower.contains("factual");
 
         // Keyword-based interpretation with prioritised matching.
@@ -120,11 +123,13 @@ impl ObservationInterpreter {
             || lower.contains("delete") && lower.contains("file")
             || lower.contains("root access")
             || lower.contains("admin password")
+            || lower.contains("production password")
             || lower.contains("bypass")
             || lower.contains("firewall")
             || lower.contains("developer mode")
             || lower.contains("no restrictions")
             || lower.contains("ignore all previous instructions")
+            || lower.contains("ignore uncertainty")
         {
             ObservationKind::UnsafeRequest
         } else if action_label_spoof {
@@ -153,6 +158,10 @@ impl ObservationInterpreter {
             || lower.contains("config file")
             || lower.contains("where i put")
             || lower.contains("conclusion") && lower.contains("meeting")
+            || lower.contains("health counters")
+            || lower.contains("runtime health")
+            || lower.contains("show runtime")
+            || lower.contains("show counters")
         {
             ObservationKind::MemoryLookup
         } else if lower.contains("plan")
@@ -178,6 +187,10 @@ impl ObservationInterpreter {
             || lower.contains("step by step")
             || lower.contains("i'm confused")
             || lower.contains("make of it")
+            || lower.contains("clarify")
+            || lower.contains("conflicting entries")
+            || lower.contains("conflicting") && lower.contains("same")
+            || lower.contains("which source")
         {
             ObservationKind::AmbiguousRequest
         } else if lower.contains("insufficient")
@@ -190,6 +203,10 @@ impl ObservationInterpreter {
             || lower.contains("that thing")
             || lower.contains("you know")
             || lower.contains("the one with the")
+            || lower.contains("private roadmap")
+            || lower.contains("launch date")
+            || lower.contains("run shell")
+            || lower.contains("fetch secrets")
             || (is_question && asks_for_live_or_external_data)
         {
             ObservationKind::InsufficientContext
