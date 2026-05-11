@@ -1,6 +1,6 @@
 {
   "codename": "CODEX-main 32",
-  "package_status": "Final Freeze Candidate",
+  "package_status": "Integration Proof Candidate",
   "verified_at": "2026-05-11T00:00:00Z",
   "python_verified": true,
   "rust_verified": true,

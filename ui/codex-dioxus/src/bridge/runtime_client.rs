@@ -7,6 +7,47 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc::UnboundedSender;
 
+// ---------------------------------------------------------------------------
+// Runtime-event-loop provider counters
+// These are always compiled in (not feature-gated) so the default build can
+// confirm all counters remain 0. Incremented only inside feature-gated code.
+// ---------------------------------------------------------------------------
+static PROVIDER_LOCAL_REQUESTS: AtomicU64 = AtomicU64::new(0);
+static PROVIDER_LOCAL_SUCCESSES: AtomicU64 = AtomicU64::new(0);
+static PROVIDER_LOCAL_FAILURES: AtomicU64 = AtomicU64::new(0);
+static PROVIDER_LOCAL_DISABLED_BLOCKS: AtomicU64 = AtomicU64::new(0);
+// Cloud/external are always 0 — no cloud provider execution exists in any build.
+static PROVIDER_CLOUD_REQUESTS: AtomicU64 = AtomicU64::new(0);
+static PROVIDER_EXTERNAL_REQUESTS: AtomicU64 = AtomicU64::new(0);
+
+/// Live snapshot of provider counters for the UI and provider_policy_report.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ProviderCounterSnapshot {
+    pub local_provider_requests: u64,
+    pub local_provider_successes: u64,
+    pub local_provider_failures: u64,
+    pub local_provider_disabled_blocks: u64,
+    pub cloud_provider_requests: u64,
+    pub external_provider_requests: u64,
+    pub local_provider_feature_enabled: bool,
+}
+
+/// Returns a point-in-time snapshot of all provider counters.
+/// Safe to call from any thread at any time.
+pub fn provider_counters_snapshot() -> ProviderCounterSnapshot {
+    ProviderCounterSnapshot {
+        local_provider_requests: PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed),
+        local_provider_successes: PROVIDER_LOCAL_SUCCESSES.load(Ordering::Relaxed),
+        local_provider_failures: PROVIDER_LOCAL_FAILURES.load(Ordering::Relaxed),
+        local_provider_disabled_blocks: PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed),
+        cloud_provider_requests: PROVIDER_CLOUD_REQUESTS.load(Ordering::Relaxed),
+        external_provider_requests: PROVIDER_EXTERNAL_REQUESTS.load(Ordering::Relaxed),
+        local_provider_feature_enabled: cfg!(feature = "ui-local-providers"),
+    }
+}
+
+
+
 #[derive(Debug, Clone)]
 pub struct RuntimeTransport {
     disabled: bool,
@@ -76,23 +117,37 @@ impl RuntimeClient {
             #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalOllamaProvider => {
                 if !self.provider_gate {
+                    PROVIDER_LOCAL_DISABLED_BLOCKS.fetch_add(1, Ordering::Relaxed);
                     let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Ollama.".to_string();
                     let _ = sender.send(err.clone());
                     return RuntimeChatResponse::with_error(err);
                 }
+                PROVIDER_LOCAL_REQUESTS.fetch_add(1, Ordering::Relaxed);
                 let mut resp = ollama_runtime_stream(input, "llama3", sender).await;
                 resp.trace.provider_executions_local += 1;
+                if resp.trace.metadata_quality == MetadataQuality::Unavailable {
+                    PROVIDER_LOCAL_FAILURES.fetch_add(1, Ordering::Relaxed);
+                } else {
+                    PROVIDER_LOCAL_SUCCESSES.fetch_add(1, Ordering::Relaxed);
+                }
                 resp
             }
             #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalTurboquantProvider => {
                 if !self.provider_gate {
+                    PROVIDER_LOCAL_DISABLED_BLOCKS.fetch_add(1, Ordering::Relaxed);
                     let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Turboquant.".to_string();
                     let _ = sender.send(err.clone());
                     return RuntimeChatResponse::with_error(err);
                 }
+                PROVIDER_LOCAL_REQUESTS.fetch_add(1, Ordering::Relaxed);
                 let mut resp = ollama_runtime_stream(input, "turboquant", sender).await;
                 resp.trace.provider_executions_local += 1;
+                if resp.trace.metadata_quality == MetadataQuality::Unavailable {
+                    PROVIDER_LOCAL_FAILURES.fetch_add(1, Ordering::Relaxed);
+                } else {
+                    PROVIDER_LOCAL_SUCCESSES.fetch_add(1, Ordering::Relaxed);
+                }
                 resp
             }
             RuntimeBridgeMode::ExternalProviderDisabled => {
@@ -799,5 +854,54 @@ mod tests {
             out.trace.evidence_hashes.len(),
             "evidence_ids and evidence_hashes must be paired"
         );
+    }
+
+    #[test]
+    fn provider_counters_are_zero_in_default_build() {
+        // In the default build (no ui-local-providers feature), no provider
+        // code paths are reachable. Assert that live atomic counters confirm this.
+        let snap = provider_counters_snapshot();
+        assert_eq!(
+            snap.cloud_provider_requests, 0,
+            "cloud_provider_requests must always be 0"
+        );
+        assert_eq!(
+            snap.external_provider_requests, 0,
+            "external_provider_requests must always be 0"
+        );
+        // In default build: local provider feature is disabled.
+        #[cfg(not(feature = "ui-local-providers"))]
+        {
+            assert!(
+                !snap.local_provider_feature_enabled,
+                "local_provider_feature_enabled must be false in default build"
+            );
+            assert_eq!(
+                snap.local_provider_requests, 0,
+                "local_provider_requests must be 0 in default build"
+            );
+            assert_eq!(
+                snap.local_provider_successes, 0,
+                "local_provider_successes must be 0 in default build"
+            );
+            assert_eq!(
+                snap.local_provider_failures, 0,
+                "local_provider_failures must be 0 in default build"
+            );
+            assert_eq!(
+                snap.local_provider_disabled_blocks, 0,
+                "local_provider_disabled_blocks must be 0 in default build"
+            );
+        }
+        // In feature build: feature is enabled but counters start at 0.
+        #[cfg(feature = "ui-local-providers")]
+        {
+            assert!(
+                snap.local_provider_feature_enabled,
+                "local_provider_feature_enabled must be true in feature build"
+            );
+            // We don't assert specific counts here since other tests may have
+            // exercised the gated path — just confirm no cloud/external leakage.
+        }
     }
 }

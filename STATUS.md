@@ -2,7 +2,11 @@
 
 Last updated: 2026-05-11 (live verified)
 Codename: CODEX-main 32
-Status: CODEX-main 32 Final Freeze Candidate
+Status: CODEX-main 32 Integration Proof Candidate
+
+Note: NOT final freeze. Rust/UI verification is receipt-backed (not independently re-run in this
+environment). Provider counters are defined but not yet runtime-event-loop backed. See
+artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md for full limitations.
 
 Official proof command:
 
