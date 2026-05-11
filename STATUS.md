@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-11 (live verified)
 Codename: CODEX-main 32
-Status: CODEX-main 32 integration proof candidate (not final freeze)
+Status: CODEX-main 32 Final Freeze Candidate
 
 Official proof command:
 
@@ -54,7 +54,7 @@ Rust verification:
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
-- held_out: 26 scenarios, action_match_rate 0.9615384615
+- held_out: 26 scenarios, action_match_rate 1.00
 - adversarial: 2 scenarios, action_match_rate 1.00
 
 ## Expanded Proof Artifacts
