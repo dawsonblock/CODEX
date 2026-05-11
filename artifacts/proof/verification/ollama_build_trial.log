@@ -1,0 +1,11 @@
+   Compiling runtime-core v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/runtime-core)
+   Compiling evidence v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/evidence)
+   Compiling modulation v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/modulation)
+   Compiling symbolic v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/symbolic)
+   Compiling cognition v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/cognition)
+   Compiling memory v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/memory)
+   Compiling gw-workspace v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/gw-workspace)
+   Compiling contradiction v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/contradiction)
+   Compiling simworld v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/simworld)
+   Compiling runtime-cli v0.1.0 (/Users/dawsonblock/CODEX/global-workspace-runtime-rs/crates/runtime-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.00s
