@@ -280,6 +280,29 @@ pub struct DashboardLoadResult {
     pub errors: Vec<String>,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn action_schema_is_fixed_to_ten() {
+        assert_eq!(ACTION_SCHEMA.len(), 10);
+    }
+
+    #[test]
+    fn runtime_bridge_mode_labels_include_read_only_mode() {
+        assert_eq!(RuntimeBridgeMode::MockUiMode.label(), "mock UI mode");
+        assert_eq!(
+            RuntimeBridgeMode::LocalCodexRuntimeReadOnly.label(),
+            "local CODEX runtime mode (read-only)"
+        );
+        assert_eq!(
+            RuntimeBridgeMode::ExternalProviderDisabled.label(),
+            "external provider mode (disabled)"
+        );
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuntimeCommand {
     RefreshProofState,

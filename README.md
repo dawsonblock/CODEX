@@ -157,6 +157,28 @@ Proof artifacts land in `artifacts/proof/current/`:
 
 See `artifacts/proof/README.md` for full artifact descriptions and `artifacts/proof/CURRENT_PROOF_SUMMARY.md` for current metrics.
 
+## Dioxus chat shell
+
+The desktop UI shell is in `ui/codex-dioxus/`. It is bounded to visualization,
+trace inspection, and safe bridge modes:
+
+- `mock UI mode` — deterministic mock routing in UI bridge
+- `local CODEX runtime mode (read-only)` — in-process `runtime-core` selection only
+- `external provider mode (disabled)` — explicitly disabled provider execution path
+
+The UI does not enable real autonomous external tool execution.
+
+### UI verification matrix
+
+```bash
+cd ui/codex-dioxus
+cargo test
+
+cd ../global-workspace-runtime-rs
+cargo test -p runtime-core
+cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
+```
+
 ## Memory & archive
 
 - **JsonlArchiveBackend** — Default. Writes standard JSONL to `.gwlog` files.
