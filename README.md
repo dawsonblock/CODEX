@@ -125,9 +125,9 @@ the resulting action against `expected_action` — but `expected_action` is
 > action_match_rate proves deterministic action routing over the current
 > scenario set, not broad natural-language reasoning. The current 28-scenario
 > NL diagnostic benchmark includes 15 curated, 11 held-out, and 2 adversarial
-> scenarios. Curated/adversarial routing is strong, while held-out routing is
-> weaker, which exposes generalization limits. This remains diagnostic keyword/
-> pattern routing, not broad natural-language reasoning.
+> scenarios. Current routing scores 1.00 across those sets, but this remains
+> bounded diagnostic routing on a fixed benchmark, not broad natural-language
+> reasoning.
 
 ## Proof system
 

@@ -22,6 +22,21 @@ Only this command is authoritative for artifacts in artifacts/proof/current.
 - reasoning_audit_report.json
 - tool_policy_report.json
 
+## Current Snapshot (CODEX-main 32)
+
+- Package status: integration proof candidate (not final freeze)
+- SimWorld cycles: 28
+- resource_survival: 0.8020
+- mean_total_score: 0.6105952381
+- action_match_rate: 1.0 (informational)
+- replay event_count: 1132
+- held_out action_match_rate: 1.00
+- raw_contradictions_detected: 326
+- unique_contradictions_detected: 1
+- duplicate_contradictions_suppressed: 325
+- real_external_executions: 0
+- audits_with_claim_refs: 3
+
 ## Report Contract
 
 Each integration report includes:

@@ -718,8 +718,11 @@ fn cmd_proof(args: &[String]) {
             "pressure_updates": replay_report.final_state.pressure_updates,
             "policy_bias_applications": replay_report.final_state.policy_bias_applications,
             "active_contradictions_final": replay_report.final_state.unresolved_contradictions,
+            "contradiction_pressure_peak": serde_json::Value::Null,
             "contradiction_pressure_final": replay_report.final_state.last_pressure_contradiction,
-            "interpretation": "contradiction_pressure_final is the final contradiction pressure signal; active_contradictions_final is the final unresolved contradiction count; both are deterministic control signals, not emotional states",
+            "pressure_decay_events": serde_json::Value::Null,
+            "pressure_reset_events": serde_json::Value::Null,
+            "interpretation": "contradiction pressure is a transient control signal that may decay/reset after handling; active_contradictions_final reports unresolved structured contradictions separately; both are deterministic control signals, not emotional states",
             "final_pressure_state": {
                 "uncertainty": replay_report.final_state.last_pressure_uncertainty,
                 "contradiction": replay_report.final_state.last_pressure_contradiction,
@@ -735,7 +738,8 @@ fn cmd_proof(args: &[String]) {
         vec![
             "Pressure fields are deterministic control signals.",
             "No emotional or sentience interpretation.",
-            "contradiction pressure links directly to unresolved_contradictions count.",
+            "Contradiction pressure is transient and may decay/reset after handling; unresolved contradictions are reported separately.",
+            "contradiction_pressure_peak / pressure_decay_events / pressure_reset_events are reserved fields and remain null until explicit replay counters are added.",
         ],
         proof_cmd,
     );

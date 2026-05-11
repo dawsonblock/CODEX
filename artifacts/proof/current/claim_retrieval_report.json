@@ -6,7 +6,7 @@
     "claims_with_evidence_links": 2,
     "evidence_backed_claims_retrieved": 2
   },
-  "generated_timestamp": 1778479864,
+  "generated_timestamp": 1778485348,
   "limitations": [
     "Retrieval is bounded lexical/structured lookup.",
     "Does not prove broad natural-language reasoning."

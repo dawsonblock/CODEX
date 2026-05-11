@@ -49,7 +49,7 @@ action_match_rate remains informational.
 
 - NL benchmark demonstrates bounded routing behavior over this diagnostic set.
 - Contradiction integration demonstrates structured contradiction handling only.
-- Pressure reports represent deterministic control signals only.
+- Pressure reports represent deterministic control signals only; contradiction pressure may decay/reset while unresolved contradiction counters are tracked separately.
 - Reasoning audit reports are structured metadata, not hidden chain-of-thought.
 - Tool policy reports do not imply autonomous external execution safety.
 

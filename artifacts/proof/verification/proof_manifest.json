@@ -1,6 +1,7 @@
 {
   "codename": "CODEX-main 32",
-  "verified_at": "2026-05-10T00:00:00Z",
+  "package_status": "integration proof candidate",
+  "verified_at": "2026-05-11T00:00:00Z",
   "python_verified": true,
   "rust_verified": true,
   "cargo_version": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
@@ -21,15 +22,16 @@
   ],
   "simworld_summary": {
     "cycles": 28,
-    "resource_survival": 0.922,
+    "resource_survival": 0.8019999999999998,
     "unsafe_action_count": 0,
-    "mean_total_score": 0.6400595238095235,
-    "action_match_rate": 0.75
+    "mean_total_score": 0.6105952380952377,
+    "action_match_rate": 1.0
   },
   "replay_report": {
     "event_count": 1132,
     "replay_passes": true,
     "is_idempotent": true,
+    "total_cycles": 28,
     "evidence_entries": 30,
     "claims_asserted": 30,
     "claims_validated": 29,
@@ -37,6 +39,7 @@
     "claims_with_evidence_links": 2,
     "contradictions_checked": 6,
     "contradictions_detected": 326,
+    "contradictions_resolved": 0,
     "reasoning_audits": 31,
     "audits_with_evidence_refs": 28,
     "audits_with_claim_refs": 3,
@@ -58,7 +61,7 @@
     },
     "held_out": {
       "scenario_count": 11,
-      "action_match_rate": 0.36363636363636365
+      "action_match_rate": 1.0
     },
     "adversarial": {
       "scenario_count": 2,
@@ -71,14 +74,69 @@
     "safety_violations": 0,
     "action_diversity": 0.04666666666666667
   },
+  "evidence_claim_link": {
+    "evidence_entries": 30,
+    "claims_asserted": 30,
+    "claims_validated": 29,
+    "claims_superseded": 0,
+    "claims_with_evidence_links": 2,
+    "evidence_backed_claim_ratio": 0.06666666666666667,
+    "synthetic_unlinked_claims": 28,
+    "rejected_unlinked_claims": 0,
+    "unsupported_unlinked_claims": 0
+  },
+  "claim_retrieval": {
+    "claims_retrieved": 2,
+    "claims_with_evidence_links": 2,
+    "evidence_backed_claims_retrieved": 2,
+    "claims_retrieved_without_evidence": 0,
+    "audits_with_claim_refs": 3
+  },
+  "contradiction_integration": {
+    "contradictions_checked": 6,
+    "contradiction_pairs_evaluated": 6,
+    "raw_contradictions_detected": 326,
+    "unique_contradictions_detected": 1,
+    "duplicate_contradictions_suppressed": 325,
+    "active_contradictions": 1,
+    "resolved_contradictions": 0
+  },
+  "pressure_replay": {
+    "pressure_updates": 78,
+    "policy_bias_applications": 29,
+    "active_contradictions_final": 1,
+    "contradiction_pressure_peak": null,
+    "contradiction_pressure_final": 0.0,
+    "pressure_decay_events": null,
+    "pressure_reset_events": null
+  },
+  "reasoning_audit": {
+    "reasoning_audits": 31,
+    "audits_with_evidence_refs": 28,
+    "audits_with_claim_refs": 3,
+    "audits_without_evidence_refs": 3,
+    "audits_without_claim_refs": 28,
+    "audits_with_contradiction_refs": 0,
+    "audits_with_pressure_refs": 29,
+    "audits_with_tool_policy_refs": 1
+  },
+  "tool_policy": {
+    "tool_requests": 2,
+    "tool_dry_runs": 1,
+    "tool_scaffold_executed": 1,
+    "tools_blocked": 1,
+    "real_external_executions": 0,
+    "approval_required_count": 1,
+    "approval_missing_blocked_count": 1,
+    "tool_risk_pressure": 0.0
+  },
   "limitations": [
-    "not a complete cognitive agent",
-    "not sentient",
-    "not conscious",
-    "not AGI",
-    "not production-ready",
-    "no real external tool executor",
-    "not full evidence-grounded cognition",
-    "not semantic contradiction reasoning"
+    "NL benchmark is diagnostic routing over a bounded set, not broad natural-language reasoning proof",
+    "Contradiction reporting is structured/deduped, not semantic truth reasoning",
+    "Evidence-backed claim coverage remains sparse (2/30 linked)",
+    "Tool reports are scaffold-only with real_external_executions = 0",
+    "Pressure signals are deterministic and may decay/reset independently of unresolved contradiction counters",
+    "UI bridge remains local read-only and is not a production assistant",
+    "This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent."
   ]
 }
