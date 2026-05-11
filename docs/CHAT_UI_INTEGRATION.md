@@ -16,9 +16,9 @@ The integration reuses UI patterns only:
 - Theme and settings panel patterns
 - CSS pattern vocabulary for cards, panels, and controls
 
-## 3. Intentionally excluded
+## 3. Intentionally excluded (all build configurations)
 
-The following were intentionally not merged into CODEX runtime authority:
+The following are excluded from all builds:
 
 - Cloud Provider API execution (OpenAI, Anthropic, etc.)
 - API key storage
@@ -26,8 +26,25 @@ The following were intentionally not merged into CODEX runtime authority:
 - External autonomous tool execution
 - Auth/account logic
 - Remote streaming provider backend
+- Real external tool execution (real_external_executions: 0)
 
-Experimental LOCAL provider execution (Ollama via localhost) is enabled for testing, gated behind an explicit security toggle.
+## 3b. Experimental local provider support (requires `ui-local-providers` Cargo feature)
+
+Local provider execution (Ollama/Turboquant via `localhost:11434`) is **not included in default builds**.
+To enable it, build explicitly with:
+
+```
+cargo build --features ui-local-providers
+```
+
+When the feature is active, the following restrictions apply:
+- Calls are **localhost-only** (no external/cloud endpoints).
+- First use requires **explicit user approval** (gate must be unlocked in Settings).
+- Provider output is labeled `"Local provider draft — not CODEX runtime authority"`.
+- Provider output **cannot**: execute tools, write evidence/claims, or override `selected_action`.
+- Failure returns a clean UI error; no silent fallback to another provider.
+- Cloud and external provider request counts must remain 0.
+
 
 ## 4. Chat UI architecture
 

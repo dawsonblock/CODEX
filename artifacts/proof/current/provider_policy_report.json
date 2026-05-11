@@ -1,0 +1,28 @@
+{
+  "report_type": "provider_policy_report",
+  "codename": "CODEX-main 32",
+  "build_profile": "default (no ui-local-providers feature)",
+  "local_provider_modes_available": ["LocalOllamaProvider", "LocalTurboquantProvider"],
+  "local_provider_feature_enabled": false,
+  "local_provider_feature_flag": "ui-local-providers",
+  "local_provider_requests": 0,
+  "local_provider_successes": 0,
+  "local_provider_failures": 0,
+  "local_provider_disabled_blocks": 0,
+  "cloud_provider_requests": 0,
+  "external_provider_requests": 0,
+  "api_key_storage_enabled": false,
+  "provider_can_execute_tools": false,
+  "provider_can_write_memory": false,
+  "provider_can_override_codex_action": false,
+  "network_scope": "localhost-only (when feature enabled)",
+  "provider_authority": "non-authoritative (when feature enabled)",
+  "requires_user_approval": true,
+  "notes": [
+    "Local provider modes compile only when --features ui-local-providers is passed.",
+    "Default build (cargo build) contains zero provider HTTP code paths.",
+    "localhost:11434 endpoint is absent from the default binary.",
+    "External and cloud provider execution is disabled at all build configurations.",
+    "CODEX runtime remains the sole authoritative source of selected_action."
+  ]
+}

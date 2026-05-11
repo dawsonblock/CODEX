@@ -3,8 +3,7 @@ use dioxus::prelude::*;
 use crate::bridge::proof_reader::load_dashboard_state;
 use crate::bridge::runtime_client::{next_message_id, now_timestamp_string, RuntimeClient};
 use crate::bridge::types::{
-    ChatMessage, ChatRole, CodexProofState, HistoricalSummary, ProofManifest, RuntimeBridgeMode,
-    TimeRange, UiSettings,
+    ChatMessage, ChatRole, CodexProofState, HistoricalSummary, ProofManifest, TimeRange, UiSettings,
 };
 use crate::components::action_schema_panel::ActionSchemaPanel;
 use crate::components::action_trace_panel::ActionTracePanel;
@@ -24,8 +23,8 @@ pub const UI_BOUNDARY_LINES: [&str; 5] = [
     "Codex-main 32 is not sentient.",
     "Codex-main 32 is not conscious.",
     "Codex-main 32 is not AGI.",
-    "Local providers (Ollama) are experimental and non-authoritative.",
-    "UI shell is bounded; real external cloud tools are disabled.",
+    "Local provider modes require the 'ui-local-providers' build feature. Disabled by default.",
+    "UI shell is bounded; real external cloud tools are disabled. CODEX runtime remains authoritative.",
 ];
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -425,13 +424,8 @@ pub fn App() -> Element {
                                 },
                                 on_cycle_bridge_mode: move |_| {
                                     settings.with_mut(|s| {
-                                        s.runtime_bridge_mode = match s.runtime_bridge_mode {
-                                            RuntimeBridgeMode::MockUiMode => RuntimeBridgeMode::LocalCodexRuntimeReadOnly,
-                                            RuntimeBridgeMode::LocalCodexRuntimeReadOnly => RuntimeBridgeMode::LocalOllamaProvider,
-                                            RuntimeBridgeMode::LocalOllamaProvider => RuntimeBridgeMode::LocalTurboquantProvider,
-                                            RuntimeBridgeMode::LocalTurboquantProvider => RuntimeBridgeMode::ExternalProviderDisabled,
-                                            RuntimeBridgeMode::ExternalProviderDisabled => RuntimeBridgeMode::MockUiMode,
-                                        };
+                                        // cycle_next() skips provider modes in default builds
+                                        s.runtime_bridge_mode = s.runtime_bridge_mode.cycle_next();
                                     });
                                 }
                             }

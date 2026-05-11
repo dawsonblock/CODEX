@@ -72,13 +72,17 @@ The official proof command now generates:
 - pressure_replay_report.json
 - reasoning_audit_report.json
 - tool_policy_report.json
+- provider_policy_report.json
 
 ## Boundaries
 
 - 10-action schema remains unchanged.
 - Rust remains authoritative.
 - No real autonomous external tool execution or external cloud provider API execution is enabled.
-- Experimental local provider execution (localhost) is security-gated and non-authoritative.
+- Local provider execution (Ollama/Turboquant via localhost) requires the `ui-local-providers` Cargo feature.
+  Default builds contain zero provider HTTP code paths.
+- When `ui-local-providers` is active, provider calls are localhost-only, approval-gated, and non-authoritative.
+  Provider output cannot execute tools, write memory, or override CODEX selected_action.
 - Contradiction handling remains structured, not semantic truth reasoning.
 - NL benchmark remains diagnostic routing over 43 scenarios, not broad reasoning proof.
 - Evidence-backed claim linkage improved for proof-known evaluator evidence and remains bounded to structured sources.

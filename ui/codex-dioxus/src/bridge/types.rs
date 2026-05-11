@@ -45,6 +45,8 @@ pub enum MetadataQuality {
     PartiallyGrounded,
     MockOnly,
     Unavailable,
+    #[cfg(feature = "ui-local-providers")]
+    LocalProviderDraft,
 }
 
 impl MetadataQuality {
@@ -54,6 +56,8 @@ impl MetadataQuality {
             Self::PartiallyGrounded => "Partial metadata",
             Self::MockOnly => "Mock metadata",
             Self::Unavailable => "Unavailable",
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalProviderDraft => "Local provider draft (non-authoritative)",
         }
     }
 }
@@ -91,7 +95,9 @@ pub enum RuntimeBridgeMode {
     #[default]
     MockUiMode,
     LocalCodexRuntimeReadOnly,
+    #[cfg(feature = "ui-local-providers")]
     LocalOllamaProvider,
+    #[cfg(feature = "ui-local-providers")]
     LocalTurboquantProvider,
     ExternalProviderDisabled,
 }
@@ -101,18 +107,41 @@ impl RuntimeBridgeMode {
         match self {
             Self::MockUiMode => "mock UI mode",
             Self::LocalCodexRuntimeReadOnly => "local CODEX runtime mode (read-only)",
+            #[cfg(feature = "ui-local-providers")]
             Self::LocalOllamaProvider => "experimental local Ollama provider",
+            #[cfg(feature = "ui-local-providers")]
             Self::LocalTurboquantProvider => "experimental local Turboquant provider",
             Self::ExternalProviderDisabled => "external cloud provider mode (disabled)",
         }
     }
 
     pub fn is_experimental(self) -> bool {
-        matches!(self, Self::LocalOllamaProvider | Self::LocalTurboquantProvider)
+        #[cfg(feature = "ui-local-providers")]
+        return matches!(self, Self::LocalOllamaProvider | Self::LocalTurboquantProvider);
+        #[cfg(not(feature = "ui-local-providers"))]
+        return false;
     }
 
     pub fn is_authoritative(self) -> bool {
         matches!(self, Self::LocalCodexRuntimeReadOnly)
+    }
+
+    /// Cycles to the next mode. In default builds, provider modes are skipped.
+    pub fn cycle_next(self) -> Self {
+        match self {
+            Self::MockUiMode => Self::LocalCodexRuntimeReadOnly,
+            Self::LocalCodexRuntimeReadOnly => {
+                #[cfg(feature = "ui-local-providers")]
+                return Self::LocalOllamaProvider;
+                #[cfg(not(feature = "ui-local-providers"))]
+                return Self::ExternalProviderDisabled;
+            }
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalOllamaProvider => Self::LocalTurboquantProvider,
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalTurboquantProvider => Self::ExternalProviderDisabled,
+            Self::ExternalProviderDisabled => Self::MockUiMode,
+        }
     }
 }
 
@@ -132,6 +161,8 @@ pub struct UiSettings {
     pub runtime_bridge_mode: RuntimeBridgeMode,
     pub show_metadata_panel: bool,
     pub show_pressure_panel: bool,
+    /// Only meaningful when the `ui-local-providers` feature is enabled.
+    /// In default builds this field exists but has no effect.
     pub provider_gate_enabled: bool,
 }
 
@@ -144,9 +175,51 @@ impl Default for UiSettings {
             runtime_bridge_mode: RuntimeBridgeMode::MockUiMode,
             show_metadata_panel: true,
             show_pressure_panel: true,
-            provider_gate_enabled: false,
+            provider_gate_enabled: false, // always false in default build
         }
     }
+}
+
+/// Policy governing local provider execution (feature = "ui-local-providers").
+/// These values are enforced at compile time in default builds by the absent feature.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocalProviderPolicy {
+    pub enabled: bool,
+    pub requires_user_approval: bool,
+    /// Scope is always localhost-only when the feature is active.
+    pub network_scope: &'static str,
+    /// Output is never CODEX runtime authoritative.
+    pub provider_authority: &'static str,
+    pub can_execute_tools: bool,
+    pub can_write_memory: bool,
+    pub can_override_codex_action: bool,
+}
+
+impl Default for LocalProviderPolicy {
+    fn default() -> Self {
+        Self {
+            enabled: cfg!(feature = "ui-local-providers"),
+            requires_user_approval: true,
+            network_scope: "localhost-only",
+            provider_authority: "non-authoritative",
+            can_execute_tools: false,
+            can_write_memory: false,
+            can_override_codex_action: false,
+        }
+    }
+}
+
+/// Runtime counters for provider calls. All external/cloud counts must remain 0.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocalProviderCounters {
+    pub local_provider_requests: usize,
+    pub local_provider_successes: usize,
+    pub local_provider_failures: usize,
+    pub local_provider_disabled_blocks: usize,
+    /// Must always be 0 — enforced by consistency script.
+    pub cloud_provider_requests: usize,
+    /// Must always be 0 — enforced by consistency script.
+    pub external_provider_requests: usize,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -346,17 +419,52 @@ mod tests {
             "local CODEX runtime mode (read-only)"
         );
         assert_eq!(
-            RuntimeBridgeMode::LocalOllamaProvider.label(),
-            "experimental local Ollama provider"
-        );
-        assert_eq!(
-            RuntimeBridgeMode::LocalTurboquantProvider.label(),
-            "experimental local Turboquant provider"
-        );
-        assert_eq!(
             RuntimeBridgeMode::ExternalProviderDisabled.label(),
             "external cloud provider mode (disabled)"
         );
+    }
+
+    #[cfg(feature = "ui-local-providers")]
+    #[test]
+    fn provider_modes_are_experimental_when_feature_enabled() {
+        assert!(RuntimeBridgeMode::LocalOllamaProvider.is_experimental());
+        assert!(RuntimeBridgeMode::LocalTurboquantProvider.is_experimental());
+        assert!(!RuntimeBridgeMode::LocalCodexRuntimeReadOnly.is_experimental());
+    }
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn no_mode_is_experimental_in_default_build() {
+        assert!(!RuntimeBridgeMode::MockUiMode.is_experimental());
+        assert!(!RuntimeBridgeMode::LocalCodexRuntimeReadOnly.is_experimental());
+        assert!(!RuntimeBridgeMode::ExternalProviderDisabled.is_experimental());
+    }
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn default_build_cycle_skips_provider_modes() {
+        let mode = RuntimeBridgeMode::LocalCodexRuntimeReadOnly;
+        let next = mode.cycle_next();
+        // Must jump directly to ExternalProviderDisabled — no Ollama/Turboquant
+        assert_eq!(next, RuntimeBridgeMode::ExternalProviderDisabled);
+    }
+
+    #[test]
+    fn local_provider_policy_default_has_all_capabilities_false() {
+        let policy = LocalProviderPolicy::default();
+        assert!(!policy.can_execute_tools);
+        assert!(!policy.can_write_memory);
+        assert!(!policy.can_override_codex_action);
+        assert!(policy.requires_user_approval);
+        assert_eq!(policy.network_scope, "localhost-only");
+        assert_eq!(policy.provider_authority, "non-authoritative");
+    }
+
+    #[test]
+    fn local_provider_counters_cloud_always_zero() {
+        let c = LocalProviderCounters::default();
+        assert_eq!(c.cloud_provider_requests, 0);
+        assert_eq!(c.external_provider_requests, 0);
     }
 }
 

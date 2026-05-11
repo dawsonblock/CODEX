@@ -33,10 +33,12 @@ impl RuntimeClient {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => mock_runtime_response(input),
             RuntimeBridgeMode::LocalCodexRuntimeReadOnly => local_runtime_response(input),
+            #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalOllamaProvider => ollama_runtime_response(input, "llama3").await,
+            #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalTurboquantProvider => ollama_runtime_response(input, "turboquant").await,
             RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
-                message: "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string(),
+                message: "External and local cloud provider execution is disabled. CODEX runtime remains authoritative.".to_string(),
                 selected_action: "defer_insufficient_evidence".to_string(),
                 bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled.label().to_string(),
                 trace: RuntimeTraceSummary {
@@ -68,6 +70,7 @@ impl RuntimeClient {
                 let _ = sender.send(resp.message.clone());
                 resp
             }
+            #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalOllamaProvider => {
                 if !self.provider_gate {
                     let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Ollama.".to_string();
@@ -78,6 +81,7 @@ impl RuntimeClient {
                 resp.trace.provider_executions_local += 1;
                 resp
             }
+            #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalTurboquantProvider => {
                 if !self.provider_gate {
                     let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Turboquant.".to_string();
@@ -89,7 +93,7 @@ impl RuntimeClient {
                 resp
             }
             RuntimeBridgeMode::ExternalProviderDisabled => {
-                let msg = "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string();
+                let msg = "External and local cloud provider execution is disabled. CODEX runtime remains authoritative.".to_string();
                 let _ = sender.send(msg.clone());
                 RuntimeChatResponse {
                     message: msg,
@@ -418,6 +422,7 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
     }
 }
 
+#[cfg(feature = "ui-local-providers")]
 async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatResponse {
     #[derive(serde::Serialize)]
     struct OllamaRequest<'a> {
@@ -484,6 +489,7 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatRe
     }
 }
 
+#[cfg(feature = "ui-local-providers")]
 async fn ollama_runtime_stream(
     input: &str,
     model_name: &str,

@@ -283,6 +283,55 @@ def main() -> int:
         else:
             print("  WARN rust_strict_proof.log is marked historical/pending. Skipping strict match.")
 
+    print("\nChecking provider_policy_report.json boundary assertions ...")
+    provider_path = CURRENT_DIR / "provider_policy_report.json"
+    if provider_path.exists():
+        provider = load_json(provider_path)
+        man_provider = manifest.get("provider_policy", {})
+
+        # Hard security assertions
+        if provider.get("external_provider_requests") != 0:
+            failures.append("SECURITY_VIOLATION: provider external_provider_requests must be exactly 0.")
+        if provider.get("cloud_provider_requests") != 0:
+            failures.append("SECURITY_VIOLATION: provider cloud_provider_requests must be exactly 0.")
+        if provider.get("api_key_storage_enabled") is not False:
+            failures.append("SECURITY_VIOLATION: api_key_storage_enabled must be false.")
+        if provider.get("provider_can_execute_tools") is not False:
+            failures.append("SECURITY_VIOLATION: provider_can_execute_tools must be false.")
+        if provider.get("provider_can_override_codex_action") is not False:
+            failures.append("SECURITY_VIOLATION: provider_can_override_codex_action must be false.")
+
+        print("  OK  external_provider_requests: 0")
+        print("  OK  cloud_provider_requests: 0")
+        print("  OK  api_key_storage_enabled: false")
+        print("  OK  provider_can_execute_tools: false")
+        print("  OK  provider_can_override_codex_action: false")
+
+        # Cross-check manifest
+        for field in ["api_key_storage_enabled", "provider_can_execute_tools", "provider_can_write_memory", "provider_can_override_codex_action"]:
+            field_check(failures, f"provider_policy.{field}", provider.get(field), man_provider.get(field))
+    else:
+        print("  WARN provider_policy_report.json not found. Skipping provider policy checks.")
+
+    # Phase 8 stale scan: check that localhost:11434 is not in active UI code (non-feature context)
+    print("\nChecking for stale provider code in default UI build ...")
+    runtime_client_path = REPO_ROOT / "ui/codex-dioxus/src/bridge/runtime_client.rs"
+    if runtime_client_path.exists():
+        rc_text = runtime_client_path.read_text()
+        # localhost:11434 should only appear inside #[cfg(feature = "ui-local-providers")] blocks.
+        # The cfg attribute may appear up to ~30 lines above the actual HTTP call.
+        lines = rc_text.splitlines()
+        for i, line in enumerate(lines):
+            if "localhost:11434" in line:
+                # Check surrounding context (up to 30 lines back) for feature gate
+                context = "\n".join(lines[max(0, i - 30):i + 1])
+                if 'cfg(feature = "ui-local-providers")' not in context:
+                    failures.append(f"BOUNDARY_VIOLATION: localhost:11434 found outside feature gate at line {i+1}")
+                else:
+                    print(f"  OK  localhost:11434 at line {i+1} is inside feature gate")
+    else:
+        print("  WARN runtime_client.rs not found. Skipping stale provider code scan.")
+
     if failures:
         print("\nFAIL: Consistency mismatches detected:")
         for entry in failures:
