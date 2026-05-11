@@ -89,4 +89,59 @@ mod tests {
         );
         assert_eq!(state.candidates_rejected, 1);
     }
+
+    #[test]
+    fn replay_tracks_claim_retrieval_pressure_and_audit_references() {
+        let events = vec![
+            RuntimeEvent::ClaimRetrieved {
+                cycle_id: 7,
+                claim_id: "claim_1".into(),
+                evidence_id: Some("ev_1".into()),
+                status: "active".into(),
+                confidence: 0.8,
+            },
+            RuntimeEvent::ContradictionChecked {
+                cycle_id: 7,
+                checked_claim_ids: vec!["claim_1".into()],
+                contradiction_ids: vec!["contra_1".into()],
+                active_contradictions: 1,
+            },
+            RuntimeEvent::PressureUpdated {
+                cycle_id: 7,
+                field: "tool_risk".into(),
+                old_value: 0.0,
+                new_value: 0.6,
+                source: "ToolPolicy".into(),
+                reason: "denied tool request".into(),
+            },
+            RuntimeEvent::PressureUpdated {
+                cycle_id: 7,
+                field: "social_risk".into(),
+                old_value: 0.0,
+                new_value: 0.3,
+                source: "Observation".into(),
+                reason: "sensitive context".into(),
+            },
+            RuntimeEvent::ReasoningAuditGenerated {
+                cycle_id: 7,
+                audit_id: "audit_7".into(),
+                selected_action: ActionType::DeferInsufficientEvidence.to_string(),
+                evidence_ids: vec!["ev_1".into()],
+                claim_ids: vec!["claim_1".into()],
+                contradiction_ids: vec!["contra_1".into()],
+                dominant_pressures: vec!["tool_risk".into()],
+                audit_text: "bounded audit".into(),
+            },
+        ];
+
+        let state = runtime_core::replay(&events);
+        assert_eq!(state.claims_retrieved, 1);
+        assert_eq!(state.claims_with_evidence_links, 1);
+        assert_eq!(state.contradictions_checked, 1);
+        assert_eq!(state.unresolved_contradictions, 1);
+        assert_eq!(state.last_pressure_tool_risk, 0.6);
+        assert_eq!(state.last_pressure_social_risk, 0.3);
+        assert_eq!(state.audits_with_evidence_refs, 1);
+        assert_eq!(state.audits_with_claim_refs, 1);
+    }
 }

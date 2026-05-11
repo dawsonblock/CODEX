@@ -25,6 +25,7 @@ pub struct ReasoningStep {
 /// Full reasoning audit for one cycle.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReasoningAudit {
+    pub audit_id: String,
     pub cycle_id: u64,
     pub observation: String,
     pub memory_hits: Vec<String>,
@@ -35,6 +36,14 @@ pub struct ReasoningAudit {
     pub rationale: String,
     /// Evidence IDs backing this decision.
     pub evidence_ids: Vec<String>,
+    /// Claim IDs consulted for this decision.
+    pub claim_ids: Vec<String>,
+    /// Disputed claim IDs observed during decision.
+    pub disputed_claim_ids: Vec<String>,
+    /// Contradiction IDs surfaced during decision.
+    pub contradiction_ids: Vec<String>,
+    /// Dominant pressure fields applied to scoring.
+    pub dominant_pressures: Vec<String>,
 }
 
 impl ReasoningAudit {
@@ -46,6 +55,7 @@ impl ReasoningAudit {
         rationale: impl Into<String>,
     ) -> Self {
         ReasoningAudit {
+            audit_id: format!("audit_{cycle_id}"),
             cycle_id,
             observation: observation.into(),
             memory_hits: Vec::new(),
@@ -55,6 +65,10 @@ impl ReasoningAudit {
             selected_action: format!("{}", selected_action),
             rationale: rationale.into(),
             evidence_ids: Vec::new(),
+            claim_ids: Vec::new(),
+            disputed_claim_ids: Vec::new(),
+            contradiction_ids: Vec::new(),
+            dominant_pressures: Vec::new(),
         }
     }
 
@@ -88,10 +102,35 @@ impl ReasoningAudit {
         self
     }
 
+    /// Add claim IDs used in this decision.
+    pub fn with_claim_ids(mut self, ids: Vec<String>) -> Self {
+        self.claim_ids = ids;
+        self
+    }
+
+    /// Add disputed claim IDs observed in this cycle.
+    pub fn with_disputed_claim_ids(mut self, ids: Vec<String>) -> Self {
+        self.disputed_claim_ids = ids;
+        self
+    }
+
+    /// Add contradiction IDs observed in this cycle.
+    pub fn with_contradiction_ids(mut self, ids: Vec<String>) -> Self {
+        self.contradiction_ids = ids;
+        self
+    }
+
+    /// Add dominant pressure fields for this decision.
+    pub fn with_dominant_pressures(mut self, fields: Vec<String>) -> Self {
+        self.dominant_pressures = fields;
+        self
+    }
+
     /// Format as human-readable text.
     pub fn to_text(&self) -> String {
         let mut out = String::new();
         out.push_str(&format!("Cycle {}:\n", self.cycle_id));
+        out.push_str(&format!("  Audit ID: {}\n", self.audit_id));
         out.push_str(&format!("  Observation: {}\n", self.observation));
         if !self.memory_hits.is_empty() {
             out.push_str(&format!("  Memory hits: {}\n", self.memory_hits.join(", ")));
@@ -112,6 +151,27 @@ impl ReasoningAudit {
         }
         if !self.evidence_ids.is_empty() {
             out.push_str(&format!("  Evidence: {}\n", self.evidence_ids.join(", ")));
+        }
+        if !self.claim_ids.is_empty() {
+            out.push_str(&format!("  Claims: {}\n", self.claim_ids.join(", ")));
+        }
+        if !self.disputed_claim_ids.is_empty() {
+            out.push_str(&format!(
+                "  Disputed Claims: {}\n",
+                self.disputed_claim_ids.join(", ")
+            ));
+        }
+        if !self.contradiction_ids.is_empty() {
+            out.push_str(&format!(
+                "  Contradictions: {}\n",
+                self.contradiction_ids.join(", ")
+            ));
+        }
+        if !self.dominant_pressures.is_empty() {
+            out.push_str(&format!(
+                "  Dominant Pressures: {}\n",
+                self.dominant_pressures.join(", ")
+            ));
         }
         out.push_str(&format!("  Selected: {}\n", self.selected_action));
         out.push_str(&format!("  Rationale: {}\n", self.rationale));

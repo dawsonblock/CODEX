@@ -14,6 +14,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use evidence::EvidenceEntry;
+
 // Re-export types needed by the store
 pub use crate::ClaimEvidenceLink;
 pub use crate::ClaimStatus;
@@ -44,6 +46,26 @@ pub enum ClaimError {
     /// Storage or serialization error.
     #[error("storage error: {0}")]
     Storage(String),
+    /// Evidence payload cannot be converted into a bounded structured claim.
+    #[error("unsupported structured evidence payload")]
+    UnsupportedStructuredEvidence,
+}
+
+/// Compact claim reference returned by observation retrieval.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClaimRef {
+    pub claim_id: String,
+    pub evidence_id: Option<String>,
+    pub status: ClaimStatus,
+}
+
+/// Retrieval result consumed by runtime scoring logic.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClaimRetrievalResult {
+    pub matched_claims: Vec<ClaimRef>,
+    pub disputed_claims: Vec<ClaimRef>,
+    pub missing_evidence: bool,
+    pub confidence_summary: f64,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -126,13 +148,84 @@ impl ClaimStore {
             object,
             status: ClaimStatus::Unverified,
             confidence: confidence.clamp(0.0, 1.0),
+            evidence_ids: evidence_links
+                .iter()
+                .map(|l| l.evidence_id.clone())
+                .collect(),
+            evidence_hashes: Vec::new(),
+            source_label: "claim_store_assert".into(),
             evidence_links,
             created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: None,
             superseded_by: None,
         };
 
         let claim_id = claim.id.clone();
         self.claims.insert(claim_id.clone(), claim);
+        Ok(self.claims.get(&claim_id).unwrap())
+    }
+
+    /// Create or reuse a bounded claim from structured evidence.
+    ///
+    /// Supported payload shape:
+    /// `{ "subject": "...", "predicate": "...", "object": "..." }`
+    /// where object is optional. Unsupported free-form extraction is rejected.
+    pub fn assert_from_evidence(
+        &mut self,
+        evidence: &EvidenceEntry,
+    ) -> Result<&MemoryClaim, ClaimError> {
+        if let Some(existing_id) = self
+            .claims
+            .values()
+            .find(|c| c.evidence_ids.iter().any(|id| id == &evidence.id))
+            .map(|c| c.id.clone())
+        {
+            return Ok(self.claims.get(&existing_id).unwrap());
+        }
+
+        let Some(subject) = evidence
+            .content
+            .get("subject")
+            .and_then(serde_json::Value::as_str)
+        else {
+            return Err(ClaimError::UnsupportedStructuredEvidence);
+        };
+        let Some(predicate) = evidence
+            .content
+            .get("predicate")
+            .and_then(serde_json::Value::as_str)
+        else {
+            return Err(ClaimError::UnsupportedStructuredEvidence);
+        };
+        let object = evidence
+            .content
+            .get("object")
+            .and_then(serde_json::Value::as_str)
+            .map(ToString::to_string);
+
+        let claim_id = format!("claim_from_{}", evidence.id);
+        let evidence_link = ClaimEvidenceLink {
+            evidence_id: evidence.id.clone(),
+            weight: evidence.confidence.clamp(0.0, 1.0),
+        };
+
+        let _ = self.assert(
+            &claim_id,
+            subject,
+            predicate,
+            object,
+            evidence.confidence,
+            vec![evidence_link],
+        )?;
+
+        if let Some(created) = self.claims.get_mut(&claim_id) {
+            created.evidence_ids = vec![evidence.id.clone()];
+            created.evidence_hashes = vec![evidence.content_hash.clone()];
+            created.source_label = evidence.source.as_str().to_string();
+            created.updated_at = Some(evidence.timestamp.to_rfc3339());
+            created.created_at = evidence.timestamp.to_rfc3339();
+        }
+
         Ok(self.claims.get(&claim_id).unwrap())
     }
 
@@ -242,8 +335,15 @@ impl ClaimStore {
             object: new_object,
             status: ClaimStatus::Active,
             confidence: confidence.clamp(0.0, 1.0),
+            evidence_ids: evidence_links
+                .iter()
+                .map(|l| l.evidence_id.clone())
+                .collect(),
+            evidence_hashes: Vec::new(),
+            source_label: "claim_store_supersede".into(),
             evidence_links,
             created_at: chrono::Utc::now().to_rfc3339(),
+            updated_at: None,
             superseded_by: None,
         };
 
@@ -367,6 +467,62 @@ impl ClaimStore {
         }
         conflicts
     }
+
+    /// Retrieve relevant claims for an observation using bounded lexical matching.
+    pub fn retrieve_for_observation(&self, observation: &str) -> ClaimRetrievalResult {
+        let obs = observation.to_lowercase();
+        let mut matched_claims = Vec::new();
+        let mut disputed_claims = Vec::new();
+        let mut confidence_sum = 0.0;
+
+        for claim in self.claims.values() {
+            let relevant = claim.subject.to_lowercase().contains(&obs)
+                || obs.contains(&claim.subject.to_lowercase())
+                || claim.predicate.to_lowercase().contains(&obs)
+                || obs.contains(&claim.predicate.to_lowercase())
+                || claim
+                    .object
+                    .as_deref()
+                    .map(|o| obs.contains(&o.to_lowercase()))
+                    .unwrap_or(false);
+
+            if !relevant {
+                continue;
+            }
+
+            let claim_ref = ClaimRef {
+                claim_id: claim.id.clone(),
+                evidence_id: claim.evidence_ids.first().cloned(),
+                status: claim.status,
+            };
+
+            match claim.status {
+                ClaimStatus::Active => {
+                    confidence_sum += claim.confidence;
+                    matched_claims.push(claim_ref);
+                }
+                ClaimStatus::Contradicted => disputed_claims.push(claim_ref),
+                ClaimStatus::Superseded | ClaimStatus::Unverified => {}
+            }
+        }
+
+        // Prefer evidence-backed active claims first.
+        matched_claims.sort_by_key(|c| c.evidence_id.is_none());
+
+        let missing_evidence = matched_claims.iter().any(|c| c.evidence_id.is_none());
+        let confidence_summary = if matched_claims.is_empty() {
+            0.0
+        } else {
+            (confidence_sum / matched_claims.len() as f64).clamp(0.0, 1.0)
+        };
+
+        ClaimRetrievalResult {
+            matched_claims,
+            disputed_claims,
+            missing_evidence,
+            confidence_summary,
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -376,6 +532,7 @@ impl ClaimStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use evidence::EvidenceSource;
 
     fn make_link(evidence_id: &str, weight: f64) -> ClaimEvidenceLink {
         ClaimEvidenceLink {
@@ -415,6 +572,58 @@ mod tests {
             .assert("c1", "X", "is Z", None, 0.5, vec![])
             .unwrap_err();
         assert!(matches!(err, ClaimError::DuplicateClaimId(ref id) if id == "c1"));
+    }
+
+    #[test]
+    fn assert_from_structured_evidence_creates_linked_claim() {
+        let mut store = ClaimStore::new();
+        let entry = EvidenceEntry::new(
+            "ev_1",
+            EvidenceSource::Observation,
+            serde_json::json!({"subject":"sky","predicate":"is blue","object":"daytime"}),
+            0.9,
+            "0",
+        );
+
+        let claim = store.assert_from_evidence(&entry).unwrap();
+        assert_eq!(claim.id, "claim_from_ev_1");
+        assert_eq!(claim.subject, "sky");
+        assert_eq!(claim.predicate, "is blue");
+        assert_eq!(claim.object.as_deref(), Some("daytime"));
+        assert_eq!(claim.evidence_ids, vec!["ev_1"]);
+        assert_eq!(claim.evidence_hashes, vec![entry.content_hash.clone()]);
+        assert_eq!(claim.source_label, "observation");
+    }
+
+    #[test]
+    fn assert_from_evidence_deduplicates_same_evidence() {
+        let mut store = ClaimStore::new();
+        let entry = EvidenceEntry::new(
+            "ev_2",
+            EvidenceSource::Observation,
+            serde_json::json!({"subject":"ocean","predicate":"is deep"}),
+            0.9,
+            "0",
+        );
+
+        let c1 = store.assert_from_evidence(&entry).unwrap().id.clone();
+        let c2 = store.assert_from_evidence(&entry).unwrap().id.clone();
+        assert_eq!(c1, c2);
+        assert_eq!(store.len(), 1);
+    }
+
+    #[test]
+    fn unsupported_evidence_payload_is_rejected() {
+        let mut store = ClaimStore::new();
+        let entry = EvidenceEntry::new(
+            "ev_bad",
+            EvidenceSource::Observation,
+            serde_json::json!({"free_text":"just some text"}),
+            0.7,
+            "0",
+        );
+        let err = store.assert_from_evidence(&entry).unwrap_err();
+        assert!(matches!(err, ClaimError::UnsupportedStructuredEvidence));
     }
 
     // ── validate ─────────────────────────────────────────────────────
@@ -702,6 +911,26 @@ mod tests {
 
         let conflicts = store.detect_conflicts();
         assert_eq!(conflicts.len(), 0);
+    }
+
+    #[test]
+    fn retrieve_for_observation_prefers_evidence_backed_active_claims() {
+        let mut store = ClaimStore::new();
+        let entry = EvidenceEntry::new(
+            "ev_3",
+            EvidenceSource::Observation,
+            serde_json::json!({"subject":"invoice","predicate":"is overdue"}),
+            0.8,
+            "0",
+        );
+        let cid = store.assert_from_evidence(&entry).unwrap().id.clone();
+        store.validate(&cid).unwrap();
+
+        let result = store.retrieve_for_observation("invoice overdue status");
+        assert_eq!(result.matched_claims.len(), 1);
+        assert_eq!(result.matched_claims[0].claim_id, cid);
+        assert!(!result.missing_evidence);
+        assert!(result.confidence_summary > 0.0);
     }
 
     // ── evidence link traversal ──────────────────────────────────────

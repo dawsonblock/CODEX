@@ -91,11 +91,16 @@ pub struct RuntimeState {
 
     // Claim memory tracking
     pub claims_asserted: u64,
+    pub claims_retrieved: u64,
+    pub claims_with_evidence_links: u64,
     pub claims_validated: u64,
     pub claims_superseded: u64,
+    pub contradictions_checked: u64,
 
     // Reasoning audit tracking
     pub reasoning_audits: u64,
+    pub audits_with_evidence_refs: u64,
+    pub audits_with_claim_refs: u64,
 
     // Tool execution tracking
     pub tools_executed: u64,
@@ -110,6 +115,10 @@ pub struct RuntimeState {
     pub last_pressure_resource: f64,
     pub last_pressure_contradiction: f64,
     pub last_pressure_evidence_gap: f64,
+    pub last_pressure_social_risk: f64,
+    pub last_pressure_tool_risk: f64,
+    pub last_pressure_urgency: f64,
+    pub last_pressure_coherence: f64,
 
     // Scratchpad
     pub scratchpad_entry_count: usize,
@@ -175,9 +184,14 @@ impl Default for RuntimeState {
             evidence_tampered: 0,
             evidence_integrity_all_valid: true,
             claims_asserted: 0,
+            claims_retrieved: 0,
+            claims_with_evidence_links: 0,
             claims_validated: 0,
             claims_superseded: 0,
+            contradictions_checked: 0,
             reasoning_audits: 0,
+            audits_with_evidence_refs: 0,
+            audits_with_claim_refs: 0,
             tools_executed: 0,
             tools_blocked: 0,
             pressure_updates: 0,
@@ -187,6 +201,10 @@ impl Default for RuntimeState {
             last_pressure_resource: 0.0,
             last_pressure_contradiction: 0.0,
             last_pressure_evidence_gap: 0.0,
+            last_pressure_social_risk: 0.0,
+            last_pressure_tool_risk: 0.0,
+            last_pressure_urgency: 0.0,
+            last_pressure_coherence: 0.0,
             scratchpad_entry_count: 0,
         }
     }

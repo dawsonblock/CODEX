@@ -179,6 +179,19 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.claims_validated = state.claims_validated.saturating_add(1);
         }
 
+        RuntimeEvent::ClaimRetrieved {
+            cycle_id,
+            evidence_id,
+            ..
+        } => {
+            state.cycle_id = *cycle_id;
+            state.claims_retrieved = state.claims_retrieved.saturating_add(1);
+            if evidence_id.is_some() {
+                state.claims_with_evidence_links =
+                    state.claims_with_evidence_links.saturating_add(1);
+            }
+        }
+
         RuntimeEvent::ClaimSuperseded { cycle_id, .. } => {
             state.cycle_id = *cycle_id;
             state.claims_superseded = state.claims_superseded.saturating_add(1);
@@ -189,9 +202,30 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.contradictions_escalated = state.contradictions_escalated.saturating_add(1);
         }
 
-        RuntimeEvent::ReasoningAuditGenerated { cycle_id, .. } => {
+        RuntimeEvent::ContradictionChecked {
+            cycle_id,
+            active_contradictions,
+            ..
+        } => {
+            state.cycle_id = *cycle_id;
+            state.contradictions_checked = state.contradictions_checked.saturating_add(1);
+            state.unresolved_contradictions = *active_contradictions as u64;
+        }
+
+        RuntimeEvent::ReasoningAuditGenerated {
+            cycle_id,
+            evidence_ids,
+            claim_ids,
+            ..
+        } => {
             state.cycle_id = *cycle_id;
             state.reasoning_audits = state.reasoning_audits.saturating_add(1);
+            if !evidence_ids.is_empty() {
+                state.audits_with_evidence_refs = state.audits_with_evidence_refs.saturating_add(1);
+            }
+            if !claim_ids.is_empty() {
+                state.audits_with_claim_refs = state.audits_with_claim_refs.saturating_add(1);
+            }
         }
 
         RuntimeEvent::ToolExecuted { cycle_id, .. } => {
@@ -218,6 +252,10 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
                 "resource" => state.last_pressure_resource = *new_value,
                 "contradiction" => state.last_pressure_contradiction = *new_value,
                 "evidence_gap" => state.last_pressure_evidence_gap = *new_value,
+                "social_risk" => state.last_pressure_social_risk = *new_value,
+                "tool_risk" => state.last_pressure_tool_risk = *new_value,
+                "urgency" => state.last_pressure_urgency = *new_value,
+                "coherence" => state.last_pressure_coherence = *new_value,
                 _ => {}
             }
         }

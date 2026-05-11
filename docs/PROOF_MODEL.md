@@ -1,70 +1,56 @@
 # Proof Model
 
-## What is tested
+## What the proof verifies
 
-- **Runtime pipeline**: Observation → memory → symbolic → candidates → critic →
-  selection → action → archive. All stages produce typed events.
-- **Non-oracle SimWorld**: The evaluator feeds scenario observations into
-  RuntimeLoop. The runtime selects actions independently. `expected_action` is
-  used only for match-rate scoring, never for selection.
-- **Oracle guard**: Tests verify that `expected_action` is not used for
-  selection and InternalDiagnostic is never selected as a user-facing action.
-- **Replay durability**: Event logs can be replayed to reconstruct RuntimeState.
-  Replay is idempotent. Corrupt logs fail loudly.
-- **Archive round-trip**: JSONL archive frames can be written and read back.
-- **Action schema**: All 10 action types round-trip through serialization.
-- **Evidence integrity**: SHA-256 hash-chained evidence vault.
-  Duplicate IDs rejected. Timestamp tampering detected.
-- **Memory contracts**: Claims with contradicted status are not Active truth.
-  Newer evidence supersedes old claims. Memvid stub fails loudly.
-- **Symbolic correctness**: Traces serialize losslessly. Resonance cannot
-  override critic hard rejection. Concept blends are speculative.
+- Deterministic runtime path execution under strict command.
+- Event-log replay reconstruction and idempotence.
+- Evidence integrity over proof-generated hash-chained entries.
+- Bounded claim lifecycle and retrieval signal presence.
+- Structured contradiction checks and replay visibility.
+- Operational pressure updates and replay-visible final pressure fields.
+- Structured reasoning audit event generation with bounded references.
+- Tool policy lifecycle counters without real external execution.
 
-## What is NOT tested
+## Official proof command
 
-- Real LLM integration (all cognition is deterministic mock).
-- Real environment interaction (SimWorld is synthetic).
-- Performance benchmarks.
-- General intelligence.
-- Production readiness.
-- Sentience, consciousness, or subjective experience.
-
-## How non-oracle SimWorld works
-
-1. The evaluator picks a scenario template (7 types).
-2. The scenario has an `expected_action` — used ONLY for match-rate scoring.
-3. The observation text is fed into `RuntimeLoop.run_cycle()`.
-4. `RuntimeLoop` scores all 10 action types, rejects unsafe ones (critic),
-   and selects the best passing action (planner).
-5. The selected action is applied to the world.
-6. `outcome.matches_expected` is computed by comparing the selected action
-   to `expected_action` — this is purely for scoring.
-7. One `EvaluatorTrace` per cycle records all selection metadata.
-
-## How action_match_rate is calculated
-
-```
-action_match_rate = matched_cycles / total_cycles
-
-where matched_cycles = count of cycles where
-  selected_action == scenario.expected_action
-```
-
-Current synthetic label-like scenarios produce high action routing accuracy
-(action_match_rate: 1.0). This remains informational and does not prove broad
-natural-language reasoning. RuntimeLoop uses policy-based
-selection, not answer-key matching. The oracle guard test explicitly verifies
-that the runtime is not simply echoing `expected_action`.
-
-## How to reproduce proof
-
-```bash
-cd global-workspace-runtime-rs
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace --all-targets --all-features
 cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
-cargo run -p runtime-cli -- simworld --cycles 25 --seed 5
-```
 
-See `artifacts/proof/CURRENT_PROOF_SUMMARY.md` for current results.
+## Current generated artifacts
+
+- simworld_summary.json
+- replay_report.json
+- evidence_integrity_report.json
+- nl_benchmark_report.json
+- long_horizon_report.json
+- evidence_claim_link_report.json
+- claim_retrieval_report.json
+- contradiction_integration_report.json
+- pressure_replay_report.json
+- reasoning_audit_report.json
+- tool_policy_report.json
+
+## Pass model
+
+Strict proof depends on:
+
+- resource_survival > 0.70
+- unsafe_action_count == 0
+- mean_total_score > 0.45
+- evidence_integrity.all_valid == true
+- replay_passes == true
+- action schema parity
+- no fake mv2 files
+- symbolic smoke pass
+- long-horizon safety_violations == 0 when enabled
+
+action_match_rate remains informational.
+
+## Bounded claims
+
+- NL benchmark demonstrates bounded routing behavior over this diagnostic set.
+- Contradiction integration demonstrates structured contradiction handling only.
+- Pressure reports represent deterministic control signals only.
+- Reasoning audit reports are structured metadata, not hidden chain-of-thought.
+- Tool policy reports do not imply autonomous external execution safety.
+
+This integration creates a bounded evidence/claim/audit path. It does not make the runtime sentient, conscious, AGI, production-ready, semantically omniscient, or fully evidence-grounded across arbitrary real-world data.

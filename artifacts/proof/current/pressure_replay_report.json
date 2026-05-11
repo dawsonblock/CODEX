@@ -1,0 +1,25 @@
+{
+  "counters": {
+    "final_pressure_state": {
+      "coherence": 0.0,
+      "contradiction": 0.0,
+      "evidence_gap": 0.0,
+      "resource": 0.05800000000000005,
+      "safety": 0.5,
+      "social_risk": 0.0,
+      "tool_risk": 0.0,
+      "uncertainty": 1.0,
+      "urgency": 0.0
+    },
+    "policy_bias_applications": 29,
+    "pressure_updates": 78
+  },
+  "generated_timestamp": 1778459106,
+  "limitations": [
+    "Pressure fields are deterministic control signals.",
+    "No emotional or sentience interpretation."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 28
+}

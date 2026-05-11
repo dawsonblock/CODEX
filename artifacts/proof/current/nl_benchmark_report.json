@@ -22,21 +22,21 @@
     },
     {
       "held_out": {
-        "scenarios": 1,
+        "scenarios": 11,
         "scorecard": {
-          "action_match_rate": 1.0,
+          "action_match_rate": 0.36363636363636365,
           "conserve_count": 0,
-          "cycles": 1,
-          "match_rate": 1.0,
-          "mean_harm_score": 0.02,
-          "mean_social_score": 0.85,
-          "mean_total_score": 0.8266666666666667,
-          "mean_truth_score": 0.9,
-          "mean_utility_score": 0.85,
-          "resource_survival": 1.0,
+          "cycles": 11,
+          "match_rate": 0.36363636363636365,
+          "mean_harm_score": 0.019999999999999997,
+          "mean_social_score": 0.4863636363636365,
+          "mean_total_score": 0.5766666666666667,
+          "mean_truth_score": 0.5363636363636364,
+          "mean_utility_score": 0.440909090909091,
+          "resource_survival": 0.8999999999999999,
           "unsafe_action_count": 0
         },
-        "traces": 1
+        "traces": 11
       }
     },
     {

@@ -134,6 +134,14 @@ pub enum RuntimeEvent {
         cycle_id: u64,
         claim_id: String,
     },
+    /// A claim was retrieved for action scoring.
+    ClaimRetrieved {
+        cycle_id: u64,
+        claim_id: String,
+        evidence_id: Option<String>,
+        status: String,
+        confidence: f64,
+    },
     /// A claim was superseded by a newer claim (Active → Superseded).
     ClaimSuperseded {
         cycle_id: u64,
@@ -146,9 +154,22 @@ pub enum RuntimeEvent {
         contradiction_id: String,
         reason: String,
     },
+    /// A contradiction pass was executed over retrieved claims.
+    ContradictionChecked {
+        cycle_id: u64,
+        checked_claim_ids: Vec<String>,
+        contradiction_ids: Vec<String>,
+        active_contradictions: usize,
+    },
     /// A reasoning audit was generated for a cycle.
     ReasoningAuditGenerated {
         cycle_id: u64,
+        audit_id: String,
+        selected_action: String,
+        evidence_ids: Vec<String>,
+        claim_ids: Vec<String>,
+        contradiction_ids: Vec<String>,
+        dominant_pressures: Vec<String>,
         audit_text: String,
     },
     /// A tool was executed (policy permitted).
@@ -254,8 +275,10 @@ impl RuntimeEvent {
             | Self::ContradictionResolved { cycle_id, .. }
             | Self::ClaimAsserted { cycle_id, .. }
             | Self::ClaimValidated { cycle_id, .. }
+            | Self::ClaimRetrieved { cycle_id, .. }
             | Self::ClaimSuperseded { cycle_id, .. }
             | Self::ContradictionEscalated { cycle_id, .. }
+            | Self::ContradictionChecked { cycle_id, .. }
             | Self::ReasoningAuditGenerated { cycle_id, .. }
             | Self::ToolExecuted { cycle_id, .. }
             | Self::ToolExecutionBlocked { cycle_id, .. }

@@ -69,14 +69,32 @@ impl EvaluatorRun {
             let resource_before = self.world.resources;
 
             // ── RuntimeLoop pipeline ──────────────────────────────────
-            // Update claim metadata on RuntimeLoop for scoring
-            let active = claim_store.active_claims();
-            rt.has_evidence_backed_claims = active.iter().any(|c| !c.evidence_links.is_empty());
-            rt.has_any_active_claims = !active.is_empty();
-            rt.has_disputed_claims = active.len() > 1
-                && active
-                    .windows(2)
-                    .any(|w| w[0].subject == w[1].subject && w[0].predicate != w[1].predicate);
+            // Retrieve bounded claims for this observation before scoring.
+            let retrieval = claim_store.retrieve_for_observation(observation);
+            rt.has_evidence_backed_claims = retrieval
+                .matched_claims
+                .iter()
+                .any(|c| c.evidence_id.is_some());
+            rt.has_any_active_claims = !retrieval.matched_claims.is_empty();
+            rt.has_disputed_claims = !retrieval.disputed_claims.is_empty();
+
+            for claim_ref in retrieval
+                .matched_claims
+                .iter()
+                .chain(retrieval.disputed_claims.iter())
+            {
+                let confidence = claim_store
+                    .get(&claim_ref.claim_id)
+                    .map(|c| c.confidence)
+                    .unwrap_or(0.0);
+                let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
+                    cycle_id,
+                    claim_id: claim_ref.claim_id.clone(),
+                    evidence_id: claim_ref.evidence_id.clone(),
+                    status: format!("{:?}", claim_ref.status).to_lowercase(),
+                    confidence,
+                });
+            }
 
             // Compute pressure and bias BEFORE cycle
             pressure.decay(0.1);
@@ -170,32 +188,39 @@ impl EvaluatorRun {
                 content_hash: ev_hash,
             });
 
-            // Claim store: assert claim every 5 cycles
-            if cycle_id % 5 == 0 {
-                let cid = format!("claim_{cycle_id}");
-                let _ = claim_store.assert(
-                    &cid,
-                    "simworld_observation",
-                    format!("cycle_{cycle_id}_completed"),
-                    None,
-                    0.6,
-                    vec![],
-                );
-                let _ = self.log.append(RuntimeEvent::ClaimAsserted {
-                    cycle_id,
-                    claim_id: cid.clone(),
-                    subject: "simworld_observation".into(),
-                    predicate: format!("cycle_{cycle_id}_completed"),
-                });
-                let _ = claim_store.validate(&cid);
-                let _ = self.log.append(RuntimeEvent::ClaimValidated {
-                    cycle_id,
-                    claim_id: cid,
-                });
+            // Claim store: bounded evidence -> claim creation only.
+            if let Some(entry) = evidence_vault.get(ev_idx).cloned() {
+                let structured_entry = evidence::EvidenceEntry {
+                    content: serde_json::json!({
+                        "subject": "simworld_observation",
+                        "predicate": format!("cycle_{cycle_id}_completed")
+                    }),
+                    ..entry
+                };
+                if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
+                    let claim_id = claim.id.clone();
+                    let claim_subject = claim.subject.clone();
+                    let claim_predicate = claim.predicate.clone();
+                    let _ = self.log.append(RuntimeEvent::ClaimAsserted {
+                        cycle_id,
+                        claim_id: claim_id.clone(),
+                        subject: claim_subject,
+                        predicate: claim_predicate,
+                    });
+                    let _ = claim_store.validate(&claim_id);
+                    let _ = self
+                        .log
+                        .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                }
             }
 
             // Contradiction detection: every 10 cycles
             if cycle_id % 10 == 0 && cycle_id > 0 {
+                let checked_claim_ids = claim_store
+                    .active_claims()
+                    .iter()
+                    .map(|c| c.id.clone())
+                    .collect::<Vec<_>>();
                 let contra_ids = contradiction_engine.detect(&claim_store);
                 for cid in &contra_ids {
                     if let Some(c) = contradiction_engine.get(cid) {
@@ -207,6 +232,12 @@ impl EvaluatorRun {
                         });
                     }
                 }
+                let _ = self.log.append(RuntimeEvent::ContradictionChecked {
+                    cycle_id,
+                    checked_claim_ids,
+                    contradiction_ids: contra_ids,
+                    active_contradictions: contradiction_engine.active().len(),
+                });
             }
 
             // ── Pressure events (per-field, real old values) ────────
@@ -237,11 +268,28 @@ impl EvaluatorRun {
                 .collect();
             let _ = self.log.append(RuntimeEvent::PolicyBiasApplied {
                 cycle_id,
-                dominant_pressures: dominant,
+                dominant_pressures: dominant.clone(),
                 selected_action: action_type.to_string(),
             });
 
-            // Reasoning audit: generate per cycle with evidence citation
+            let retrieval_for_audit = claim_store.retrieve_for_observation(observation);
+            let claim_ids_for_audit = retrieval_for_audit
+                .matched_claims
+                .iter()
+                .map(|c| c.claim_id.clone())
+                .collect::<Vec<_>>();
+            let disputed_claim_ids_for_audit = retrieval_for_audit
+                .disputed_claims
+                .iter()
+                .map(|c| c.claim_id.clone())
+                .collect::<Vec<_>>();
+            let contradiction_ids_for_audit = contradiction_engine
+                .active()
+                .iter()
+                .map(|c| c.id.clone())
+                .collect::<Vec<_>>();
+
+            // Reasoning audit: generate per cycle with evidence/claim/pressure refs
             let audit = ReasoningAudit::new(
                 cycle_id,
                 observation,
@@ -258,9 +306,19 @@ impl EvaluatorRun {
                     .collect(),
             )
             .with_memory_hits(step.memory_hits.iter().map(|h| h.key.clone()).collect())
-            .with_evidence(vec![ev_id_for_audit]);
+            .with_evidence(vec![ev_id_for_audit])
+            .with_claim_ids(claim_ids_for_audit.clone())
+            .with_disputed_claim_ids(disputed_claim_ids_for_audit)
+            .with_contradiction_ids(contradiction_ids_for_audit.clone())
+            .with_dominant_pressures(dominant.clone());
             let _ = self.log.append(RuntimeEvent::ReasoningAuditGenerated {
                 cycle_id,
+                audit_id: audit.audit_id.clone(),
+                selected_action: action_type.to_string(),
+                evidence_ids: audit.evidence_ids.clone(),
+                claim_ids: claim_ids_for_audit,
+                contradiction_ids: contradiction_ids_for_audit,
+                dominant_pressures: dominant.clone(),
                 audit_text: audit.to_text(),
             });
 
@@ -374,14 +432,32 @@ impl EvaluatorRun {
             let expected_str = scenario.expected_action.as_str();
             let resource_before = self.world.resources;
 
-            // Update claim metadata on RuntimeLoop for scoring
-            let active = claim_store.active_claims();
-            rt.has_evidence_backed_claims = active.iter().any(|c| !c.evidence_links.is_empty());
-            rt.has_any_active_claims = !active.is_empty();
-            rt.has_disputed_claims = active.len() > 1
-                && active
-                    .windows(2)
-                    .any(|w| w[0].subject == w[1].subject && w[0].predicate != w[1].predicate);
+            // Retrieve bounded claims for this observation before scoring.
+            let retrieval = claim_store.retrieve_for_observation(observation);
+            rt.has_evidence_backed_claims = retrieval
+                .matched_claims
+                .iter()
+                .any(|c| c.evidence_id.is_some());
+            rt.has_any_active_claims = !retrieval.matched_claims.is_empty();
+            rt.has_disputed_claims = !retrieval.disputed_claims.is_empty();
+
+            for claim_ref in retrieval
+                .matched_claims
+                .iter()
+                .chain(retrieval.disputed_claims.iter())
+            {
+                let confidence = claim_store
+                    .get(&claim_ref.claim_id)
+                    .map(|c| c.confidence)
+                    .unwrap_or(0.0);
+                let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
+                    cycle_id,
+                    claim_id: claim_ref.claim_id.clone(),
+                    evidence_id: claim_ref.evidence_id.clone(),
+                    status: format!("{:?}", claim_ref.status).to_lowercase(),
+                    confidence,
+                });
+            }
 
             // Compute pressure and bias (same as standard run)
             pressure.decay(0.1);
@@ -475,30 +551,37 @@ impl EvaluatorRun {
                 content_hash: ev_hash,
             });
 
-            if cycle_id % 3 == 0 {
-                let cid = format!("nl_claim_{cycle_id}");
-                let _ = claim_store.assert(
-                    &cid,
-                    "nl_scenario",
-                    format!("cycle_{cycle_id}"),
-                    None,
-                    0.6,
-                    vec![],
-                );
-                let _ = self.log.append(RuntimeEvent::ClaimAsserted {
-                    cycle_id,
-                    claim_id: cid.clone(),
-                    subject: "nl_scenario".into(),
-                    predicate: format!("cycle_{cycle_id}"),
-                });
-                let _ = claim_store.validate(&cid);
-                let _ = self.log.append(RuntimeEvent::ClaimValidated {
-                    cycle_id,
-                    claim_id: cid,
-                });
+            if let Some(entry) = evidence_vault.get(ev_idx).cloned() {
+                let structured_entry = evidence::EvidenceEntry {
+                    content: serde_json::json!({
+                        "subject": "nl_scenario",
+                        "predicate": format!("cycle_{cycle_id}")
+                    }),
+                    ..entry
+                };
+                if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
+                    let claim_id = claim.id.clone();
+                    let claim_subject = claim.subject.clone();
+                    let claim_predicate = claim.predicate.clone();
+                    let _ = self.log.append(RuntimeEvent::ClaimAsserted {
+                        cycle_id,
+                        claim_id: claim_id.clone(),
+                        subject: claim_subject,
+                        predicate: claim_predicate,
+                    });
+                    let _ = claim_store.validate(&claim_id);
+                    let _ = self
+                        .log
+                        .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                }
             }
 
             if cycle_id % 5 == 0 && cycle_id > 0 {
+                let checked_claim_ids = claim_store
+                    .active_claims()
+                    .iter()
+                    .map(|c| c.id.clone())
+                    .collect::<Vec<_>>();
                 let contra_ids = contradiction_engine.detect(&claim_store);
                 for cid in &contra_ids {
                     if let Some(c) = contradiction_engine.get(cid) {
@@ -510,6 +593,12 @@ impl EvaluatorRun {
                         });
                     }
                 }
+                let _ = self.log.append(RuntimeEvent::ContradictionChecked {
+                    cycle_id,
+                    checked_claim_ids,
+                    contradiction_ids: contra_ids,
+                    active_contradictions: contradiction_engine.active().len(),
+                });
             }
 
             // Pressure events (per-field, real old values)
@@ -550,11 +639,23 @@ impl EvaluatorRun {
                 .collect();
             let _ = self.log.append(RuntimeEvent::PolicyBiasApplied {
                 cycle_id,
-                dominant_pressures: dominant,
+                dominant_pressures: dominant.clone(),
                 selected_action: action_type.to_string(),
             });
 
-            // Reasoning audit: NL path with evidence citation
+            let retrieval_for_audit = claim_store.retrieve_for_observation(observation);
+            let claim_ids_for_audit = retrieval_for_audit
+                .matched_claims
+                .iter()
+                .map(|c| c.claim_id.clone())
+                .collect::<Vec<_>>();
+            let contradiction_ids_for_audit = contradiction_engine
+                .active()
+                .iter()
+                .map(|c| c.id.clone())
+                .collect::<Vec<_>>();
+
+            // Reasoning audit: NL path with evidence/claim/pressure refs
             let audit = ReasoningAudit::new(
                 cycle_id,
                 observation,
@@ -564,9 +665,18 @@ impl EvaluatorRun {
                     action_type, ev_id_for_audit
                 ),
             )
-            .with_evidence(vec![ev_id_for_audit]);
+            .with_evidence(vec![ev_id_for_audit])
+            .with_claim_ids(claim_ids_for_audit.clone())
+            .with_contradiction_ids(contradiction_ids_for_audit.clone())
+            .with_dominant_pressures(dominant.clone());
             let _ = self.log.append(RuntimeEvent::ReasoningAuditGenerated {
                 cycle_id,
+                audit_id: audit.audit_id.clone(),
+                selected_action: action_type.to_string(),
+                evidence_ids: audit.evidence_ids.clone(),
+                claim_ids: claim_ids_for_audit,
+                contradiction_ids: contradiction_ids_for_audit,
+                dominant_pressures: dominant,
                 audit_text: audit.to_text(),
             });
 

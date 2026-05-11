@@ -37,9 +37,9 @@ ClaimRetrieved (during decision)
   ↓
 ContradictionChecked (on active claims)
   ↓
-OperationalPressure Updated
+PressureUpdated
   ↓
-ActionScoringInfluenced (by claims, pressure)
+ActionScored (by claims, pressure)
   ↓
 ActionSelected (from 10-action vocab)
   ↓
@@ -52,6 +52,19 @@ ReplayReconstructsPath
   ↓
 ProofArtifactVerifies
 ```
+
+Required replay contract sequence:
+
+Observation
+→ EvidenceStored
+→ ClaimCreated
+→ ClaimRetrieved
+→ ContradictionChecked
+→ PressureUpdated
+→ ActionScored
+→ ActionSelected
+→ ReasoningAuditGenerated
+→ ReplayVerified
 
 ---
 
@@ -211,6 +224,8 @@ Each new report includes:
 ---
 
 ## What Not to Claim
+
+This integration creates a bounded evidence/claim/audit path. It does not make the runtime sentient, conscious, AGI, production-ready, semantically omniscient, or fully evidence-grounded across arbitrary real-world data.
 
 - ✗ "Evidence grounding completes cognition" — scaffolds are bounded
 - ✗ "Claim retrieval proves reasoning" — it's pattern matching

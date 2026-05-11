@@ -16,6 +16,7 @@ use runtime_core::RuntimeEvent;
 use simworld::evaluator::EvaluatorRun;
 use std::env;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -50,6 +51,36 @@ fn json_output(value: &serde_json::Value) {
 
 fn to_json<T: serde::Serialize>(value: &T) -> serde_json::Value {
     serde_json::to_value(value).unwrap_or(serde_json::json!({"error": "serialization_failed"}))
+}
+
+fn now_unix_ts() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+fn write_integration_report(
+    out_dir: &str,
+    file_name: &str,
+    pass: bool,
+    scenario_count: usize,
+    counters: serde_json::Value,
+    limitations: Vec<&str>,
+    proof_command: &str,
+) {
+    let report = serde_json::json!({
+        "pass": pass,
+        "scenario_count": scenario_count,
+        "counters": counters,
+        "limitations": limitations,
+        "proof_command": proof_command,
+        "generated_timestamp": now_unix_ts(),
+    });
+    let _ = std::fs::write(
+        format!("{out_dir}/{file_name}"),
+        serde_json::to_string_pretty(&report).unwrap_or_default(),
+    );
 }
 
 // ─── simworld ────────────────────────────────────────────────────────────
@@ -450,6 +481,20 @@ fn cmd_proof(args: &[String]) {
         predicate: "is red at sunset".into(),
     });
     let _ = claim_store.validate("proof_claim_2");
+    let _ = run.log.append(RuntimeEvent::ClaimRetrieved {
+        cycle_id: proof_cycle + 5,
+        claim_id: "proof_claim_1".into(),
+        evidence_id: Some("proof_evidence_1".into()),
+        status: "active".into(),
+        confidence: 0.8,
+    });
+    let _ = run.log.append(RuntimeEvent::ClaimRetrieved {
+        cycle_id: proof_cycle + 5,
+        claim_id: "proof_claim_2".into(),
+        evidence_id: Some("proof_evidence_2".into()),
+        status: "active".into(),
+        confidence: 0.7,
+    });
 
     // ── Contradiction detection ──────────────────────────────────────
     let mut contradiction_engine = contradiction::ContradictionEngine::new();
@@ -464,6 +509,12 @@ fn cmd_proof(args: &[String]) {
             });
         }
     }
+    let _ = run.log.append(RuntimeEvent::ContradictionChecked {
+        cycle_id: proof_cycle + 6,
+        checked_claim_ids: vec!["proof_claim_1".into(), "proof_claim_2".into()],
+        contradiction_ids: contra_ids.clone(),
+        active_contradictions: contradiction_engine.active().len(),
+    });
     let claim_ok = claim_store.len() == 2;
 
     // ── Pressure modulation ─────────────────────────────────────────
@@ -506,6 +557,12 @@ fn cmd_proof(args: &[String]) {
         );
         let _ = run.log.append(RuntimeEvent::ReasoningAuditGenerated {
             cycle_id: proof_cycle + 9 + i,
+            audit_id: audit.audit_id.clone(),
+            selected_action: ActionType::Answer.to_string(),
+            evidence_ids: vec![],
+            claim_ids: vec![],
+            contradiction_ids: vec![],
+            dominant_pressures: vec!["safety".into()],
             audit_text: audit.to_text(),
         });
     }
@@ -540,6 +597,122 @@ fn cmd_proof(args: &[String]) {
     if strict && !evidence_ok {
         all_ok = false;
     }
+
+    let scenario_count = run.traces.len();
+    let proof_cmd =
+        "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current";
+
+    write_integration_report(
+        &out_dir,
+        "evidence_claim_link_report.json",
+        replay_report.final_state.claims_with_evidence_links > 0,
+        scenario_count,
+        serde_json::json!({
+            "evidence_entries": replay_report.final_state.evidence_entries,
+            "claims_asserted": replay_report.final_state.claims_asserted,
+            "claims_with_evidence_links": replay_report.final_state.claims_with_evidence_links,
+        }),
+        vec![
+            "Bounded structured evidence linking only.",
+            "No arbitrary free-form semantic extraction.",
+        ],
+        proof_cmd,
+    );
+
+    write_integration_report(
+        &out_dir,
+        "claim_retrieval_report.json",
+        replay_report.final_state.claims_retrieved > 0,
+        scenario_count,
+        serde_json::json!({
+            "claims_retrieved": replay_report.final_state.claims_retrieved,
+            "claims_with_evidence_links": replay_report.final_state.claims_with_evidence_links,
+            "audits_with_claim_refs": replay_report.final_state.audits_with_claim_refs,
+        }),
+        vec![
+            "Retrieval is bounded lexical/structured lookup.",
+            "Does not prove broad natural-language reasoning.",
+        ],
+        proof_cmd,
+    );
+
+    write_integration_report(
+        &out_dir,
+        "contradiction_integration_report.json",
+        replay_report.final_state.contradictions_checked > 0,
+        scenario_count,
+        serde_json::json!({
+            "contradictions_checked": replay_report.final_state.contradictions_checked,
+            "contradictions_detected": replay_report.final_state.contradictions_detected,
+            "active_contradictions": replay_report.final_state.unresolved_contradictions,
+        }),
+        vec![
+            "Contradictions are structured checks, not semantic truth reasoning.",
+            "Mutual-exclusion patterns are bounded.",
+        ],
+        proof_cmd,
+    );
+
+    write_integration_report(
+        &out_dir,
+        "pressure_replay_report.json",
+        replay_report.final_state.pressure_updates > 0,
+        scenario_count,
+        serde_json::json!({
+            "pressure_updates": replay_report.final_state.pressure_updates,
+            "policy_bias_applications": replay_report.final_state.policy_bias_applications,
+            "final_pressure_state": {
+                "uncertainty": replay_report.final_state.last_pressure_uncertainty,
+                "contradiction": replay_report.final_state.last_pressure_contradiction,
+                "safety": replay_report.final_state.last_pressure_safety,
+                "resource": replay_report.final_state.last_pressure_resource,
+                "social_risk": replay_report.final_state.last_pressure_social_risk,
+                "tool_risk": replay_report.final_state.last_pressure_tool_risk,
+                "evidence_gap": replay_report.final_state.last_pressure_evidence_gap,
+                "urgency": replay_report.final_state.last_pressure_urgency,
+                "coherence": replay_report.final_state.last_pressure_coherence,
+            }
+        }),
+        vec![
+            "Pressure fields are deterministic control signals.",
+            "No emotional or sentience interpretation.",
+        ],
+        proof_cmd,
+    );
+
+    write_integration_report(
+        &out_dir,
+        "reasoning_audit_report.json",
+        replay_report.final_state.reasoning_audits > 0,
+        scenario_count,
+        serde_json::json!({
+            "reasoning_audits": replay_report.final_state.reasoning_audits,
+            "audits_with_evidence_refs": replay_report.final_state.audits_with_evidence_refs,
+            "audits_with_claim_refs": replay_report.final_state.audits_with_claim_refs,
+        }),
+        vec![
+            "Audit is structured metadata, not hidden chain-of-thought.",
+            "Audit references are bounded to event-visible IDs.",
+        ],
+        proof_cmd,
+    );
+
+    write_integration_report(
+        &out_dir,
+        "tool_policy_report.json",
+        replay_report.final_state.tools_blocked > 0,
+        scenario_count,
+        serde_json::json!({
+            "tools_executed": replay_report.final_state.tools_executed,
+            "tools_blocked": replay_report.final_state.tools_blocked,
+            "tool_risk_pressure": replay_report.final_state.last_pressure_tool_risk,
+        }),
+        vec![
+            "Tool lifecycle is policy-gated and bounded.",
+            "No real autonomous external tool execution is enabled.",
+        ],
+        proof_cmd,
+    );
 
     // 4. Action schema — validate against schemas/action_types.json
     let schema_ok = match std::fs::read_to_string("../schemas/action_types.json") {

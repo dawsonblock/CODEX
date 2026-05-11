@@ -1,6 +1,6 @@
 {
   "codename": "CODEX-main 32",
-  "verified_at": "2026-05-10T20:20:16.340076Z",
+  "verified_at": "2026-05-10T00:00:00Z",
   "python_verified": true,
   "rust_verified": true,
   "cargo_version": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
@@ -11,28 +11,39 @@
     "artifacts/proof/current/replay_report.json",
     "artifacts/proof/current/evidence_integrity_report.json",
     "artifacts/proof/current/nl_benchmark_report.json",
-    "artifacts/proof/current/long_horizon_report.json"
+    "artifacts/proof/current/long_horizon_report.json",
+    "artifacts/proof/current/evidence_claim_link_report.json",
+    "artifacts/proof/current/claim_retrieval_report.json",
+    "artifacts/proof/current/contradiction_integration_report.json",
+    "artifacts/proof/current/pressure_replay_report.json",
+    "artifacts/proof/current/reasoning_audit_report.json",
+    "artifacts/proof/current/tool_policy_report.json"
   ],
   "simworld_summary": {
-    "cycles": 18,
-    "resource_survival": 0.954,
+    "cycles": 28,
+    "resource_survival": 0.922,
     "unsafe_action_count": 0,
-    "mean_total_score": 0.6280555555555554,
-    "action_match_rate": 1.0
+    "mean_total_score": 0.6400595238095235,
+    "action_match_rate": 0.75
   },
   "replay_report": {
-    "event_count": 502,
+    "event_count": 1123,
     "replay_passes": true,
     "is_idempotent": true,
-    "evidence_entries": 20,
-    "claims_asserted": 8,
-    "claims_validated": 7,
-    "contradictions_detected": 16,
-    "reasoning_audits": 21,
+    "evidence_entries": 30,
+    "claims_asserted": 30,
+    "claims_validated": 29,
+    "claims_retrieved": 2,
+    "claims_with_evidence_links": 2,
+    "contradictions_checked": 6,
+    "contradictions_detected": 326,
+    "reasoning_audits": 31,
+    "audits_with_evidence_refs": 28,
+    "audits_with_claim_refs": 0,
     "tools_executed": 1,
     "tools_blocked": 1,
-    "pressure_updates": 48,
-    "policy_bias_applications": 19
+    "pressure_updates": 78,
+    "policy_bias_applications": 29
   },
   "evidence_integrity": {
     "total_entries": 2,
@@ -46,8 +57,8 @@
       "action_match_rate": 1.0
     },
     "held_out": {
-      "scenario_count": 1,
-      "action_match_rate": 1.0
+      "scenario_count": 11,
+      "action_match_rate": 0.36363636363636365
     },
     "adversarial": {
       "scenario_count": 2,

@@ -1,0 +1,15 @@
+{
+  "counters": {
+    "tool_risk_pressure": 0.0,
+    "tools_blocked": 1,
+    "tools_executed": 1
+  },
+  "generated_timestamp": 1778459106,
+  "limitations": [
+    "Tool lifecycle is policy-gated and bounded.",
+    "No real autonomous external tool execution is enabled."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 28
+}

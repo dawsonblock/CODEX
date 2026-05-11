@@ -212,8 +212,19 @@ pub struct MemoryClaim {
     pub status: ClaimStatus,
     /// Claim confidence (0.0–1.0). Does NOT mean the claim is true.
     pub confidence: f64,
+    /// Explicit evidence IDs linked to this claim.
+    #[serde(default)]
+    pub evidence_ids: Vec<String>,
+    /// Explicit evidence hashes linked to this claim.
+    #[serde(default)]
+    pub evidence_hashes: Vec<String>,
+    /// Source label for bounded evidence-backed claim creation.
+    #[serde(default)]
+    pub source_label: String,
     pub evidence_links: Vec<ClaimEvidenceLink>,
     pub created_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
     pub superseded_by: Option<String>,
 }
 
@@ -437,8 +448,12 @@ mod tests {
             object: None,
             status: ClaimStatus::Contradicted,
             confidence: 0.5,
+            evidence_ids: vec![],
+            evidence_hashes: vec![],
+            source_label: "test".into(),
             evidence_links: vec![],
             created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: None,
             superseded_by: None,
         };
         assert_ne!(claim.status, ClaimStatus::Active);
@@ -453,8 +468,12 @@ mod tests {
             object: None,
             status: ClaimStatus::Superseded,
             confidence: 0.5,
+            evidence_ids: vec![],
+            evidence_hashes: vec![],
+            source_label: "test".into(),
             evidence_links: vec![],
             created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: None,
             superseded_by: Some("c2".into()),
         };
         assert_eq!(old.status, ClaimStatus::Superseded);

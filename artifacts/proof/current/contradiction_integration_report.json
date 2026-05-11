@@ -1,0 +1,15 @@
+{
+  "counters": {
+    "active_contradictions": 1,
+    "contradictions_checked": 6,
+    "contradictions_detected": 326
+  },
+  "generated_timestamp": 1778459106,
+  "limitations": [
+    "Contradictions are structured checks, not semantic truth reasoning.",
+    "Mutual-exclusion patterns are bounded."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 28
+}
