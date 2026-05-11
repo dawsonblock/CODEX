@@ -26,31 +26,36 @@ Rust verification:
 
 ## Current Proof Metrics
 
-- SimWorld cycles: 28
-- resource_survival: 0.8020
+- SimWorld cycles: 15
+- resource_survival: 0.9740
 - unsafe_action_count: 0
-- mean_total_score: 0.6105952381
+- mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
-- replay event_count: 1132
+- replay event_count: 541
 - replay_passes: true
-- evidence_entries: 30
-- claims_asserted: 30
-- claims_retrieved: 2
-- claims_with_evidence_links: 2
-- contradictions_checked: 6
-- contradictions_detected: 326
-- raw_contradictions_detected: 326
+- evidence_entries: 96
+- claims_asserted: 17
+- claims_retrieved: 17
+- claims_with_evidence_links: 17
+- contradictions_checked: 3
+- contradictions_detected: 1
+- raw_contradictions_detected: 1
 - unique_contradictions_detected: 1
-- duplicate_contradictions_suppressed: 325
-- pressure_updates: 78
-- policy_bias_applications: 29
-- reasoning_audits: 31
-- audits_with_claim_refs: 3
+- duplicate_contradictions_suppressed: 0
+- pressure_updates: 39
+- policy_bias_applications: 16
+- reasoning_audits: 33
+- audits_with_claim_refs: 18
 - tool_requests: 2
 - tool_dry_runs: 1
 - tool_scaffold_executed: 1
 - tools_blocked: 1
 - real_external_executions: 0
+
+NL benchmark snapshot:
+- curated: 15 scenarios, action_match_rate 1.00
+- held_out: 26 scenarios, action_match_rate 0.9615384615
+- adversarial: 2 scenarios, action_match_rate 1.00
 
 ## Expanded Proof Artifacts
 
@@ -74,7 +79,7 @@ The official proof command now generates:
 - Rust remains authoritative.
 - No real autonomous external tool execution is enabled.
 - Contradiction handling remains structured, not semantic truth reasoning.
-- NL benchmark remains diagnostic routing over 28 scenarios, not broad reasoning proof.
-- Evidence-backed claim coverage remains sparse (2/30 linked).
+- NL benchmark remains diagnostic routing over 43 scenarios, not broad reasoning proof.
+- Evidence-backed claim linkage improved for proof-known evaluator evidence and remains bounded to structured sources.
 
 This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.

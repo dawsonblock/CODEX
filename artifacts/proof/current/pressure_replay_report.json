@@ -7,7 +7,7 @@
       "coherence": 0.0,
       "contradiction": 0.0,
       "evidence_gap": 0.0,
-      "resource": 0.17800000000000016,
+      "resource": 0.016000000000000014,
       "safety": 0.5,
       "social_risk": 0.0,
       "tool_risk": 0.0,
@@ -15,12 +15,12 @@
       "urgency": 0.0
     },
     "interpretation": "contradiction pressure is a transient control signal that may decay/reset after handling; active_contradictions_final reports unresolved structured contradictions separately; both are deterministic control signals, not emotional states",
-    "policy_bias_applications": 29,
+    "policy_bias_applications": 16,
     "pressure_decay_events": null,
     "pressure_reset_events": null,
-    "pressure_updates": 78
+    "pressure_updates": 39
   },
-  "generated_timestamp": 1778491119,
+  "generated_timestamp": 1778529315,
   "limitations": [
     "Pressure fields are deterministic control signals.",
     "No emotional or sentience interpretation.",
@@ -29,5 +29,5 @@
   ],
   "pass": true,
   "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
-  "scenario_count": 28
+  "scenario_count": 15
 }

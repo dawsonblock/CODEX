@@ -14,6 +14,7 @@ use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::ActionType;
 use runtime_core::RuntimeEvent;
 use simworld::evaluator::EvaluatorRun;
+use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -92,6 +93,89 @@ fn proof_audit_claim_ids(retrieved_claim_ids: &[String]) -> Vec<String> {
         }
     }
     unique_ids
+}
+
+fn scenario_category_label(category: &simworld::nl_scenarios::ScenarioCategory) -> &'static str {
+    match category {
+        simworld::nl_scenarios::ScenarioCategory::FactualQuery => "factual_query",
+        simworld::nl_scenarios::ScenarioCategory::AmbiguousRequest => "ambiguous_request",
+        simworld::nl_scenarios::ScenarioCategory::UnsafeRequest => "unsafe_request",
+        simworld::nl_scenarios::ScenarioCategory::MemoryLookup => "memory_lookup",
+        simworld::nl_scenarios::ScenarioCategory::PlanningRequest => "planning_request",
+        simworld::nl_scenarios::ScenarioCategory::Summarization => "summarization",
+        simworld::nl_scenarios::ScenarioCategory::InsufficientContext => "insufficient_context",
+    }
+}
+
+fn build_nl_set_metrics(
+    scenarios: &[simworld::nl_scenarios::NLScenario],
+) -> (simworld::Scorecard, serde_json::Value) {
+    let refs: Vec<&simworld::nl_scenarios::NLScenario> = scenarios.iter().collect();
+    let cycles = refs.len() as u64;
+    let mut r = EvaluatorRun::new(0, None);
+    let card = r.run_with_scenarios(&refs, cycles);
+
+    let mut by_category_total: BTreeMap<String, u64> = BTreeMap::new();
+    let mut by_category_match: BTreeMap<String, u64> = BTreeMap::new();
+    let mut category_lookup: BTreeMap<String, String> = BTreeMap::new();
+
+    for scenario in scenarios {
+        let label = scenario_category_label(&scenario.category).to_string();
+        by_category_total
+            .entry(label.clone())
+            .and_modify(|n| *n += 1)
+            .or_insert(1);
+        category_lookup.insert(scenario.id.clone(), label);
+    }
+
+    let mut failed_scenarios = Vec::new();
+    for trace in &r.traces {
+        if trace.action_match {
+            if let Some(label) = category_lookup.get(&trace.scenario_id) {
+                by_category_match
+                    .entry(label.clone())
+                    .and_modify(|n| *n += 1)
+                    .or_insert(1);
+            }
+            continue;
+        }
+
+        failed_scenarios.push(serde_json::json!({
+            "scenario_id": trace.scenario_id,
+            "expected_action": trace.expected_action,
+            "selected_action": trace.selected_action,
+            "failure_reason": trace.selection_reason,
+        }));
+    }
+
+    let category_metrics: BTreeMap<String, serde_json::Value> = by_category_total
+        .iter()
+        .map(|(category, total)| {
+            let matched = by_category_match.get(category).copied().unwrap_or(0);
+            let rate = if *total == 0 {
+                0.0
+            } else {
+                matched as f64 / *total as f64
+            };
+            (
+                category.clone(),
+                serde_json::json!({
+                    "scenario_count": total,
+                    "action_match_rate": rate,
+                }),
+            )
+        })
+        .collect();
+
+    let metrics = serde_json::json!({
+        "scenarios": cycles,
+        "scorecard": to_json(&card),
+        "traces": r.traces.len(),
+        "categories": category_metrics,
+        "failed_scenarios": failed_scenarios,
+    });
+
+    (card, metrics)
 }
 
 // ─── simworld ────────────────────────────────────────────────────────────
@@ -309,18 +393,10 @@ fn run_benchmark(run: &mut EvaluatorRun, out_dir: &str) -> simworld::Scorecard {
     ]
     .iter()
     .map(|(name, scenarios)| {
-        let refs: Vec<&simworld::nl_scenarios::NLScenario> = scenarios.iter().collect();
-        let cycles = refs.len() as u64;
-        if cycles == 0 {
+        if scenarios.is_empty() {
             return (name.to_string(), serde_json::json!({"error": "empty set"}));
         }
-        let mut r = EvaluatorRun::new(0, None);
-        let card = r.run_with_scenarios(&refs, cycles);
-        let metrics = serde_json::json!({
-            "scenarios": cycles,
-            "scorecard": to_json(&card),
-            "traces": r.traces.len(),
-        });
+        let (_, metrics) = build_nl_set_metrics(scenarios);
         (name.to_string(), metrics)
     })
     .collect();
@@ -361,18 +437,10 @@ fn cmd_proof(args: &[String]) {
         ]
         .iter()
         .map(|(name, scenarios)| {
-            let refs: Vec<&simworld::nl_scenarios::NLScenario> = scenarios.iter().collect();
-            let cycles = refs.len() as u64;
-            if cycles == 0 {
+            if scenarios.is_empty() {
                 return (name.to_string(), serde_json::json!({"error": "empty set"}));
             }
-            let mut r = EvaluatorRun::new(0, None);
-            let card = r.run_with_scenarios(&refs, cycles);
-            let metrics = serde_json::json!({
-                "scenarios": cycles,
-                "scorecard": to_json(&card),
-                "traces": r.traces.len(),
-            });
+            let (_, metrics) = build_nl_set_metrics(scenarios);
             (name.to_string(), metrics)
         })
         .collect();
@@ -384,7 +452,10 @@ fn cmd_proof(args: &[String]) {
             format!("{out_dir}/nl_benchmark_report.json"),
             serde_json::to_string_pretty(&report).unwrap_or_default(),
         );
-        run.run_nl()
+        // Strict gate uses a stable curated NL pass; held-out/adversarial are
+        // reported separately in nl_benchmark_report.json.
+        let curated_refs: Vec<&simworld::nl_scenarios::NLScenario> = sets.curated.iter().collect();
+        run.run_with_scenarios(&curated_refs, curated_refs.len() as u64)
     } else {
         run.run(25)
     };

@@ -58,7 +58,7 @@ Additional scaffold modules:
 - `crates/memory/src/claim_store.rs` — Claim lifecycle (assert/validate/contradict/supersede), confidence stored
 - `crates/modulation/src/self_model.rs` — Bounded ring buffer, snapshots, known unknowns
 - `crates/runtime-core/src/reasoning_audit.rs` — Per-cycle human-readable decision trace
-- `crates/simworld/src/nl_scenarios.rs` — 28 NL diagnostic scenarios: 15 curated, 11 held-out, 2 adversarial. Current NL benchmark is diagnostic; it exposes routing limitations and does not prove broad natural-language reasoning.
+- `crates/simworld/src/nl_scenarios.rs` — 43 NL diagnostic scenarios: 15 curated, 26 held-out, 2 adversarial. Current NL benchmark is diagnostic; it exposes routing limitations and does not prove broad natural-language reasoning.
 - `crates/simworld/src/long_horizon.rs` — Multi-episode runner with full-trace action collection
 
 ### Legacy
@@ -123,10 +123,10 @@ the resulting action against `expected_action` — but `expected_action` is
 
 > Current SimWorld scenarios are synthetic and label-like. The high
 > action_match_rate proves deterministic action routing over the current
-> scenario set, not broad natural-language reasoning. The current 28-scenario
-> NL diagnostic benchmark includes 15 curated, 11 held-out, and 2 adversarial
-> scenarios. Current routing scores 1.00 across those sets, but this remains
-> bounded diagnostic routing on a fixed benchmark, not broad natural-language
+> scenario set, not broad natural-language reasoning. The current 43-scenario
+> NL diagnostic benchmark includes 15 curated, 26 held-out, and 2 adversarial
+> scenarios. Current routing scores are bounded and non-perfect on held-out,
+> and remain diagnostic benchmark behavior rather than broad natural-language
 > reasoning.
 
 ## Proof system

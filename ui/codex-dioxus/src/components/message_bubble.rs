@@ -25,6 +25,7 @@ pub fn MessageBubble(
                     span { "{message.timestamp}" }
                     if let Some(trace) = &message.runtime {
                         span { "action: {trace.selected_action}" }
+                        span { "metadata: {trace.metadata_quality.label()}" }
                     }
                 }
             }

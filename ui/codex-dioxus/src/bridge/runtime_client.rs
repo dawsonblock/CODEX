@@ -1,6 +1,6 @@
 use super::types::{
-    ChatRole, CommandApprovalState, RuntimeBridgeMode, RuntimeChatResponse, RuntimeCommand,
-    RuntimeCommandResult, RuntimeCommandStatus, RuntimeTraceSummary,
+    ChatRole, CommandApprovalState, MetadataQuality, RuntimeBridgeMode, RuntimeChatResponse,
+    RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus, RuntimeTraceSummary,
 };
 use runtime_core::{ActionType, RuntimeEvent, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -40,6 +40,7 @@ impl RuntimeClient {
                     dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
                     replay_safe: true,
                     tool_policy_decision: Some("provider_disabled".to_string()),
+                    metadata_quality: MetadataQuality::Unavailable,
                     ..RuntimeTraceSummary::default()
                 },
             },
@@ -132,6 +133,15 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
     } else {
         None
     };
+    let metadata_quality = if audit_id.is_some()
+        || !evidence_ids.is_empty()
+        || !claim_ids.is_empty()
+        || !contradiction_ids.is_empty()
+    {
+        MetadataQuality::RuntimeGrounded
+    } else {
+        MetadataQuality::PartiallyGrounded
+    };
 
     RuntimeChatResponse {
         message,
@@ -152,6 +162,7 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
             replay_safe: step.is_safe,
             tool_policy_decision: None,
             missing_evidence_reason,
+            metadata_quality,
         },
     }
 }
@@ -338,6 +349,7 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
             replay_safe: true,
             tool_policy_decision: policy,
             missing_evidence_reason: missing_evidence,
+            metadata_quality: MetadataQuality::MockOnly,
         },
     }
 }
@@ -478,6 +490,17 @@ mod tests {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
         let out = client.send_user_message("What is a bounded runtime bridge?");
         assert_eq!(out.selected_action, "answer");
+        assert_eq!(out.trace.metadata_quality, MetadataQuality::MockOnly);
+    }
+
+    #[test]
+    fn local_runtime_mode_has_explicit_metadata_quality() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
+        let out = client.send_user_message("what is safe_action?");
+        assert!(
+            out.trace.metadata_quality == MetadataQuality::RuntimeGrounded
+                || out.trace.metadata_quality == MetadataQuality::PartiallyGrounded
+        );
     }
 }
 #[test]

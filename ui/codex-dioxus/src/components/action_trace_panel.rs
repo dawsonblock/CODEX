@@ -38,12 +38,25 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
     let missing_evidence = trace
         .missing_evidence_reason
         .unwrap_or_else(|| "not available in current runtime bridge".to_string());
+    let metadata_quality = trace.metadata_quality.label();
+    let show_partial_warning = matches!(
+        trace.metadata_quality,
+        crate::bridge::types::MetadataQuality::PartiallyGrounded
+            | crate::bridge::types::MetadataQuality::Unavailable
+    );
 
     rsx! {
         section { class: "card",
             h3 { "Action Trace" }
+            if show_partial_warning {
+                p {
+                    class: "muted",
+                    "This response is local-runtime routed, but evidence/claim/audit grounding is partial."
+                }
+            }
             ul { class: "list",
                 li { "selected_action: {trace.selected_action}" }
+                li { "metadata_quality: {metadata_quality}" }
                 li { "replay_safe: {trace.replay_safe}" }
                 li { "pressure_updates: {trace.pressure_updates}" }
                 li { "policy_bias_applications: {trace.policy_bias_applications}" }

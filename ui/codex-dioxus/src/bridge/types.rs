@@ -34,6 +34,27 @@ pub struct RuntimeTraceSummary {
     pub replay_safe: bool,
     pub tool_policy_decision: Option<String>,
     pub missing_evidence_reason: Option<String>,
+    pub metadata_quality: MetadataQuality,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MetadataQuality {
+    RuntimeGrounded,
+    #[default]
+    PartiallyGrounded,
+    MockOnly,
+    Unavailable,
+}
+
+impl MetadataQuality {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeGrounded => "RuntimeGrounded",
+            Self::PartiallyGrounded => "PartiallyGrounded",
+            Self::MockOnly => "MockOnly",
+            Self::Unavailable => "Unavailable",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
