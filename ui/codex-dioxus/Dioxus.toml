@@ -1,0 +1,12 @@
+[application]
+name = "codex-dioxus"
+default_platform = "desktop"
+out_dir = "dist"
+asset_dir = "assets"
+
+[web.app]
+title = "CODEX Runtime Dashboard"
+
+[web.resource]
+style = ["assets/main.css"]
+script = []
