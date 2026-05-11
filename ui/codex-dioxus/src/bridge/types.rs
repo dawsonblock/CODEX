@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ScorecardMetrics {
     #[serde(default)]
     pub cycles: u64,
@@ -14,13 +14,13 @@ pub struct ScorecardMetrics {
     pub action_match_rate: f64,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SimworldSummary {
     #[serde(default)]
     pub scorecard: ScorecardMetrics,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ReplayReport {
     #[serde(default)]
     pub event_count: u64,
@@ -32,7 +32,7 @@ pub struct ReplayReport {
     pub final_state: ReplayFinalState,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ReplayFinalState {
     #[serde(default)]
     pub evidence_entries: u64,
@@ -72,7 +72,7 @@ pub struct ReplayFinalState {
     pub last_pressure_coherence: f64,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceIntegrityReport {
     #[serde(default)]
     pub total_entries: u64,
@@ -84,7 +84,7 @@ pub struct EvidenceIntegrityReport {
     pub all_valid: bool,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct NlSetMetrics {
     #[serde(default)]
     pub scenarios: u64,
@@ -92,7 +92,7 @@ pub struct NlSetMetrics {
     pub scorecard: ScorecardMetrics,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct NlBenchmarkReport {
     #[serde(default)]
     pub curated: Option<NlSetMetrics>,
@@ -102,7 +102,7 @@ pub struct NlBenchmarkReport {
     pub adversarial: Option<NlSetMetrics>,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct LongHorizonReport {
     #[serde(default)]
     pub total_episodes: u64,
@@ -114,7 +114,7 @@ pub struct LongHorizonReport {
     pub action_diversity: f64,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ProofManifest {
     #[serde(default)]
     pub codename: String,
@@ -126,7 +126,7 @@ pub struct ProofManifest {
     pub official_proof_command: String,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct CodexProofState {
     pub simworld: SimworldSummary,
     pub replay: ReplayReport,
@@ -153,9 +153,6 @@ pub enum RuntimeCommand {
 pub enum RuntimeCommandStatus {
     Disabled,
     DryRunOnly,
-    PendingApproval,
-    Complete,
-    Failed,
 }
 
 #[derive(Debug, Clone)]

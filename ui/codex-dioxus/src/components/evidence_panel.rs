@@ -3,8 +3,13 @@ use dioxus::prelude::*;
 
 #[component]
 pub fn EvidencePanel(proof: CodexProofState) -> Element {
-    let contradiction_rate = if proof.replays > 0 {
-        proof.contradictions as f64 / proof.replays as f64
+    let replay_events = proof.replay.event_count;
+    let contradictions = proof.replay.final_state.contradictions_detected;
+    let claims = proof.replay.final_state.claims_asserted;
+    let evidence_items = proof.evidence.total_entries;
+
+    let contradiction_rate = if replay_events > 0 {
+        contradictions as f64 / replay_events as f64
     } else {
         0.0
     };
@@ -15,15 +20,15 @@ pub fn EvidencePanel(proof: CodexProofState) -> Element {
             div { class: "metric-grid",
                 div { class: "metric",
                     span { class: "metric-label", "Evidence Items" }
-                    span { class: "metric-value", "{proof.evidence_items}" }
+                    span { class: "metric-value", "{evidence_items}" }
                 }
                 div { class: "metric",
                     span { class: "metric-label", "Claims" }
-                    span { class: "metric-value", "{proof.claims}" }
+                    span { class: "metric-value", "{claims}" }
                 }
                 div { class: "metric",
                     span { class: "metric-label", "Contradictions" }
-                    span { class: "metric-value", "{proof.contradictions}" }
+                    span { class: "metric-value", "{contradictions}" }
                 }
                 div { class: "metric",
                     span { class: "metric-label", "Contradiction Rate" }

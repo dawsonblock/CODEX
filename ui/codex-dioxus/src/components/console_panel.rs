@@ -4,8 +4,8 @@ use dioxus::prelude::*;
 
 #[component]
 pub fn ConsolePanel() -> Element {
-    let command = use_signal(|| RuntimeCommand::ReplayLast);
-    let status = use_signal(|| String::from("Commands are disabled in UI v1."));
+    let mut command = use_signal(|| RuntimeCommand::ReplayLast);
+    let mut status = use_signal(|| String::from("Commands are disabled in UI v1."));
 
     rsx! {
         section { class: "card",
@@ -39,11 +39,14 @@ pub fn ConsolePanel() -> Element {
                 onclick: move |_| {
                     let transport = RuntimeTransport::new_disabled();
                     let result = send_runtime_command(&transport, &command());
-                    status.set(result.message);
+                    status.set(format!(
+                        "{:?} {:?}: {}",
+                        result.command, result.status, result.message
+                    ));
                 },
                 "Send (Disabled)"
             }
-            p { class: "muted", "Status: {status}" }
+            p { class: "muted", "Status: {status()}" }
         }
     }
 }
