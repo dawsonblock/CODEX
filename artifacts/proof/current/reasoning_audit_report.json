@@ -9,7 +9,7 @@
     "audits_without_evidence_refs": 3,
     "reasoning_audits": 31
   },
-  "generated_timestamp": 1778485348,
+  "generated_timestamp": 1778485748,
   "limitations": [
     "Audit is structured metadata, not hidden chain-of-thought.",
     "Audit references are bounded to event-visible IDs.",
