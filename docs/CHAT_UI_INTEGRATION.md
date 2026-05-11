@@ -20,12 +20,14 @@ The integration reuses UI patterns only:
 
 The following were intentionally not merged into CODEX runtime authority:
 
-- Provider API execution
+- Cloud Provider API execution (OpenAI, Anthropic, etc.)
 - API key storage
 - Web search execution
 - External autonomous tool execution
 - Auth/account logic
-- Streaming provider backend
+- Remote streaming provider backend
+
+Experimental LOCAL provider execution (Ollama via localhost) is enabled for testing, gated behind an explicit security toggle.
 
 ## 4. Chat UI architecture
 
@@ -55,8 +57,10 @@ The UI does not become the runtime brain, and does not replace runtime selection
 Bridge modes:
 
 - mock UI mode (active)
-- local CODEX runtime mode (disabled until direct crate wiring is enabled)
-- external provider mode (disabled)
+- local CODEX runtime mode (read-only)
+- experimental local Ollama provider (localhost:11434)
+- experimental local Turboquant provider (localhost:11434)
+- external cloud provider mode (disabled)
 
 The mock bridge is explicitly non-authoritative and bounded to the fixed 10-action schema.
 
@@ -96,9 +100,14 @@ Pressure wording remains bounded:
 
 ## 10. Tool/provider limitations
 
-No real external tool execution or provider API execution is enabled in this pass.
+External cloud provider API execution is strictly disabled.
 
-Tool requests are policy-gated and rendered as bounded/disabled behavior.
+Experimental LOCAL provider execution (Ollama/Turboquant) is enabled for developer testing only. This mode is:
+- Gated behind a "Provider Security Gate" in Settings.
+- Strictly non-authoritative; it does NOT represent the CODEX runtime selection.
+- Monitored via local provider execution counters.
+
+Tool requests remain policy-gated and are rendered as bounded/disabled "Dry Run" behaviors. Real external tool execution is NOT enabled.
 
 ## 11. How to run the UI
 
@@ -124,4 +133,4 @@ The chat UI is a viewer/controller shell. CODEX runtime remains authoritative.
 
 The UI may display chat history, but UI history is not claim memory or evidence memory.
 
-No real external tool execution or provider API execution is enabled in this pass.
+No real external tool execution or external cloud provider API execution is enabled in this pass. Local provider execution (localhost:11434) is experimental, non-authoritative, and security-gated.

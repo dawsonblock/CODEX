@@ -79,6 +79,7 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
                 li { "dominant_pressures: {dominant_pressures}" }
                 li { "tool_policy_decision: {tool_policy}" }
                 li { "missing_evidence_reason: {missing_evidence}" }
+                li { "provider_executions_local: {trace.provider_executions_local}" }
             }
         }
     }

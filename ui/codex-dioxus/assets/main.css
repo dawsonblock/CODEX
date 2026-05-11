@@ -723,3 +723,32 @@ button, input, textarea {
   border-left: 2px solid var(--accent);
   color: var(--accent);
 }
+
+.warning-banner {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+}
+
+.warning-banner h4 {
+  color: #ef4444;
+  margin-bottom: 8px;
+}
+
+.badge.success {
+  background: #10b981;
+  color: white;
+}
+
+.badge.danger {
+  background: #ef4444;
+  color: white;
+}
+
+.badge.warning {
+  background: #f59e0b;
+  color: white;
+}
+

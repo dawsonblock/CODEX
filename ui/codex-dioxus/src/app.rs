@@ -24,8 +24,8 @@ pub const UI_BOUNDARY_LINES: [&str; 5] = [
     "Codex-main 32 is not sentient.",
     "Codex-main 32 is not conscious.",
     "Codex-main 32 is not AGI.",
-    "Codex-main 32 is not production-ready.",
-    "UI shell is bounded to visualization and disabled command intents.",
+    "Local providers (Ollama) are experimental and non-authoritative.",
+    "UI shell is bounded; real external cloud tools are disabled.",
 ];
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -310,7 +310,7 @@ pub fn App() -> Element {
                                         selected_message_id.set(Some(assistant_id.clone()));
 
                                         spawn(async move {
-                                            let client = RuntimeClient::new(mode);
+                                            let client = RuntimeClient::new(mode, settings().provider_gate_enabled);
                                             let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
                                             
                                             let text_clone = text.clone();
@@ -419,6 +419,9 @@ pub fn App() -> Element {
                                 },
                                 on_toggle_pressure: move |_| {
                                     settings.with_mut(|s| s.show_pressure_panel = !s.show_pressure_panel);
+                                },
+                                on_toggle_provider_gate: move |_| {
+                                    settings.with_mut(|s| s.provider_gate_enabled = !s.provider_gate_enabled);
                                 },
                                 on_cycle_bridge_mode: move |_| {
                                     settings.with_mut(|s| {

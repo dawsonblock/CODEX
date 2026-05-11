@@ -164,9 +164,10 @@ trace inspection, and safe bridge modes:
 
 - `mock UI mode` — deterministic mock routing in UI bridge
 - `local CODEX runtime mode (read-only)` — in-process `runtime-core` selection only
-- `external provider mode (disabled)` — explicitly disabled provider execution path
+- `local Ollama/Turboquant provider (experimental)` — localhost provider execution, gated by a security toggle
+- `external cloud provider mode (disabled)` — explicitly disabled external execution path
 
-The UI does not enable real autonomous external tool execution.
+The UI does not enable real autonomous external tool execution or external cloud provider API execution. Local provider execution (localhost:11434) is strictly non-authoritative and used for developer testing only.
 
 ### UI verification matrix
 

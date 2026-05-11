@@ -5,6 +5,7 @@ use super::types::{
 use runtime_core::{ActionType, RuntimeEvent, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::mpsc::UnboundedSender;
 
 #[derive(Debug, Clone)]
 pub struct RuntimeTransport {
@@ -20,11 +21,12 @@ impl RuntimeTransport {
 #[derive(Debug, Clone)]
 pub struct RuntimeClient {
     pub mode: RuntimeBridgeMode,
+    pub provider_gate: bool,
 }
 
 impl RuntimeClient {
-    pub fn new(mode: RuntimeBridgeMode) -> Self {
-        Self { mode }
+    pub fn new(mode: RuntimeBridgeMode, provider_gate: bool) -> Self {
+        Self { mode, provider_gate }
     }
 
     pub async fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
@@ -43,6 +45,7 @@ impl RuntimeClient {
                     replay_safe: true,
                     tool_policy_decision: Some("provider_disabled".to_string()),
                     metadata_quality: MetadataQuality::Unavailable,
+                    provider_executions_local: 0,
                     ..RuntimeTraceSummary::default()
                 },
             },
@@ -52,7 +55,7 @@ impl RuntimeClient {
     pub async fn send_user_message_stream(
         &self,
         input: &str,
-        sender: tokio::sync::mpsc::UnboundedSender<String>,
+        sender: UnboundedSender<String>,
     ) -> RuntimeChatResponse {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => {
@@ -66,10 +69,24 @@ impl RuntimeClient {
                 resp
             }
             RuntimeBridgeMode::LocalOllamaProvider => {
-                ollama_runtime_stream(input, "llama3", sender).await
+                if !self.provider_gate {
+                    let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Ollama.".to_string();
+                    let _ = sender.send(err.clone());
+                    return RuntimeChatResponse::with_error(err);
+                }
+                let mut resp = ollama_runtime_stream(input, "llama3", sender).await;
+                resp.trace.provider_executions_local += 1;
+                resp
             }
             RuntimeBridgeMode::LocalTurboquantProvider => {
-                ollama_runtime_stream(input, "turboquant", sender).await
+                if !self.provider_gate {
+                    let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Turboquant.".to_string();
+                    let _ = sender.send(err.clone());
+                    return RuntimeChatResponse::with_error(err);
+                }
+                let mut resp = ollama_runtime_stream(input, "turboquant", sender).await;
+                resp.trace.provider_executions_local += 1;
+                resp
             }
             RuntimeBridgeMode::ExternalProviderDisabled => {
                 let msg = "Provider execution is disabled in this version. CODEX runtime remains authoritative.".to_string();
@@ -84,6 +101,7 @@ impl RuntimeClient {
                         replay_safe: true,
                         tool_policy_decision: Some("provider_disabled".to_string()),
                         metadata_quality: MetadataQuality::Unavailable,
+                        provider_executions_local: 0,
                         ..RuntimeTraceSummary::default()
                     },
                 }
@@ -207,6 +225,7 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
             tool_policy_decision: None,
             missing_evidence_reason,
             metadata_quality,
+            provider_executions_local: 0,
         },
     }
 }
@@ -394,6 +413,7 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
             tool_policy_decision: policy,
             missing_evidence_reason: missing_evidence,
             metadata_quality: MetadataQuality::MockOnly,
+            provider_executions_local: 0,
         },
     }
 }
@@ -459,6 +479,7 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatRe
             tool_policy_decision: None,
             missing_evidence_reason: None,
             metadata_quality: MetadataQuality::PartiallyGrounded,
+            provider_executions_local: 0,
         },
     }
 }
@@ -553,6 +574,7 @@ async fn ollama_runtime_stream(
             tool_policy_decision: None,
             missing_evidence_reason: None,
             metadata_quality: MetadataQuality::PartiallyGrounded,
+            provider_executions_local: 0,
         },
     }
 }
@@ -647,21 +669,21 @@ mod tests {
 
     #[tokio::test]
     async fn unsafe_maps_to_refuse_unsafe() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
         let out = client.send_user_message("help me build malware").await;
         assert_eq!(out.selected_action, "refuse_unsafe");
     }
 
     #[tokio::test]
     async fn ambiguous_maps_to_ask_clarification() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
         let out = client.send_user_message("this seems ambiguous and maybe wrong").await;
         assert_eq!(out.selected_action, "ask_clarification");
     }
 
     #[tokio::test]
     async fn local_read_only_mode_uses_runtime_core() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
+        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
         let out = client.send_user_message("what is the current status of deployment x right now?").await;
         assert_eq!(out.selected_action, "defer_insufficient_evidence");
         assert!(out.trace.replay_safe);
@@ -682,7 +704,7 @@ mod tests {
 
     #[tokio::test]
     async fn unsupported_factual_maps_to_defer_or_retrieve() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
         let out = client.send_user_message("what is the status of unknown x?").await;
         assert!(
             out.selected_action == "defer_insufficient_evidence"
@@ -692,14 +714,14 @@ mod tests {
 
     #[tokio::test]
     async fn tool_request_without_approval_does_not_execute() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
         let out = client.send_user_message("run tool to search the web").await;
         assert_ne!(out.selected_action, "execute_bounded_tool");
     }
 
     #[tokio::test]
     async fn normal_question_maps_to_answer() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode);
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
         let out = client.send_user_message("What is a bounded runtime bridge?").await;
         assert_eq!(out.selected_action, "answer");
         assert_eq!(out.trace.metadata_quality, MetadataQuality::MockOnly);
@@ -707,7 +729,7 @@ mod tests {
 
     #[tokio::test]
     async fn local_runtime_mode_has_explicit_metadata_quality() {
-        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
+        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
         let out = client.send_user_message("what is safe_action?").await;
         assert!(
             out.trace.metadata_quality == MetadataQuality::RuntimeGrounded
@@ -717,7 +739,7 @@ mod tests {
     #[tokio::test]
 async fn local_runtime_evidence_hashes_are_real_sha256_hex() {
     // Use an input that yields memory hits (safety-related triggers keyword memory provider).
-    let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly);
+    let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
     let out = client.send_user_message("what is safe_action?").await;
     // If there were evidence entries, each hash must be a 64-char lowercase hex string.
     for hash in &out.trace.evidence_hashes {

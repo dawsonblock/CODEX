@@ -34,6 +34,7 @@ pub struct RuntimeTraceSummary {
     pub replay_safe: bool,
     pub tool_policy_decision: Option<String>,
     pub missing_evidence_reason: Option<String>,
+    pub provider_executions_local: usize,
     pub metadata_quality: MetadataQuality,
 }
 
@@ -74,6 +75,17 @@ pub struct RuntimeChatResponse {
     pub trace: RuntimeTraceSummary,
 }
 
+impl RuntimeChatResponse {
+    pub fn with_error(err: String) -> Self {
+        Self {
+            message: err,
+            selected_action: "refuse_unsafe".to_string(),
+            bridge_mode: "error".to_string(),
+            trace: RuntimeTraceSummary::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum RuntimeBridgeMode {
     #[default]
@@ -89,10 +101,18 @@ impl RuntimeBridgeMode {
         match self {
             Self::MockUiMode => "mock UI mode",
             Self::LocalCodexRuntimeReadOnly => "local CODEX runtime mode (read-only)",
-            Self::LocalOllamaProvider => "local Ollama provider mode",
-            Self::LocalTurboquantProvider => "local Turboquant provider mode",
-            Self::ExternalProviderDisabled => "external provider mode (disabled)",
+            Self::LocalOllamaProvider => "experimental local Ollama provider",
+            Self::LocalTurboquantProvider => "experimental local Turboquant provider",
+            Self::ExternalProviderDisabled => "external cloud provider mode (disabled)",
         }
+    }
+
+    pub fn is_experimental(self) -> bool {
+        matches!(self, Self::LocalOllamaProvider | Self::LocalTurboquantProvider)
+    }
+
+    pub fn is_authoritative(self) -> bool {
+        matches!(self, Self::LocalCodexRuntimeReadOnly)
     }
 }
 
@@ -112,6 +132,7 @@ pub struct UiSettings {
     pub runtime_bridge_mode: RuntimeBridgeMode,
     pub show_metadata_panel: bool,
     pub show_pressure_panel: bool,
+    pub provider_gate_enabled: bool,
 }
 
 impl Default for UiSettings {
@@ -123,6 +144,7 @@ impl Default for UiSettings {
             runtime_bridge_mode: RuntimeBridgeMode::MockUiMode,
             show_metadata_panel: true,
             show_pressure_panel: true,
+            provider_gate_enabled: false,
         }
     }
 }
@@ -325,15 +347,15 @@ mod tests {
         );
         assert_eq!(
             RuntimeBridgeMode::LocalOllamaProvider.label(),
-            "local Ollama provider mode"
+            "experimental local Ollama provider"
         );
         assert_eq!(
             RuntimeBridgeMode::LocalTurboquantProvider.label(),
-            "local Turboquant provider mode"
+            "experimental local Turboquant provider"
         );
         assert_eq!(
             RuntimeBridgeMode::ExternalProviderDisabled.label(),
-            "external provider mode (disabled)"
+            "external cloud provider mode (disabled)"
         );
     }
 }

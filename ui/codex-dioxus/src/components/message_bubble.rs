@@ -31,6 +31,9 @@ pub fn MessageBubble(
                     if let Some(trace) = &message.runtime {
                         span { "action: {trace.selected_action}" }
                         span { "metadata: {trace.metadata_quality.label()}" }
+                        if trace.provider_executions_local > 0 {
+                            span { class: "badge warning", "Non-Authoritative Provider ({trace.provider_executions_local})" }
+                        }
                     }
                 }
             }

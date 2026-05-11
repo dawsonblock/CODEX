@@ -77,7 +77,8 @@ The official proof command now generates:
 
 - 10-action schema remains unchanged.
 - Rust remains authoritative.
-- No real autonomous external tool execution is enabled.
+- No real autonomous external tool execution or external cloud provider API execution is enabled.
+- Experimental local provider execution (localhost) is security-gated and non-authoritative.
 - Contradiction handling remains structured, not semantic truth reasoning.
 - NL benchmark remains diagnostic routing over 43 scenarios, not broad reasoning proof.
 - Evidence-backed claim linkage improved for proof-known evaluator evidence and remains bounded to structured sources.
