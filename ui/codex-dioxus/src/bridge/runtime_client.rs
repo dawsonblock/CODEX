@@ -865,9 +865,11 @@ mod tests {
     }
 
     #[test]
-    fn provider_counters_are_zero_in_default_build() {
-        // In the default build (no ui-local-providers feature), no provider
-        // code paths are reachable. Assert that live atomic counters confirm this.
+    fn fresh_provider_counters_start_zero_before_attempt() {
+        // A fresh in-process provider counter snapshot before any proof attempt 
+        // may have disabled_blocks = 0. The official proof report however
+        // intentionally exercises the block and reports disabled_blocks = 1.
+        // These are different contexts and not contradictory.
         let snap = provider_counters_snapshot();
         assert_eq!(
             snap.cloud_provider_requests, 0,
@@ -898,7 +900,7 @@ mod tests {
             );
             assert_eq!(
                 snap.local_provider_disabled_blocks, 0,
-                "local_provider_disabled_blocks must be 0 in default build"
+                "local_provider_disabled_blocks is 0 in a fresh in-process snapshot"
             );
         }
         // In feature build: feature is enabled but counters start at 0.
@@ -1023,7 +1025,8 @@ mod tests {
         );
         assert_eq!(
             snap.local_provider_disabled_blocks, 0,
-            "disabled_blocks is 0 because the gate is compile-time, not runtime-counted"
+            "disabled_blocks is 0 in a fresh snapshot; the gate is compile-time and 
+             only recorded as a block in the authoritative proof artifact report."
         );
         assert_eq!(snap.cloud_provider_requests, 0);
         assert_eq!(snap.external_provider_requests, 0);

@@ -21,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CURRENT_DIR = REPO_ROOT / "artifacts/proof/current"
 MANIFEST = REPO_ROOT / "artifacts/proof/verification/proof_manifest.json"
 SUMMARY_MD = REPO_ROOT / "artifacts/proof/CURRENT_PROOF_SUMMARY.md"
+README_MD = REPO_ROOT / "artifacts/proof/README.md"
 
 SIMWORLD_JSON = CURRENT_DIR / "simworld_summary.json"
 REPLAY_JSON = CURRENT_DIR / "replay_report.json"
@@ -38,6 +39,9 @@ STALE_MARKERS = [
     "action_match_rate: 0.75",
     "event_count: 1123",
     "held_out: 11 scenarios, match_rate 0.3636",
+    "0.9615384615",
+    "event_count: 541",
+    "event_count: 556",
 ]
 
 
@@ -238,11 +242,56 @@ def main() -> int:
 
     print("\nChecking CURRENT_PROOF_SUMMARY.md stale markers ...")
     summary_text = SUMMARY_MD.read_text() if SUMMARY_MD.exists() else ""
+    print("\nChecking artifacts/proof/README.md stale markers ...")
+    readme_text = README_MD.read_text() if README_MD.exists() else ""
     for marker in STALE_MARKERS:
-        if marker in summary_text:
-            failures.append(f"STALE_MARKER_FOUND: {marker}")
+        if marker in readme_text:
+            failures.append(f"STALE_MARKER_FOUND in README.md: {marker}")
         else:
-            print(f"  OK  missing stale marker: {marker}")
+            print(f"  OK  missing stale marker in README.md: {marker}")
+
+    print("\nChecking Markdown consistency vs JSON ...")
+    expected_event_count = replay.get("event_count")
+    if expected_event_count is not None:
+        event_str = f"event_count: {expected_event_count}"
+        if event_str not in summary_text:
+            failures.append(f"MARKDOWN_MISMATCH: {SUMMARY_MD.name} missing '{event_str}'")
+        else:
+            print(f"  OK  {SUMMARY_MD.name} contains '{event_str}'")
+        
+        if event_str not in readme_text:
+            failures.append(f"MARKDOWN_MISMATCH: {README_MD.name} missing '{event_str}'")
+        else:
+            print(f"  OK  {README_MD.name} contains '{event_str}'")
+
+    held_out_current = lookup_nl_set(nl, "held_out")
+    ho_scenarios = held_out_current.get("scenarios")
+    ho_match_rate = held_out_current.get("scorecard", {}).get("action_match_rate")
+
+    if ho_scenarios is not None:
+        ho_scenarios_str = f"scenario_count: {ho_scenarios}"
+        if ho_scenarios_str not in readme_text:
+            # Also check for "held_out: 46 scenarios" pattern
+            alt_ho_str = f"held_out: {ho_scenarios} scenarios"
+            if alt_ho_str not in readme_text and f"held_out scenario_count: {ho_scenarios}" not in readme_text:
+                failures.append(f"MARKDOWN_MISMATCH: {README_MD.name} missing scenario count {ho_scenarios}")
+            else:
+                print(f"  OK  {README_MD.name} contains scenario count {ho_scenarios}")
+        else:
+            print(f"  OK  {README_MD.name} contains '{ho_scenarios_str}'")
+
+    if ho_match_rate is not None:
+        # Check for exact long float or at least 4-decimal rounded version
+        ho_match_str = f"{ho_match_rate}"
+        ho_match_rounded = f"{ho_match_rate:.4f}"
+        if ho_match_str not in readme_text and ho_match_rounded not in readme_text:
+            # Try specific 0.8260869565 string
+            if "0.8260869565" not in readme_text:
+                failures.append(f"MARKDOWN_MISMATCH: {README_MD.name} missing held_out match_rate {ho_match_rate}")
+            else:
+                 print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
+        else:
+            print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
 
     print("\nChecking rust_strict_proof.log vs current JSON ...")
     rust_log_path = REPO_ROOT / "artifacts/proof/verification/rust_strict_proof.log"

@@ -23,7 +23,7 @@ Toolchain: cargo 1.95.0, rustc 1.95.0
 - mean_total_score: 0.6433333333
 
 ### Replay
-- event_count: 556
+- event_count: 557
 - total_cycles: 15
 - is_idempotent: true
 - evidence_entries: 96
@@ -64,7 +64,7 @@ Toolchain: cargo 1.95.0, rustc 1.95.0
 
 ### NL benchmark sets (diagnostic)
 - curated: 15 scenarios, match_rate 1.00
-- held_out: 46 scenarios, match_rate 0.8261
+- held_out: 46 scenarios, match_rate 1.0000
 - adversarial: 2 scenarios, match_rate 1.00
 
 ### Long-horizon
