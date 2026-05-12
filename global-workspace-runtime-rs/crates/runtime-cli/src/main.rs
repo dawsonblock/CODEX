@@ -684,6 +684,9 @@ fn cmd_proof(args: &[String]) {
     // ProviderCountersReported event pipeline replayed through RuntimeState.
     // Attempt counters (tool/memory/action-override) are always 0: no provider code path
     // exists that can attempt those operations in any build configuration.
+    // default_provider_attempt_tested: false — no provider request is made during the default
+    // proof run. Disabled-provider behavior is covered by unit tests in ui/codex-dioxus
+    // (default_build_local_provider_attempt_is_blocked, live_provider_counters_boundary_ok).
     let provider_report = serde_json::json!({
         "report_type": "provider_policy",
         "pass": true,
@@ -707,6 +710,7 @@ fn cmd_proof(args: &[String]) {
         "provider_action_override_attempts": 0,
         "provider_output_authority": "non_authoritative",
         "codex_runtime_authoritative": true,
+        "default_provider_attempt_tested": false,
         "limitations": [
             "Local provider support is experimental and disabled by default.",
             "Provider output is non-authoritative.",
@@ -714,7 +718,8 @@ fn cmd_proof(args: &[String]) {
             "CODEX runtime remains authoritative.",
             "Local provider modes compile only when --features ui-local-providers is passed.",
             "Default build (cargo build) contains zero provider HTTP code paths.",
-            "External and cloud provider execution is disabled at all build configurations."
+            "External and cloud provider execution is disabled at all build configurations.",
+            "default_provider_attempt_tested is false: no provider request is made in the default proof. Disabled-provider blocking is verified by ui/codex-dioxus unit tests."
         ]
     });
     let _ = std::fs::write(

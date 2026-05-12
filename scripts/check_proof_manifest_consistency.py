@@ -377,6 +377,7 @@ def main() -> int:
             "provider_action_override_attempts",
             "provider_output_authority",
             "codex_runtime_authoritative",
+            "default_provider_attempt_tested",
         ]:
             field_check(
                 failures,
@@ -384,6 +385,18 @@ def main() -> int:
                 provider.get(field),
                 man_provider.get(field),
             )
+
+        # Verify default_provider_attempt_tested is a boolean and explain its value
+        dat = provider.get("default_provider_attempt_tested")
+        if dat is None:
+            failures.append("MISSING_FIELD: default_provider_attempt_tested must be present in provider_policy_report.json")
+        elif not isinstance(dat, bool):
+            failures.append(f"FIELD_TYPE_ERROR: default_provider_attempt_tested must be a boolean, got {type(dat).__name__}")
+        else:
+            if dat:
+                print("  OK  default_provider_attempt_tested: true (provider attempt was exercised in proof)")
+            else:
+                print("  OK  default_provider_attempt_tested: false (disabled-provider blocking verified by unit tests in ui/codex-dioxus)")
 
         # If default build, confirm ui_local_providers_feature_enabled == false
         if build_profile == "default":

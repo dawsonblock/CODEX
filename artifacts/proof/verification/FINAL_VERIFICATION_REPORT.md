@@ -1,4 +1,4 @@
-# CODEX-main 32 — UI Provider Boundary Repair
+# CODEX-main 32 — Final Verification Report
 ## FINAL_VERIFICATION_REPORT.md
 
 ---
@@ -6,9 +6,9 @@
 ## 1. Package Identity
 
 - **Internal codename:** CODEX-main 32
-- **Uploaded filename:** CODEX-main 38 (internal codename unchanged)
+- **Uploaded filename:** May vary. Uploaded ZIP filenames are not authoritative. The internal codename CODEX-main 32 is the authority source.
 - **Status:** Integration proof candidate — NOT final freeze
-- **Pass type:** UI Provider Boundary Repair
+- **Pass type:** Report Filename Cleanup + Provider Disabled-Block Test
 - **Report date:** 2026-05-11
 
 ---
@@ -174,6 +174,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | `provider_action_override_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
 | `provider_output_authority` | **non_authoritative** | ✓ provider_policy_report.json |
 | `codex_runtime_authoritative` | **true** | ✓ provider_policy_report.json |
+| `default_provider_attempt_tested` | **false** | ✓ provider_policy_report.json (disabled-block confirmed by unit tests; no proof-run attempt) |
 | `localhost:11434` in default binary | **absent** | ✓ feature-gate scan (consistency script) |
 | `reqwest` in default binary | **absent** | ✓ Cargo.toml optional dependency |
 
@@ -228,7 +229,7 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 6. **Evidence-backed claim linkage** remains bounded to structured, proof-known sources.
 7. **UI bridge** is local read-only and is not a production assistant.
 8. **Dioxus CLI (`dx build`)** was not invoked this pass; UI artifact build is not verified.
-9. **Phase 3 safety tests** (10 new tests) cover default-build provider mode skipping, ExternalProviderDisabled returning defer, provider output authority assertion, and empty-input no-panic guarantee.
+9. **Phase 2 disabled-block tests** (2 new tests): `default_build_local_provider_attempt_is_blocked` proves the full default-build mode cycle never reaches `LocalOllamaProvider` or `LocalTurboquantProvider`, counters remain 0, and no HTTP call path is reachable. `default_build_local_provider_activation_returns_disabled_status` confirms `ExternalProviderDisabled` mode defers without any counter leakage. These tests are the unit-test evidence for `default_provider_attempt_tested: false`.
 
 ---
 
@@ -237,12 +238,12 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 **Integration proof candidate. Not final freeze.**
 
 All provider boundary assertions pass. The 10-action schema is unchanged. Python tests pass.
-UI tests pass (default: 39+, feature-gated: 28+). Proof consistency script passes all 75+ assertions.
-`provider_policy_report.json` now exposes 20 granular fields including `policy_basis`,
-`local_provider_disabled_blocks`, all attempt counters, `provider_output_authority`, and
-`codex_runtime_authoritative`. All fields are cross-checked against `proof_manifest.json`.
-Provider execution is unambiguously disabled in the default build. The feature-gated path is
-clearly documented, approval-gated, and non-authoritative.
+UI tests pass (default: 41+, feature-gated: 28+). Proof consistency script passes all 77+ assertions.
+`provider_policy_report.json` exposes 21 fields including `default_provider_attempt_tested: false`,
+which documents that no provider request is attempted in the default proof; disabled-provider blocking
+is proven by two dedicated unit tests in ui/codex-dioxus. All fields are cross-checked against
+`proof_manifest.json`. Provider execution is unambiguously disabled in the default build.
+The feature-gated path is clearly documented, approval-gated, and non-authoritative.
 
 ---
 

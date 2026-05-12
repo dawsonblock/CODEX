@@ -21,9 +21,11 @@ Only this command is authoritative for artifacts in artifacts/proof/current.
 - pressure_replay_report.json
 - reasoning_audit_report.json
 - tool_policy_report.json
+- provider_policy_report.json
 
 ## Current Snapshot (CODEX-main 32)
 
+- Package identity: Internal codename CODEX-main 32. Uploaded ZIP filename may vary and is not the authority source.
 - Package status: integration proof candidate (not final freeze)
 - SimWorld cycles: 15
 - resource_survival: 0.9740

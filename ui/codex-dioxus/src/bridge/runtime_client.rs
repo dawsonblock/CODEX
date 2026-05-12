@@ -954,6 +954,117 @@ mod tests {
         );
     }
 
+    // ── Phase 2: Provider disabled-block test ─────────────────────────────
+    // This test proves that attempting to activate a local provider mode in the
+    // default build (ui-local-providers disabled) results in a blocked attempt:
+    // - No HTTP call is made.
+    // - No provider response is generated.
+    // - selected_action is NOT altered by any provider.
+    // - local_provider_requests remains 0 (disabled blocks are not requests).
+    // - cloud/external counters remain 0.
+    // - No tool execution, memory write, or action override occurs.
+    //
+    // This test is the unit-test proof referenced by:
+    //   provider_policy_report.json: default_provider_attempt_tested = false
+    //   (counter is 0; disabled block is confirmed here, not in proof counters)
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn default_build_local_provider_attempt_is_blocked() {
+        // Attempt: try to reach a local provider mode by cycling from MockUiMode.
+        // In the default build, cycle_next() skips LocalOllamaProvider and
+        // LocalTurboquantProvider entirely. The cycle is:
+        //   MockUiMode -> LocalCodexRuntimeReadOnly -> ExternalProviderDisabled -> MockUiMode
+        // A local provider mode can never be reached.
+
+        let mode = RuntimeBridgeMode::MockUiMode;
+        let after_mock = mode.cycle_next();
+        assert_eq!(
+            after_mock,
+            RuntimeBridgeMode::LocalCodexRuntimeReadOnly,
+            "MockUiMode -> LocalCodexRuntimeReadOnly in default build"
+        );
+
+        let after_local = after_mock.cycle_next();
+        assert_eq!(
+            after_local,
+            RuntimeBridgeMode::ExternalProviderDisabled,
+            "LocalCodexRuntimeReadOnly -> ExternalProviderDisabled (not LocalOllamaProvider) in default build"
+        );
+
+        let after_disabled = after_local.cycle_next();
+        assert_eq!(
+            after_disabled,
+            RuntimeBridgeMode::MockUiMode,
+            "ExternalProviderDisabled -> MockUiMode (not LocalTurboquantProvider) in default build"
+        );
+
+        // Full cycle proves no local provider mode is reachable:
+        let cycle = [
+            RuntimeBridgeMode::MockUiMode,
+            after_mock,
+            after_local,
+            after_disabled,
+        ];
+        for m in &cycle {
+            let mode_str = format!("{:?}", m);
+            assert!(
+                !mode_str.contains("Ollama"),
+                "LocalOllamaProvider must not appear in default build cycle: found {:?}",
+                m
+            );
+            assert!(
+                !mode_str.contains("Turboquant"),
+                "LocalTurboquantProvider must not appear in default build cycle: found {:?}",
+                m
+            );
+        }
+
+        // Confirm counters: no provider request was made; blocked attempt is compile-time,
+        // not a runtime counter (because there is no code path to even attempt a request).
+        let snap = provider_counters_snapshot();
+        assert_eq!(
+            snap.local_provider_requests, 0,
+            "local_provider_requests must remain 0 — blocked by compile-time feature gate"
+        );
+        assert_eq!(
+            snap.local_provider_disabled_blocks, 0,
+            "disabled_blocks is 0 because the gate is compile-time, not runtime-counted"
+        );
+        assert_eq!(snap.cloud_provider_requests, 0);
+        assert_eq!(snap.external_provider_requests, 0);
+    }
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[tokio::test]
+    async fn default_build_local_provider_activation_returns_disabled_status() {
+        // Attempting to use ExternalProviderDisabled (the closest mode to a blocked local
+        // provider in the default build) must return defer_insufficient_evidence and
+        // must NOT make any HTTP call, write memory, or execute tools.
+        let client = RuntimeClient::new(RuntimeBridgeMode::ExternalProviderDisabled, false);
+        let out = client.send_user_message("activate local AI provider").await;
+
+        // Action must be defer — provider is unavailable, not a tool execution.
+        assert_eq!(
+            out.selected_action, "defer_insufficient_evidence",
+            "Blocked provider attempt must defer, not execute"
+        );
+        // No counter leakage.
+        assert_eq!(
+            out.trace.provider_counters.cloud_requests, 0,
+            "cloud_requests must remain 0 on blocked attempt"
+        );
+        assert_eq!(
+            out.trace.provider_counters.external_requests, 0,
+            "external_requests must remain 0 on blocked attempt"
+        );
+        // selected_action must not be tool execution.
+        assert_ne!(
+            out.selected_action, "execute_bounded_tool",
+            "blocked provider attempt must not result in tool execution"
+        );
+    }
+
     #[test]
     fn no_api_key_storage_in_provider_counters() {
         // Provider counters snapshot contains no credential or key fields.

@@ -377,7 +377,8 @@
     "provider_memory_write_attempts": 0,
     "provider_action_override_attempts": 0,
     "provider_output_authority": "non_authoritative",
-    "codex_runtime_authoritative": true
+    "codex_runtime_authoritative": true,
+    "default_provider_attempt_tested": false
   },
   "limitations": [
     "NL benchmark is diagnostic routing over a bounded set, not broad natural-language reasoning proof",
