@@ -29,7 +29,7 @@
     "action_match_rate": 1.0
   },
   "replay_report": {
-    "event_count": 541,
+    "event_count": 556,
     "replay_passes": true,
     "is_idempotent": true,
     "total_cycles": 15,

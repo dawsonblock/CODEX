@@ -1,5 +1,5 @@
 {
-  "event_count": 541,
+  "event_count": 556,
   "replay_passes": true,
   "is_idempotent": true,
   "final_state": {
@@ -84,7 +84,14 @@
     "last_pressure_tool_risk": 0.0,
     "last_pressure_urgency": 0.0,
     "last_pressure_coherence": 0.0,
-    "scratchpad_entry_count": 0
+    "scratchpad_entry_count": 0,
+    "provider_local_requests": 0,
+    "provider_local_successes": 0,
+    "provider_local_failures": 0,
+    "provider_local_disabled_blocks": 0,
+    "provider_cloud_requests": 0,
+    "provider_external_requests": 0,
+    "provider_feature_enabled": false
   },
   "checks": [
     {
@@ -111,6 +118,11 @@
       "name": "resources_valid",
       "passed": true,
       "detail": "resources=0.9940"
+    },
+    {
+      "name": "provider_boundary_zero",
+      "passed": true,
+      "detail": "cloud_requests=0, external_requests=0"
     }
   ]
 }

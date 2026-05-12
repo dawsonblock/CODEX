@@ -678,6 +678,36 @@ fn cmd_proof(args: &[String]) {
     if strict && !replay_report.replay_passes {
         all_ok = false;
     }
+
+    // 4. Provider Policy Report (Mandatory hard boundary check)
+    let provider_report = serde_json::json!({
+        "report_type": "provider_policy_report",
+        "codename": "CODEX-main 32",
+        "build_profile": "default (no ui-local-providers feature)",
+        "external_provider_requests": replay_report.final_state.provider_external_requests,
+        "cloud_provider_requests": replay_report.final_state.provider_cloud_requests,
+        "api_key_storage_enabled": false,
+        "provider_can_execute_tools": false,
+        "provider_can_write_memory": false,
+        "provider_can_override_codex_action": false,
+        "local_provider_feature_enabled": replay_report.final_state.provider_feature_enabled,
+        "counters": {
+            "local_requests": replay_report.final_state.provider_local_requests,
+            "local_successes": replay_report.final_state.provider_local_successes,
+            "local_failures": replay_report.final_state.provider_local_failures,
+        },
+        "notes": [
+            "Local provider modes compile only when --features ui-local-providers is passed.",
+            "Default build (cargo build) contains zero provider HTTP code paths.",
+            "External and cloud provider execution is disabled at all build configurations.",
+            "CODEX runtime remains the sole authoritative source of selected_action."
+        ]
+    });
+    let _ = std::fs::write(
+        format!("{out_dir}/provider_policy_report.json"),
+        serde_json::to_string_pretty(&provider_report).unwrap_or_default(),
+    );
+
     if strict && !evidence_ok {
         all_ok = false;
     }

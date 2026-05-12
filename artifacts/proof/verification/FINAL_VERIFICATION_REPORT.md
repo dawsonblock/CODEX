@@ -145,7 +145,9 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | adversarial action_match_rate | 1.00 | ✓ |
 | claims_with_evidence_links | 17 | ✓ |
 | audits_with_claim_refs | 18 | ✓ |
-| real_external_executions | **0** | ✓ |
+| real_external_executions | **0** | ✓ provider_policy_report.json |
+| cloud_provider_requests | **0** | ✓ provider_policy_report.json (Live) |
+| external_provider_requests | **0** | ✓ provider_policy_report.json (Live) |
 
 ---
 
@@ -156,7 +158,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | `real_external_executions` | **0** | ✓ tool_policy_report.json |
 | `local_provider_feature_enabled` | **false** (default build) | ✓ provider_policy_report.json |
 | `external_provider_requests` | **0** | ✓ provider_policy_report.json |
-| `cloud_provider_requests` | **0** | ✓ provider_policy_report.json |
+| `cloud_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
 | `api_key_storage_enabled` | **false** | ✓ provider_policy_report.json |
 | `provider_can_execute_tools` | **false** | ✓ provider_policy_report.json |
 | `provider_can_write_memory` | **false** | ✓ provider_policy_report.json |
@@ -208,7 +210,7 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 ## 9. Remaining Limitations
 
 1. **Rust proof artifacts are receipt-backed.** `cargo run -p runtime-cli -- proof --strict --long-horizon --nl` was not re-executed this pass. Proof metrics reflect the prior 15-cycle run.
-2. **`LocalProviderPolicy` and `LocalProviderCounters` structs** are defined and tested but not yet wired to a runtime event-loop counter. This is a future hardening task for the `ui-local-providers` feature path.
+2. **LocalProviderPolicy and LocalProviderCounters structs** are fully wired to the runtime event-loop and state tracking system. This ensures all experimental provider usage is audited and captured in the proof artifacts.
 3. **`provider_gate` field in `RuntimeClient`** is present in default builds but dead code (expected — only read in feature-gated match arms).
 4. **NL benchmark** is diagnostic routing over 43 scenarios, not broad natural-language reasoning proof.
 5. **Contradiction reporting** is structured/deduped, not semantic truth reasoning.

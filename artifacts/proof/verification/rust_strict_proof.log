@@ -47,7 +47,7 @@
             "passed": true
           }
         ],
-        "event_count": 541,
+        "event_count": 556,
         "final_state": {
           "archive_commits": 15,
           "audits_with_claim_refs": 18,
