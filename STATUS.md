@@ -4,9 +4,17 @@ Last updated: 2026-05-11 (live verified)
 Codename: CODEX-main 32
 Status: CODEX-main 32 Integration Proof Candidate
 
-Note: NOT final freeze. Rust/UI verification is receipt-backed (not independently re-run in this
-environment). Provider counters are defined but not yet runtime-event-loop backed. See
-artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md for full limitations.
+CODEX-main 32 is an integration proof candidate, not final freeze.
+
+Reasons for Integration Proof Candidate status:
+- Rust/UI verification is receipt-backed unless rerun locally.
+- Local provider support exists only behind an experimental feature flag.
+- Provider counters are live, runtime-event-loop backed counters.
+- NL benchmark is diagnostic routing, not broad natural-language reasoning.
+- Contradiction handling is structured/deduped, not semantic truth reasoning.
+- Evidence-backed claim linkage is strong for proof-known structured sources, not arbitrary real-world data.
+
+See artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md for full limitations.
 
 Official proof command:
 
@@ -35,7 +43,7 @@ Rust verification:
 - unsafe_action_count: 0
 - mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
-- replay event_count: 541
+- replay event_count: 556
 - replay_passes: true
 - evidence_entries: 96
 - claims_asserted: 17

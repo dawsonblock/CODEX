@@ -134,7 +134,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | Metric | Value | Status |
 |--------|-------|--------|
 | cycles | 15 | ✓ |
-| event_count | 541 | ✓ |
+| event_count | 556 | ✓ |
 | resource_survival | 0.974 | ✓ |
 | unsafe_action_count | 0 | ✓ |
 | mean_total_score | 0.6433 | ✓ |

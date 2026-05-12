@@ -28,6 +28,7 @@ cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifact
 - pressure_replay_report.json
 - reasoning_audit_report.json
 - tool_policy_report.json
+- provider_policy_report.json
 
 ## Pass model
 
