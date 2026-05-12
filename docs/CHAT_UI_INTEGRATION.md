@@ -16,16 +16,35 @@ The integration reuses UI patterns only:
 - Theme and settings panel patterns
 - CSS pattern vocabulary for cards, panels, and controls
 
-## 3. Intentionally excluded
+## 3. Intentionally excluded (all build configurations)
 
-The following were intentionally not merged into CODEX runtime authority:
+The following are excluded from all builds:
 
-- Provider API execution
+- Cloud Provider API execution (OpenAI, Anthropic, etc.)
 - API key storage
 - Web search execution
 - External autonomous tool execution
 - Auth/account logic
-- Streaming provider backend
+- Remote streaming provider backend
+- Real external tool execution (real_external_executions: 0)
+
+## 3b. Experimental local provider support (requires `ui-local-providers` Cargo feature)
+
+Local provider execution (Ollama/Turboquant via `localhost:11434`) is **not included in default builds**.
+To enable it, build explicitly with:
+
+```
+cargo build --features ui-local-providers
+```
+
+When the feature is active, the following restrictions apply:
+- Calls are **localhost-only** (no external/cloud endpoints).
+- First use requires **explicit user approval** (gate must be unlocked in Settings).
+- Provider output is labeled `"Local provider draft — not CODEX runtime authority"`.
+- Provider output **cannot**: execute tools, write evidence/claims, or override `selected_action`.
+- Failure returns a clean UI error; no silent fallback to another provider.
+- Cloud and external provider request counts must remain 0.
+
 
 ## 4. Chat UI architecture
 
@@ -55,8 +74,10 @@ The UI does not become the runtime brain, and does not replace runtime selection
 Bridge modes:
 
 - mock UI mode (active)
-- local CODEX runtime mode (disabled until direct crate wiring is enabled)
-- external provider mode (disabled)
+- local CODEX runtime mode (read-only)
+- experimental local Ollama provider (localhost:11434)
+- experimental local Turboquant provider (localhost:11434)
+- external cloud provider mode (disabled)
 
 The mock bridge is explicitly non-authoritative and bounded to the fixed 10-action schema.
 
@@ -96,9 +117,14 @@ Pressure wording remains bounded:
 
 ## 10. Tool/provider limitations
 
-No real external tool execution or provider API execution is enabled in this pass.
+External cloud provider API execution is strictly disabled.
 
-Tool requests are policy-gated and rendered as bounded/disabled behavior.
+Experimental LOCAL provider execution (Ollama/Turboquant) is enabled for developer testing only. This mode is:
+- Gated behind a "Provider Security Gate" in Settings.
+- Strictly non-authoritative; it does NOT represent the CODEX runtime selection.
+- Monitored via local provider execution counters.
+
+Tool requests remain policy-gated and are rendered as bounded/disabled "Dry Run" behaviors. Real external tool execution is NOT enabled.
 
 ## 11. How to run the UI
 
@@ -124,4 +150,7 @@ The chat UI is a viewer/controller shell. CODEX runtime remains authoritative.
 
 The UI may display chat history, but UI history is not claim memory or evidence memory.
 
-No real external tool execution or provider API execution is enabled in this pass.
+No real external tool execution or external cloud provider API execution is enabled in this pass. Local provider execution (localhost:11434) is experimental, non-authoritative, and security-gated.
+
+This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.
+

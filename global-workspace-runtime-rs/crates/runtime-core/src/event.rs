@@ -16,6 +16,18 @@ pub struct WorldOutcome {
     pub matches_expected: bool,
 }
 
+/// Snapshot of provider counters.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProviderCountersSnapshot {
+    pub local_requests: u64,
+    pub local_successes: u64,
+    pub local_failures: u64,
+    pub local_disabled_blocks: u64,
+    pub cloud_requests: u64,
+    pub external_requests: u64,
+    pub feature_enabled: bool,
+}
+
 /// All events that can be appended to the event log.
 /// Variants are tagged in JSONL as `{"type": "...", "payload": {...}}`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -250,6 +262,11 @@ pub enum RuntimeEvent {
         entries: Vec<ResonanceEntry>,
         total_score: f64,
     },
+    /// Periodic or per-message report of live provider counters.
+    ProviderCountersReported {
+        cycle_id: u64,
+        snapshot: ProviderCountersSnapshot,
+    },
 }
 
 impl RuntimeEvent {
@@ -290,7 +307,8 @@ impl RuntimeEvent {
             | Self::ConceptBlendGenerated { cycle_id, .. }
             | Self::PrincipleExtracted { cycle_id, .. }
             | Self::SymbolicCompressionApplied { cycle_id, .. }
-            | Self::ResonanceScoreComputed { cycle_id, .. } => Some(*cycle_id),
+            | Self::ResonanceScoreComputed { cycle_id, .. }
+            | Self::ProviderCountersReported { cycle_id, .. } => Some(*cycle_id),
             Self::RuntimeModeChanged { .. } => None,
         }
     }

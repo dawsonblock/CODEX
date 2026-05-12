@@ -3,6 +3,7 @@ pub mod action_trace_panel;
 pub mod audit_panel;
 pub mod chat_input;
 pub mod chat_view;
+pub mod command_queue;
 pub mod console_panel;
 pub mod evidence_panel;
 pub mod message_bubble;

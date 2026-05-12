@@ -21,20 +21,29 @@ pub enum ChatRole {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RuntimeTraceSummary {
+pub struct RuntimeStepResult {
     pub selected_action: String,
+    pub response_text: String,
+    pub audit_id: Option<String>,
     pub evidence_ids: Vec<String>,
     pub evidence_hashes: Vec<String>,
     pub claim_ids: Vec<String>,
     pub contradiction_ids: Vec<String>,
-    pub audit_id: Option<String>,
     pub dominant_pressures: Vec<String>,
+    pub replay_safe: bool,
+    pub missing_evidence_reason: Option<String>,
+    pub tool_policy_decision: Option<String>,
+    pub provider_policy_decision: Option<String>,
+    pub metadata_quality: MetadataQuality,
+    pub bridge_mode: String,
+    
+    // Kept from previous structure to maintain UI compatibility
     pub pressure_updates: usize,
     pub policy_bias_applications: usize,
-    pub replay_safe: bool,
-    pub tool_policy_decision: Option<String>,
-    pub missing_evidence_reason: Option<String>,
-    pub metadata_quality: MetadataQuality,
+    pub provider_executions_local: usize,
+    /// Live snapshot of provider event-loop counters at the time this trace was generated.
+    #[serde(default)]
+    pub provider_counters: ProviderCountersSummary,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -44,15 +53,19 @@ pub enum MetadataQuality {
     PartiallyGrounded,
     MockOnly,
     Unavailable,
+    #[cfg(feature = "ui-local-providers")]
+    LocalProviderDraft,
 }
 
 impl MetadataQuality {
     pub fn label(self) -> &'static str {
         match self {
-            Self::RuntimeGrounded => "RuntimeGrounded",
-            Self::PartiallyGrounded => "PartiallyGrounded",
-            Self::MockOnly => "MockOnly",
+            Self::RuntimeGrounded => "Runtime-grounded",
+            Self::PartiallyGrounded => "Partial metadata",
+            Self::MockOnly => "Mock metadata",
             Self::Unavailable => "Unavailable",
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalProviderDraft => "Local provider draft (non-authoritative)",
         }
     }
 }
@@ -63,15 +76,18 @@ pub struct ChatMessage {
     pub role: ChatRole,
     pub content: String,
     pub timestamp: String,
-    pub runtime: Option<RuntimeTraceSummary>,
+    pub runtime: Option<RuntimeStepResult>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RuntimeChatResponse {
-    pub message: String,
-    pub selected_action: String,
-    pub bridge_mode: String,
-    pub trace: RuntimeTraceSummary,
+impl RuntimeStepResult {
+    pub fn with_error(err: String) -> Self {
+        Self {
+            response_text: err,
+            selected_action: "refuse_unsafe".to_string(),
+            bridge_mode: "error".to_string(),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -79,6 +95,10 @@ pub enum RuntimeBridgeMode {
     #[default]
     MockUiMode,
     LocalCodexRuntimeReadOnly,
+    #[cfg(feature = "ui-local-providers")]
+    LocalOllamaProvider,
+    #[cfg(feature = "ui-local-providers")]
+    LocalTurboquantProvider,
     ExternalProviderDisabled,
 }
 
@@ -87,7 +107,43 @@ impl RuntimeBridgeMode {
         match self {
             Self::MockUiMode => "mock UI mode",
             Self::LocalCodexRuntimeReadOnly => "local CODEX runtime mode (read-only)",
-            Self::ExternalProviderDisabled => "external provider mode (disabled)",
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalOllamaProvider => "experimental local Ollama provider",
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalTurboquantProvider => "experimental local Turboquant provider",
+            Self::ExternalProviderDisabled => "external cloud provider mode (disabled)",
+        }
+    }
+
+    pub fn is_experimental(self) -> bool {
+        #[cfg(feature = "ui-local-providers")]
+        return matches!(
+            self,
+            Self::LocalOllamaProvider | Self::LocalTurboquantProvider
+        );
+        #[cfg(not(feature = "ui-local-providers"))]
+        return false;
+    }
+
+    pub fn is_authoritative(self) -> bool {
+        matches!(self, Self::LocalCodexRuntimeReadOnly)
+    }
+
+    /// Cycles to the next mode. In default builds, provider modes are skipped.
+    pub fn cycle_next(self) -> Self {
+        match self {
+            Self::MockUiMode => Self::LocalCodexRuntimeReadOnly,
+            Self::LocalCodexRuntimeReadOnly => {
+                #[cfg(feature = "ui-local-providers")]
+                return Self::LocalOllamaProvider;
+                #[cfg(not(feature = "ui-local-providers"))]
+                return Self::ExternalProviderDisabled;
+            }
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalOllamaProvider => Self::LocalTurboquantProvider,
+            #[cfg(feature = "ui-local-providers")]
+            Self::LocalTurboquantProvider => Self::ExternalProviderDisabled,
+            Self::ExternalProviderDisabled => Self::MockUiMode,
         }
     }
 }
@@ -108,6 +164,9 @@ pub struct UiSettings {
     pub runtime_bridge_mode: RuntimeBridgeMode,
     pub show_metadata_panel: bool,
     pub show_pressure_panel: bool,
+    /// Only meaningful when the `ui-local-providers` feature is enabled.
+    /// In default builds this field exists but has no effect.
+    pub provider_gate_enabled: bool,
 }
 
 impl Default for UiSettings {
@@ -119,6 +178,86 @@ impl Default for UiSettings {
             runtime_bridge_mode: RuntimeBridgeMode::MockUiMode,
             show_metadata_panel: true,
             show_pressure_panel: true,
+            provider_gate_enabled: false, // always false in default build
+        }
+    }
+}
+
+/// Policy governing local provider execution (feature = "ui-local-providers").
+/// These values are enforced at compile time in default builds by the absent feature.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocalProviderPolicy {
+    pub enabled: bool,
+    pub requires_user_approval: bool,
+    /// Scope is always localhost-only when the feature is active.
+    pub network_scope: &'static str,
+    /// Output is never CODEX runtime authoritative.
+    pub provider_authority: &'static str,
+    pub can_execute_tools: bool,
+    pub can_write_memory: bool,
+    pub can_override_codex_action: bool,
+}
+
+impl Default for LocalProviderPolicy {
+    fn default() -> Self {
+        Self {
+            enabled: cfg!(feature = "ui-local-providers"),
+            requires_user_approval: true,
+            network_scope: "localhost-only",
+            provider_authority: "non-authoritative",
+            can_execute_tools: false,
+            can_write_memory: false,
+            can_override_codex_action: false,
+        }
+    }
+}
+
+/// Runtime counters for provider calls. All external/cloud counts must remain 0.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocalProviderCounters {
+    pub local_provider_requests: usize,
+    pub local_provider_successes: usize,
+    pub local_provider_failures: usize,
+    pub local_provider_disabled_blocks: usize,
+    /// Must always be 0 — enforced by consistency script.
+    pub cloud_provider_requests: usize,
+    /// Must always be 0 — enforced by consistency script.
+    pub external_provider_requests: usize,
+}
+
+/// Lightweight, serializable snapshot of the live provider event-loop counters.
+/// Populated from the AtomicU64 counters in runtime_client.rs at each response.
+/// All cloud/external fields must always be 0.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProviderCountersSummary {
+    pub local_requests: u64,
+    pub local_successes: u64,
+    pub local_failures: u64,
+    pub local_disabled_blocks: u64,
+    /// Hard invariant: always 0.
+    pub cloud_requests: u64,
+    /// Hard invariant: always 0.
+    pub external_requests: u64,
+    pub feature_enabled: bool,
+}
+
+impl ProviderCountersSummary {
+    /// Returns true if the hard boundary invariants hold:
+    /// cloud_requests == 0 and external_requests == 0.
+    pub fn boundary_ok(&self) -> bool {
+        self.cloud_requests == 0 && self.external_requests == 0
+    }
+
+    /// Human-readable status for UI display.
+    pub fn status_label(&self) -> &'static str {
+        if !self.feature_enabled {
+            "Provider disabled (default build)"
+        } else if self.local_requests == 0 {
+            "Provider enabled, no requests yet"
+        } else if self.local_failures > 0 {
+            "Provider active (with failures)"
+        } else {
+            "Provider active"
         }
     }
 }
@@ -321,8 +460,115 @@ mod tests {
         );
         assert_eq!(
             RuntimeBridgeMode::ExternalProviderDisabled.label(),
-            "external provider mode (disabled)"
+            "external cloud provider mode (disabled)"
         );
+    }
+
+    #[cfg(feature = "ui-local-providers")]
+    #[test]
+    fn provider_modes_are_experimental_when_feature_enabled() {
+        assert!(RuntimeBridgeMode::LocalOllamaProvider.is_experimental());
+        assert!(RuntimeBridgeMode::LocalTurboquantProvider.is_experimental());
+        assert!(!RuntimeBridgeMode::LocalCodexRuntimeReadOnly.is_experimental());
+    }
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn no_mode_is_experimental_in_default_build() {
+        assert!(!RuntimeBridgeMode::MockUiMode.is_experimental());
+        assert!(!RuntimeBridgeMode::LocalCodexRuntimeReadOnly.is_experimental());
+        assert!(!RuntimeBridgeMode::ExternalProviderDisabled.is_experimental());
+    }
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn default_build_cycle_skips_provider_modes() {
+        let mode = RuntimeBridgeMode::LocalCodexRuntimeReadOnly;
+        let next = mode.cycle_next();
+        // Must jump directly to ExternalProviderDisabled — no Ollama/Turboquant
+        assert_eq!(next, RuntimeBridgeMode::ExternalProviderDisabled);
+    }
+
+    #[test]
+    fn local_provider_policy_default_has_all_capabilities_false() {
+        let policy = LocalProviderPolicy::default();
+        assert!(!policy.can_execute_tools);
+        assert!(!policy.can_write_memory);
+        assert!(!policy.can_override_codex_action);
+        assert!(policy.requires_user_approval);
+        assert_eq!(policy.network_scope, "localhost-only");
+        assert_eq!(policy.provider_authority, "non-authoritative");
+    }
+
+    #[test]
+    fn local_provider_counters_cloud_always_zero() {
+        let c = LocalProviderCounters::default();
+        assert_eq!(c.cloud_provider_requests, 0);
+        assert_eq!(c.external_provider_requests, 0);
+    }
+
+    #[test]
+    fn provider_counters_summary_default_is_boundary_ok() {
+        let s = ProviderCountersSummary::default();
+        assert!(s.boundary_ok());
+        assert_eq!(s.cloud_requests, 0);
+        assert_eq!(s.external_requests, 0);
+        assert!(!s.feature_enabled);
+        assert_eq!(s.status_label(), "Provider disabled (default build)");
+    }
+
+    #[test]
+    fn provider_counters_summary_boundary_violation() {
+        let s = ProviderCountersSummary {
+            cloud_requests: 1,
+            ..Default::default()
+        };
+        assert!(!s.boundary_ok());
+
+        let s2 = ProviderCountersSummary {
+            external_requests: 1,
+            ..Default::default()
+        };
+        assert!(!s2.boundary_ok());
+    }
+
+    #[test]
+    fn provider_counters_summary_status_labels() {
+        let enabled_no_requests = ProviderCountersSummary {
+            feature_enabled: true,
+            ..Default::default()
+        };
+        assert_eq!(
+            enabled_no_requests.status_label(),
+            "Provider enabled, no requests yet"
+        );
+
+        let active_with_failures = ProviderCountersSummary {
+            feature_enabled: true,
+            local_requests: 5,
+            local_failures: 2,
+            ..Default::default()
+        };
+        assert_eq!(
+            active_with_failures.status_label(),
+            "Provider active (with failures)"
+        );
+
+        let active_ok = ProviderCountersSummary {
+            feature_enabled: true,
+            local_requests: 3,
+            local_successes: 3,
+            ..Default::default()
+        };
+        assert_eq!(active_ok.status_label(), "Provider active");
+    }
+
+    #[test]
+    fn runtime_trace_summary_default_has_boundary_ok_counters() {
+        let trace = RuntimeStepResult::default();
+        assert!(trace.provider_counters.boundary_ok());
+        assert_eq!(trace.provider_counters.cloud_requests, 0);
+        assert_eq!(trace.provider_counters.external_requests, 0);
     }
 }
 
@@ -331,6 +577,7 @@ pub enum RuntimeCommand {
     RefreshProofState,
     ReplayLast,
     RequestAuditSnapshot,
+    ExecuteTool { tool: String, args: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -347,10 +594,20 @@ pub struct RuntimeCommandResult {
     pub message: String,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CommandApprovalState {
     #[default]
     Draft,
     AwaitingApproval,
     Approved,
+    Rejected,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CommandApprovalRecord {
+    pub id: String,
+    pub command: String, // Stringified for display
+    pub state: CommandApprovalState,
+    pub timestamp: String,
+    pub result: Option<String>,
 }

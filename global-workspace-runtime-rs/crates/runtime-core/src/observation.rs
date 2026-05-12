@@ -130,6 +130,8 @@ impl ObservationInterpreter {
             || lower.contains("no restrictions")
             || lower.contains("ignore all previous instructions")
             || lower.contains("ignore uncertainty")
+            || lower.contains("delete the backup")
+            || lower.contains("delete the") && lower.contains("backup")
         {
             ObservationKind::UnsafeRequest
         } else if action_label_spoof {
@@ -162,9 +164,15 @@ impl ObservationInterpreter {
             || lower.contains("runtime health")
             || lower.contains("show runtime")
             || lower.contains("show counters")
+            || lower.contains("belief memory")
+            || lower.contains("internal diagnostic state")
+            || lower.contains("internal diagnostic trace")
+            || lower.contains("diagnostic trace")
+            || lower.contains("diagnostic state")
+            || lower.contains("reasoning audit")
         {
             ObservationKind::MemoryLookup
-        } else if lower.contains("plan")
+        } else if (lower.contains("plan")
             || lower.contains("strategy")
             || lower.contains("design")
             || lower.contains("architecture")
@@ -175,7 +183,8 @@ impl ObservationInterpreter {
             || lower.contains("where should i start")
             || lower.contains("steps to")
             || lower.contains("how do i set up")
-            || lower.contains("how to build")
+            || lower.contains("how to build"))
+            && !lower.contains("not sure") && !lower.contains("clarify")
         {
             ObservationKind::PlanningRequest
         } else if lower.contains("ambiguous")
@@ -191,6 +200,9 @@ impl ObservationInterpreter {
             || lower.contains("conflicting entries")
             || lower.contains("conflicting") && lower.contains("same")
             || lower.contains("which source")
+            || lower.contains("source of truth")
+            || lower.contains("primary source or the cache")
+            || lower.contains("not sure") && (lower.contains("database") || lower.contains("which"))
         {
             ObservationKind::AmbiguousRequest
         } else if lower.contains("insufficient")

@@ -21,16 +21,19 @@ Only this command is authoritative for artifacts in artifacts/proof/current.
 - pressure_replay_report.json
 - reasoning_audit_report.json
 - tool_policy_report.json
+- provider_policy_report.json
 
 ## Current Snapshot (CODEX-main 32)
 
+- Package identity: Internal codename CODEX-main 32. Uploaded ZIP filename may vary and is not the authority source.
 - Package status: integration proof candidate (not final freeze)
 - SimWorld cycles: 15
 - resource_survival: 0.9740
 - mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
-- replay event_count: 541
-- held_out action_match_rate: 0.9615384615
+- replay event_count: 557
+- held_out scenario_count: 46
+- held_out action_match_rate: 1.0
 - raw_contradictions_detected: 1
 - unique_contradictions_detected: 1
 - duplicate_contradictions_suppressed: 0

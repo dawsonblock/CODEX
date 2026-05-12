@@ -319,6 +319,17 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.cycle_id = *cycle_id;
             state.last_resonance_score = *total_score;
         }
+
+        RuntimeEvent::ProviderCountersReported { cycle_id, snapshot } => {
+            state.cycle_id = *cycle_id;
+            state.provider_local_requests = snapshot.local_requests;
+            state.provider_local_successes = snapshot.local_successes;
+            state.provider_local_failures = snapshot.local_failures;
+            state.provider_local_disabled_blocks = snapshot.local_disabled_blocks;
+            state.provider_cloud_requests = snapshot.cloud_requests;
+            state.provider_external_requests = snapshot.external_requests;
+            state.provider_feature_enabled = snapshot.feature_enabled;
+        }
     }
     state
 }

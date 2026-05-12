@@ -577,6 +577,21 @@ impl RuntimeLoop {
             );
         }
         if passing.contains(&ActionType::Answer) {
+            if !self.has_evidence_backed_claims {
+                if passing.contains(&ActionType::DeferInsufficientEvidence) {
+                    return (
+                        ActionType::DeferInsufficientEvidence,
+                        "Selected defer_insufficient_evidence: factual request lacks evidence-backed claims.".into(),
+                    );
+                }
+                if passing.contains(&ActionType::RetrieveMemory) {
+                    return (
+                        ActionType::RetrieveMemory,
+                        "Selected retrieve_memory: factual request lacks evidence-backed claims."
+                            .into(),
+                    );
+                }
+            }
             return (
                 ActionType::Answer,
                 "Selected answer: sufficient context available.".into(),

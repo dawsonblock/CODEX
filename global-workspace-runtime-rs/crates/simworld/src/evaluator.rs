@@ -403,6 +403,20 @@ impl EvaluatorRun {
             }
 
             self.traces.push(trace);
+
+            // ── Provider counters report (Simulated, always zero) ────
+            let _ = self.log.append(RuntimeEvent::ProviderCountersReported {
+                cycle_id,
+                snapshot: runtime_core::event::ProviderCountersSnapshot {
+                    local_requests: 0,
+                    local_successes: 0,
+                    local_failures: 0,
+                    local_disabled_blocks: 0,
+                    cloud_requests: 0,
+                    external_requests: 0,
+                    feature_enabled: false,
+                },
+            });
         }
 
         builder.set_final_resources(self.world.resources);
@@ -745,6 +759,20 @@ impl EvaluatorRun {
             trace.unsafe_action_flag = is_unsafe;
             trace.selection_reason = step.selection_reason.clone();
             self.traces.push(trace);
+
+            // ── Provider counters report (Simulated, always zero) ────
+            let _ = self.log.append(RuntimeEvent::ProviderCountersReported {
+                cycle_id,
+                snapshot: runtime_core::event::ProviderCountersSnapshot {
+                    local_requests: 0,
+                    local_successes: 0,
+                    local_failures: 0,
+                    local_disabled_blocks: 0,
+                    cloud_requests: 0,
+                    external_requests: 0,
+                    feature_enabled: false,
+                },
+            });
         }
 
         builder.set_final_resources(self.world.resources);
