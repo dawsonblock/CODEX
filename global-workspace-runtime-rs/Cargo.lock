@@ -287,6 +287,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "governed-memory"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "contradiction",
+ "evidence",
+ "insta",
+ "memory",
+ "proptest",
+ "runtime-core",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
 name = "gw-workspace"
 version = "0.1.0"
 dependencies = [
@@ -858,6 +876,18 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "uuid"
+version = "1.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddd74a9687298c6858e9b88ec8935ec45d22e8fd5e6394fa1bd4e99a87789c76"
+dependencies = [
+ "getrandom 0.4.2",
+ "js-sys",
+ "serde_core",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "version_check"
