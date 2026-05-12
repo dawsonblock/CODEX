@@ -43,7 +43,7 @@ Rust verification:
 - unsafe_action_count: 0
 - mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
-- replay event_count: 556
+- replay event_count: 557
 - replay_passes: true
 - evidence_entries: 96
 - claims_asserted: 17
