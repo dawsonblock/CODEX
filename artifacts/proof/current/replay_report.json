@@ -1,9 +1,9 @@
 {
-  "event_count": 556,
+  "event_count": 557,
   "replay_passes": true,
   "is_idempotent": true,
   "final_state": {
-    "cycle_id": 36,
+    "cycle_id": 35,
     "total_cycles": 15,
     "resources": 0.994,
     "conserve_actions": 0,
@@ -88,7 +88,7 @@
     "provider_local_requests": 0,
     "provider_local_successes": 0,
     "provider_local_failures": 0,
-    "provider_local_disabled_blocks": 0,
+    "provider_local_disabled_blocks": 1,
     "provider_cloud_requests": 0,
     "provider_external_requests": 0,
     "provider_feature_enabled": false

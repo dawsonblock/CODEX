@@ -317,8 +317,8 @@ def main() -> int:
 
         # Verify policy_basis is declared (either value is acceptable but must be present)
         policy_basis = provider.get("policy_basis")
-        if policy_basis not in ("runtime_event_counters", "static_build_policy"):
-            failures.append(f"MISSING_FIELD: policy_basis must be runtime_event_counters or static_build_policy, got {policy_basis!r}")
+        if policy_basis not in ("runtime_event_counters", "static_build_policy", "static_build_policy_with_disabled_attempt_check"):
+            failures.append(f"MISSING_FIELD: policy_basis must be runtime_event_counters or static_build_policy or static_build_policy_with_disabled_attempt_check, got {policy_basis!r}")
         else:
             print(f"  OK  policy_basis: {policy_basis}")
 

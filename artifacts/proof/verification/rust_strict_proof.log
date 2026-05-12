@@ -1,3 +1,5 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
+     Running `target/debug/runtime-cli proof --strict --long-horizon --nl --out ../artifacts/proof/current`
 {
   "checks": {
     "action_schema": {
@@ -45,9 +47,14 @@
             "detail": "resources=0.9940",
             "name": "resources_valid",
             "passed": true
+          },
+          {
+            "detail": "cloud_requests=0, external_requests=0",
+            "name": "provider_boundary_zero",
+            "passed": true
           }
         ],
-        "event_count": 556,
+        "event_count": 557,
         "final_state": {
           "archive_commits": 15,
           "audits_with_claim_refs": 18,
@@ -68,7 +75,7 @@
           "contradictions_escalated": 0,
           "contradictions_resolved": 0,
           "current_mode": "Normal",
-          "cycle_id": 36,
+          "cycle_id": 35,
           "evidence_entries": 96,
           "evidence_integrity_all_valid": true,
           "evidence_tampered": 0,
@@ -108,6 +115,13 @@
           "policy_bias_applications": 16,
           "pressure_updates": 39,
           "principles_extracted": 0,
+          "provider_cloud_requests": 0,
+          "provider_external_requests": 0,
+          "provider_feature_enabled": false,
+          "provider_local_disabled_blocks": 1,
+          "provider_local_failures": 0,
+          "provider_local_requests": 0,
+          "provider_local_successes": 0,
           "reasoning_audits": 33,
           "repeated_mistakes": 0,
           "resources": 0.994,

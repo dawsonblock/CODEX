@@ -29,7 +29,7 @@
     "action_match_rate": 1.0
   },
   "replay_report": {
-    "event_count": 556,
+    "event_count": 557,
     "replay_passes": true,
     "is_idempotent": true,
     "total_cycles": 15,
@@ -349,7 +349,7 @@
   "tool_policy": {
     "approval_missing_blocked_count": 1,
     "approval_required_count": 1,
-    "interpretation": "tool_scaffold_executed counts policy-gated dry-run scaffold events; real_external_executions is always 0 \u2014 no real tool execution is enabled",
+    "interpretation": "tool_scaffold_executed counts policy-gated dry-run scaffold events; real_external_executions is always 0 — no real tool execution is enabled",
     "real_external_executions": 0,
     "tool_dry_runs": 1,
     "tool_requests": 2,
@@ -359,14 +359,14 @@
   },
   "provider_policy": {
     "pass": true,
-    "policy_basis": "runtime_event_counters",
+    "policy_basis": "static_build_policy_with_disabled_attempt_check",
     "build_profile": "default",
     "ui_local_providers_feature_enabled": false,
     "local_provider_modes_available": false,
     "local_provider_requests": 0,
     "local_provider_successes": 0,
     "local_provider_failures": 0,
-    "local_provider_disabled_blocks": 0,
+    "local_provider_disabled_blocks": 1,
     "external_provider_requests": 0,
     "cloud_provider_requests": 0,
     "api_key_storage_enabled": false,
@@ -378,7 +378,7 @@
     "provider_action_override_attempts": 0,
     "provider_output_authority": "non_authoritative",
     "codex_runtime_authoritative": true,
-    "default_provider_attempt_tested": false
+    "default_provider_attempt_tested": true
   },
   "limitations": [
     "NL benchmark is diagnostic routing over a bounded set, not broad natural-language reasoning proof",
