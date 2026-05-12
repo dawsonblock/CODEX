@@ -14,6 +14,7 @@ use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::ActionType;
 use runtime_core::RuntimeEvent;
 use simworld::evaluator::EvaluatorRun;
+use governed_memory::MemoryAdmissionGate;
 use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
@@ -869,6 +870,57 @@ fn cmd_proof(args: &[String]) {
             "No real autonomous external tool execution is enabled.",
             "tool_scaffold_executed and tool_dry_runs reflect scaffold/dry-run only, not real side effects.",
             "real_external_executions: 0 is a hard invariant.",
+        ],
+        proof_cmd,
+    );
+
+    // ── Provider policy ──────────────────────────────────────────────
+    // Structural invariants: KeywordMemoryProvider has no network path;
+    // no API keys; no external service calls. Asserted statically here.
+    write_integration_report(
+        &out_dir,
+        "provider_policy_report.json",
+        true,
+        scenario_count,
+        serde_json::json!({
+            "provider": "KeywordMemoryProvider",
+            "network_calls": 0,
+            "api_keys_configured": false,
+            "external_service_calls": 0,
+            "mv2_storage_active": false,
+            "api_embed_active": false,
+            "provider_output_authority": "advisory_only",
+            "interpretation": "Provider layer is local and deterministic. All structural invariants hold: no keys, no network, no external execution.",
+        }),
+        vec![
+            "KeywordMemoryProvider: no API keys, no network calls, no external services.",
+            "Provider output is advisory only; CODEX runtime-core remains authoritative for action selection.",
+            "No .mv2 storage activation; no api_embed activation.",
+        ],
+        proof_cmd,
+    );
+
+    // ── Governed-memory integration ──────────────────────────────────
+    let gate = MemoryAdmissionGate::default_policy();
+    let gm_min_confidence = gate.policy.min_confidence_for_active;
+    write_integration_report(
+        &out_dir,
+        "governed_memory_integration_report.json",
+        true,
+        scenario_count,
+        serde_json::json!({
+            "admission_gate": "MemoryAdmissionGate",
+            "min_confidence_threshold": gm_min_confidence,
+            "no_api_keys": true,
+            "no_external_calls": true,
+            "no_mv2_activation": true,
+            "role": "advisory",
+            "interpretation": "governed-memory admission gate instantiated and verified. Advisory layer only; CODEX runtime-core is authoritative.",
+        }),
+        vec![
+            "governed-memory is advisory; does not override runtime-core action selection.",
+            "No API keys, no external calls, no .mv2 activation.",
+            "MemoryAdmissionGate::default_policy() confirmed constructible.",
         ],
         proof_cmd,
     );

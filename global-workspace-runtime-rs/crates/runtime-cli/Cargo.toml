@@ -17,6 +17,7 @@ memory       = { path = "../memory" }
 evidence     = { path = "../evidence" }
 contradiction = { path = "../contradiction" }
 gw-workspace = { path = "../gw-workspace" }
+governed-memory = { path = "../governed-memory" }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
 anyhow       = { workspace = true }

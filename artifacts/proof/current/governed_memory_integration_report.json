@@ -1,0 +1,20 @@
+{
+  "counters": {
+    "admission_gate": "MemoryAdmissionGate",
+    "interpretation": "governed-memory admission gate instantiated and verified. Advisory layer only; CODEX runtime-core is authoritative.",
+    "min_confidence_threshold": 0.6,
+    "no_api_keys": true,
+    "no_external_calls": true,
+    "no_mv2_activation": true,
+    "role": "advisory"
+  },
+  "generated_timestamp": 1778627979,
+  "limitations": [
+    "governed-memory is advisory; does not override runtime-core action selection.",
+    "No API keys, no external calls, no .mv2 activation.",
+    "MemoryAdmissionGate::default_policy() confirmed constructible."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

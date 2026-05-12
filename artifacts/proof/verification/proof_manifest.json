@@ -1,5 +1,5 @@
 {
-  "codename": "CODEX-main 32",
+  "codename": "CODEX-main 32 proof-clean",
   "package_status": "integration proof candidate",
   "verified_at": "2026-05-11T00:00:00Z",
   "python_verified": true,
@@ -18,7 +18,9 @@
     "artifacts/proof/current/contradiction_integration_report.json",
     "artifacts/proof/current/pressure_replay_report.json",
     "artifacts/proof/current/reasoning_audit_report.json",
-    "artifacts/proof/current/tool_policy_report.json"
+    "artifacts/proof/current/tool_policy_report.json",
+    "artifacts/proof/current/provider_policy_report.json",
+    "artifacts/proof/current/governed_memory_integration_report.json"
   ],
   "simworld_summary": {
     "cycles": 15,
@@ -60,8 +62,8 @@
       "action_match_rate": 1.0
     },
     "held_out": {
-      "scenario_count": 26,
-      "action_match_rate": 0.9615384615384616
+      "scenario_count": 46,
+      "action_match_rate": 1.0
     },
     "adversarial": {
       "scenario_count": 2,

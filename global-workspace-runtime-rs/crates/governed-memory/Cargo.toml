@@ -12,10 +12,6 @@ thiserror.workspace = true
 anyhow.workspace = true
 uuid = { version = "1", features = ["v4", "serde"] }
 
-evidence = { path = "../evidence" }
-contradiction = { path = "../contradiction" }
-memory = { path = "../memory" }
-runtime-core = { path = "../runtime-core" }
 
 [dev-dependencies]
 proptest.workspace = true

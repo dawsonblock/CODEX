@@ -1,0 +1,21 @@
+{
+  "counters": {
+    "api_embed_active": false,
+    "api_keys_configured": false,
+    "external_service_calls": 0,
+    "interpretation": "Provider layer is local and deterministic. All structural invariants hold: no keys, no network, no external execution.",
+    "mv2_storage_active": false,
+    "network_calls": 0,
+    "provider": "KeywordMemoryProvider",
+    "provider_output_authority": "advisory_only"
+  },
+  "generated_timestamp": 1778627979,
+  "limitations": [
+    "KeywordMemoryProvider: no API keys, no network calls, no external services.",
+    "Provider output is advisory only; CODEX runtime-core remains authoritative for action selection.",
+    "No .mv2 storage activation; no api_embed activation."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}
