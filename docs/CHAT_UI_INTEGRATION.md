@@ -151,3 +151,6 @@ The chat UI is a viewer/controller shell. CODEX runtime remains authoritative.
 The UI may display chat history, but UI history is not claim memory or evidence memory.
 
 No real external tool execution or external cloud provider API execution is enabled in this pass. Local provider execution (localhost:11434) is experimental, non-authoritative, and security-gated.
+
+This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.
+
