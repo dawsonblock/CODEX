@@ -1,8 +1,8 @@
-use crate::bridge::types::RuntimeTraceSummary;
+use crate::bridge::types::RuntimeStepResult;
 use dioxus::prelude::*;
 
 #[component]
-pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
+pub fn ActionTracePanel(trace: Option<RuntimeStepResult>) -> Element {
     let Some(trace) = trace else {
         return rsx! {
             section { class: "card",
@@ -88,6 +88,7 @@ pub fn ActionTracePanel(trace: Option<RuntimeTraceSummary>) -> Element {
                 li { "{audit_label}: {audit_id}" }
                 li { "dominant_pressures: {dominant_pressures}" }
                 li { "tool_policy_decision: {tool_policy}" }
+                li { "provider_policy_decision: {trace.provider_policy_decision.clone().unwrap_or_else(|| \"not available in current runtime bridge\".to_string())}" }
                 li { "missing_evidence_reason: {missing_evidence}" }
                 li { "provider_executions_local: {trace.provider_executions_local}" }
             }

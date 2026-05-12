@@ -21,21 +21,26 @@ pub enum ChatRole {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RuntimeTraceSummary {
+pub struct RuntimeStepResult {
     pub selected_action: String,
+    pub response_text: String,
+    pub audit_id: Option<String>,
     pub evidence_ids: Vec<String>,
     pub evidence_hashes: Vec<String>,
     pub claim_ids: Vec<String>,
     pub contradiction_ids: Vec<String>,
-    pub audit_id: Option<String>,
     pub dominant_pressures: Vec<String>,
+    pub replay_safe: bool,
+    pub missing_evidence_reason: Option<String>,
+    pub tool_policy_decision: Option<String>,
+    pub provider_policy_decision: Option<String>,
+    pub metadata_quality: MetadataQuality,
+    pub bridge_mode: String,
+    
+    // Kept from previous structure to maintain UI compatibility
     pub pressure_updates: usize,
     pub policy_bias_applications: usize,
-    pub replay_safe: bool,
-    pub tool_policy_decision: Option<String>,
-    pub missing_evidence_reason: Option<String>,
     pub provider_executions_local: usize,
-    pub metadata_quality: MetadataQuality,
     /// Live snapshot of provider event-loop counters at the time this trace was generated.
     #[serde(default)]
     pub provider_counters: ProviderCountersSummary,
@@ -71,24 +76,16 @@ pub struct ChatMessage {
     pub role: ChatRole,
     pub content: String,
     pub timestamp: String,
-    pub runtime: Option<RuntimeTraceSummary>,
+    pub runtime: Option<RuntimeStepResult>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RuntimeChatResponse {
-    pub message: String,
-    pub selected_action: String,
-    pub bridge_mode: String,
-    pub trace: RuntimeTraceSummary,
-}
-
-impl RuntimeChatResponse {
+impl RuntimeStepResult {
     pub fn with_error(err: String) -> Self {
         Self {
-            message: err,
+            response_text: err,
             selected_action: "refuse_unsafe".to_string(),
             bridge_mode: "error".to_string(),
-            trace: RuntimeTraceSummary::default(),
+            ..Default::default()
         }
     }
 }
@@ -568,7 +565,7 @@ mod tests {
 
     #[test]
     fn runtime_trace_summary_default_has_boundary_ok_counters() {
-        let trace = RuntimeTraceSummary::default();
+        let trace = RuntimeStepResult::default();
         assert!(trace.provider_counters.boundary_ok());
         assert_eq!(trace.provider_counters.cloud_requests, 0);
         assert_eq!(trace.provider_counters.external_requests, 0);

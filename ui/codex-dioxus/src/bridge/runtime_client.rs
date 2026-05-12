@@ -1,7 +1,7 @@
 use super::types::{
     ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary,
-    RuntimeBridgeMode, RuntimeChatResponse, RuntimeCommand, RuntimeCommandResult,
-    RuntimeCommandStatus, RuntimeTraceSummary,
+    RuntimeBridgeMode, RuntimeCommand, RuntimeCommandResult,
+    RuntimeCommandStatus, RuntimeStepResult,
 };
 use runtime_core::{ActionType, RuntimeEvent, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -48,7 +48,7 @@ pub fn provider_counters_snapshot() -> ProviderCounterSnapshot {
 }
 
 /// Returns a lightweight `ProviderCountersSummary` from the live atomic counters.
-/// This is embedded in every `RuntimeTraceSummary` so the UI can display live
+/// This is embedded in every `RuntimeStepResult` so the UI can display live
 /// provider event-loop state per-message.
 pub fn live_provider_counters() -> ProviderCountersSummary {
     ProviderCountersSummary {
@@ -87,7 +87,7 @@ impl RuntimeClient {
         }
     }
 
-    pub async fn send_user_message(&self, input: &str) -> RuntimeChatResponse {
+    pub async fn send_user_message(&self, input: &str) -> RuntimeStepResult {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => mock_runtime_response(input),
             RuntimeBridgeMode::LocalCodexRuntimeReadOnly => local_runtime_response(input),
@@ -95,21 +95,19 @@ impl RuntimeClient {
             RuntimeBridgeMode::LocalOllamaProvider => ollama_runtime_response(input, "llama3").await,
             #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalTurboquantProvider => ollama_runtime_response(input, "turboquant").await,
-            RuntimeBridgeMode::ExternalProviderDisabled => RuntimeChatResponse {
-                message: "External and local cloud provider execution is disabled. CODEX runtime remains authoritative.".to_string(),
-                selected_action: "defer_insufficient_evidence".to_string(),
-                bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled.label().to_string(),
-                trace: RuntimeTraceSummary {
-                    selected_action: "defer_insufficient_evidence".to_string(),
-                    dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
-                    replay_safe: true,
-                    tool_policy_decision: Some("provider_disabled".to_string()),
-                    metadata_quality: MetadataQuality::Unavailable,
-                    provider_executions_local: 0,
-                    provider_counters: live_provider_counters(),
-                    ..RuntimeTraceSummary::default()
-                },
-            },
+            RuntimeBridgeMode::ExternalProviderDisabled => RuntimeStepResult {
+            response_text: "External and local cloud provider execution is disabled. CODEX runtime remains authoritative.".to_string(),
+            bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled.label().to_string(),
+            selected_action: "defer_insufficient_evidence".to_string(),
+            dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
+            replay_safe: true,
+            tool_policy_decision: Some("provider_disabled".to_string()),
+        provider_policy_decision: None,
+            metadata_quality: MetadataQuality::Unavailable,
+            provider_executions_local: 0,
+            provider_counters: live_provider_counters(),
+            ..RuntimeStepResult::default()
+        },
         }
     }
 
@@ -117,16 +115,16 @@ impl RuntimeClient {
         &self,
         input: &str,
         sender: UnboundedSender<String>,
-    ) -> RuntimeChatResponse {
+    ) -> RuntimeStepResult {
         match self.mode {
             RuntimeBridgeMode::MockUiMode => {
                 let resp = mock_runtime_response(input);
-                let _ = sender.send(resp.message.clone());
+                let _ = sender.send(resp.response_text.clone());
                 resp
             }
             RuntimeBridgeMode::LocalCodexRuntimeReadOnly => {
                 let resp = local_runtime_response(input);
-                let _ = sender.send(resp.message.clone());
+                let _ = sender.send(resp.response_text.clone());
                 resp
             }
             #[cfg(feature = "ui-local-providers")]
@@ -135,12 +133,12 @@ impl RuntimeClient {
                     PROVIDER_LOCAL_DISABLED_BLOCKS.fetch_add(1, Ordering::Relaxed);
                     let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Ollama.".to_string();
                     let _ = sender.send(err.clone());
-                    return RuntimeChatResponse::with_error(err);
+                    return RuntimeStepResult::with_error(err);
                 }
                 PROVIDER_LOCAL_REQUESTS.fetch_add(1, Ordering::Relaxed);
                 let mut resp = ollama_runtime_stream(input, "llama3", sender).await;
-                resp.trace.provider_executions_local += 1;
-                if resp.trace.metadata_quality == MetadataQuality::Unavailable {
+                resp.provider_executions_local += 1;
+                if resp.metadata_quality == MetadataQuality::Unavailable {
                     PROVIDER_LOCAL_FAILURES.fetch_add(1, Ordering::Relaxed);
                 } else {
                     PROVIDER_LOCAL_SUCCESSES.fetch_add(1, Ordering::Relaxed);
@@ -153,11 +151,11 @@ impl RuntimeClient {
                     PROVIDER_LOCAL_DISABLED_BLOCKS.fetch_add(1, Ordering::Relaxed);
                     let err = "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use Turboquant.".to_string();
                     let _ = sender.send(err.clone());
-                    return RuntimeChatResponse::with_error(err);
+                    return RuntimeStepResult::with_error(err);
                 }
                 PROVIDER_LOCAL_REQUESTS.fetch_add(1, Ordering::Relaxed);
                 let mut resp = ollama_runtime_stream(input, "turboquant", sender).await;
-                resp.trace.provider_executions_local += 1;
+                resp.provider_executions_local += 1;
                 if resp.trace.metadata_quality == MetadataQuality::Unavailable {
                     PROVIDER_LOCAL_FAILURES.fetch_add(1, Ordering::Relaxed);
                 } else {
@@ -168,32 +166,30 @@ impl RuntimeClient {
             RuntimeBridgeMode::ExternalProviderDisabled => {
                 let msg = "External and local cloud provider execution is disabled. CODEX runtime remains authoritative.".to_string();
                 let _ = sender.send(msg.clone());
-                RuntimeChatResponse {
-                    message: msg,
+                RuntimeStepResult {
+                    response_text: msg,
                     selected_action: "defer_insufficient_evidence".to_string(),
                     bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled
                         .label()
                         .to_string(),
-                    trace: RuntimeTraceSummary {
-                        selected_action: "defer_insufficient_evidence".to_string(),
-                        dominant_pressures: vec![
-                            "tool_risk".to_string(),
-                            "evidence_gap".to_string(),
-                        ],
-                        replay_safe: true,
-                        tool_policy_decision: Some("provider_disabled".to_string()),
-                        metadata_quality: MetadataQuality::Unavailable,
-                        provider_executions_local: 0,
-                        provider_counters: live_provider_counters(),
-                        ..RuntimeTraceSummary::default()
-                    },
+                    dominant_pressures: vec![
+                        "tool_risk".to_string(),
+                        "evidence_gap".to_string(),
+                    ],
+                    replay_safe: true,
+                    tool_policy_decision: Some("provider_disabled".to_string()),
+        provider_policy_decision: None,
+                    metadata_quality: MetadataQuality::Unavailable,
+                    provider_executions_local: 0,
+                    provider_counters: live_provider_counters(),
+                    ..RuntimeStepResult::default()
                 }
             }
         }
     }
 }
 
-fn local_runtime_response(input: &str) -> RuntimeChatResponse {
+fn local_runtime_response(input: &str) -> RuntimeStepResult {
     let mut runtime = RuntimeLoop::default();
     let step = runtime.run_cycle(input, 1, 0.9);
 
@@ -288,29 +284,27 @@ fn local_runtime_response(input: &str) -> RuntimeChatResponse {
         MetadataQuality::PartiallyGrounded
     };
 
-    RuntimeChatResponse {
-        message,
+    RuntimeStepResult {
+        response_text: message,
         selected_action: selected_action.clone(),
         bridge_mode: RuntimeBridgeMode::LocalCodexRuntimeReadOnly
             .label()
             .to_string(),
-        trace: RuntimeTraceSummary {
-            selected_action,
-            evidence_ids,
-            evidence_hashes,
-            claim_ids,
-            contradiction_ids,
-            audit_id,
-            dominant_pressures,
-            pressure_updates: 1,
-            policy_bias_applications: 0,
-            replay_safe: step.is_safe,
-            tool_policy_decision: None,
-            missing_evidence_reason,
-            metadata_quality,
-            provider_executions_local: 0,
-            provider_counters: live_provider_counters(),
-        },
+        evidence_ids,
+        evidence_hashes,
+        claim_ids,
+        contradiction_ids,
+        audit_id,
+        dominant_pressures,
+        pressure_updates: 1,
+        policy_bias_applications: 0,
+        replay_safe: step.is_safe,
+        tool_policy_decision: None,
+        provider_policy_decision: None,
+        missing_evidence_reason,
+        metadata_quality,
+        provider_executions_local: 0,
+        provider_counters: live_provider_counters(),
     }
 }
 
@@ -370,7 +364,7 @@ fn contains_any(input: &str, words: &[&str]) -> bool {
     words.iter().any(|w| input.contains(w))
 }
 
-fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
+fn mock_runtime_response(input: &str) -> RuntimeStepResult {
     let trimmed = input.trim();
     let lower = trimmed.to_lowercase();
 
@@ -479,32 +473,30 @@ fn mock_runtime_response(input: &str) -> RuntimeChatResponse {
     }
     .to_string();
 
-    RuntimeChatResponse {
-        message,
+    RuntimeStepResult {
+        response_text: message,
         selected_action: action.to_string(),
         bridge_mode: RuntimeBridgeMode::MockUiMode.label().to_string(),
-        trace: RuntimeTraceSummary {
-            selected_action: action.to_string(),
-            evidence_ids: vec![],
-            evidence_hashes: vec![],
-            claim_ids: vec![],
-            contradiction_ids: vec![],
-            audit_id: None,
-            dominant_pressures: pressures.into_iter().map(ToString::to_string).collect(),
-            pressure_updates: 1,
-            policy_bias_applications: if policy.is_some() { 1 } else { 0 },
-            replay_safe: true,
-            tool_policy_decision: policy,
-            missing_evidence_reason: missing_evidence,
-            metadata_quality: MetadataQuality::MockOnly,
-            provider_executions_local: 0,
-            provider_counters: live_provider_counters(),
-        },
+        evidence_ids: vec![],
+        evidence_hashes: vec![],
+        claim_ids: vec![],
+        contradiction_ids: vec![],
+        audit_id: None,
+        dominant_pressures: pressures.into_iter().map(ToString::to_string).collect(),
+        pressure_updates: 1,
+        policy_bias_applications: if policy.is_some() { 1 } else { 0 },
+        replay_safe: true,
+        tool_policy_decision: policy,
+        provider_policy_decision: None,
+        missing_evidence_reason: missing_evidence,
+        metadata_quality: MetadataQuality::MockOnly,
+        provider_executions_local: 0,
+        provider_counters: live_provider_counters(),
     }
 }
 
 #[cfg(feature = "ui-local-providers")]
-async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatResponse {
+async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeStepResult {
     #[derive(serde::Serialize)]
     struct OllamaRequest<'a> {
         model: &'a str,
@@ -549,27 +541,25 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeChatRe
         RuntimeBridgeMode::LocalOllamaProvider.label().to_string()
     };
 
-    RuntimeChatResponse {
-        message,
+    RuntimeStepResult {
+        response_text: message,
         selected_action: "answer".to_string(),
         bridge_mode: bridge_mode_label,
-        trace: RuntimeTraceSummary {
-            selected_action: "answer".to_string(),
-            evidence_ids: vec![],
-            evidence_hashes: vec![],
-            claim_ids: vec![],
-            contradiction_ids: vec![],
-            audit_id: None,
-            dominant_pressures: vec!["coherence".to_string()],
-            pressure_updates: 1,
-            policy_bias_applications: 0,
-            replay_safe: true,
-            tool_policy_decision: None,
-            missing_evidence_reason: None,
-            metadata_quality: MetadataQuality::PartiallyGrounded,
-            provider_executions_local: 0,
-            provider_counters: live_provider_counters(),
-        },
+        evidence_ids: vec![],
+        evidence_hashes: vec![],
+        claim_ids: vec![],
+        contradiction_ids: vec![],
+        audit_id: None,
+        dominant_pressures: vec!["coherence".to_string()],
+        pressure_updates: 1,
+        policy_bias_applications: 0,
+        replay_safe: true,
+        tool_policy_decision: None,
+        provider_policy_decision: None,
+        missing_evidence_reason: None,
+        metadata_quality: MetadataQuality::PartiallyGrounded,
+        provider_executions_local: 0,
+        provider_counters: live_provider_counters(),
     }
 }
 
@@ -578,7 +568,7 @@ async fn ollama_runtime_stream(
     input: &str,
     model_name: &str,
     sender: tokio::sync::mpsc::UnboundedSender<String>,
-) -> RuntimeChatResponse {
+) -> RuntimeStepResult {
     use futures_util::StreamExt;
 
     #[derive(serde::Serialize)]
@@ -648,27 +638,25 @@ async fn ollama_runtime_stream(
         RuntimeBridgeMode::LocalOllamaProvider.label().to_string()
     };
 
-    RuntimeChatResponse {
-        message: full_message,
-        selected_action: "answer".to_string(),
+    RuntimeStepResult {
+        response_text: full_message,
         bridge_mode: bridge_mode_label,
-        trace: RuntimeTraceSummary {
-            selected_action: "answer".to_string(),
-            evidence_ids: vec![],
-            evidence_hashes: vec![],
-            claim_ids: vec![],
-            contradiction_ids: vec![],
-            audit_id: None,
-            dominant_pressures: vec!["coherence".to_string()],
-            pressure_updates: 1,
-            policy_bias_applications: 0,
-            replay_safe: true,
-            tool_policy_decision: None,
-            missing_evidence_reason: None,
-            metadata_quality: MetadataQuality::PartiallyGrounded,
-            provider_executions_local: 0,
-            provider_counters: live_provider_counters(),
-        },
+        selected_action: "answer".to_string(),
+        evidence_ids: vec![],
+        evidence_hashes: vec![],
+        claim_ids: vec![],
+        contradiction_ids: vec![],
+        audit_id: None,
+        dominant_pressures: vec!["coherence".to_string()],
+        pressure_updates: 1,
+        policy_bias_applications: 0,
+        replay_safe: true,
+        tool_policy_decision: None,
+        provider_policy_decision: None,
+        missing_evidence_reason: None,
+        metadata_quality: MetadataQuality::PartiallyGrounded,
+        provider_executions_local: 0,
+        provider_counters: live_provider_counters(),
     }
 }
 

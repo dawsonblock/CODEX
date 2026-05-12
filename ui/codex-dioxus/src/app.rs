@@ -328,8 +328,8 @@ pub fn App() -> Element {
                                             if let Ok(final_resp) = producer.await {
                                                 messages.with_mut(|m| {
                                                     if let Some(msg) = m.iter_mut().find(|msg| msg.id == assistant_id) {
-                                                        msg.content = final_resp.message;
-                                                        msg.runtime = Some(final_resp.trace);
+                                                        msg.content = final_resp.response_text.clone();
+                                                        msg.runtime = Some(final_resp);
                                                     }
                                                 });
                                             }
