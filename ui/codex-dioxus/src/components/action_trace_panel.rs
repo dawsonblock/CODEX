@@ -69,6 +69,7 @@ pub fn ActionTracePanel(trace: Option<RuntimeStepResult>) -> Element {
     rsx! {
         section { class: "card",
             h3 { "Action Trace" }
+            p { class: "muted small", "Metadata quality indicates whether this trace is runtime-grounded, partial, mock-only, or unavailable." }
             if show_partial_warning {
                 p {
                     class: "muted",

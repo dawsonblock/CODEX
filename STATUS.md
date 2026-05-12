@@ -1,6 +1,6 @@
 # STATUS.md
 
-Last updated: 2026-05-11 (live verified)
+Last updated: 2026-05-12 (live verified)
 Codename: CODEX-main 32
 Status: CODEX-main 32 Integration Proof Candidate
 
@@ -66,7 +66,7 @@ Rust verification:
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
-- held_out: 26 scenarios, action_match_rate 1.00
+- held_out: 46 scenarios, action_match_rate 0.8261
 - adversarial: 2 scenarios, action_match_rate 1.00
 
 ## Expanded Proof Artifacts
@@ -96,7 +96,7 @@ The official proof command now generates:
 - When `ui-local-providers` is active, provider calls are localhost-only, approval-gated, and non-authoritative.
   Provider output cannot execute tools, write memory, or override CODEX selected_action.
 - Contradiction handling remains structured, not semantic truth reasoning.
-- NL benchmark remains diagnostic routing over 43 scenarios, not broad reasoning proof.
+- NL benchmark remains diagnostic routing over 63 scenarios (15 curated + 46 held-out + 2 adversarial), not broad reasoning proof.
 - Evidence-backed claim linkage improved for proof-known evaluator evidence and remains bounded to structured sources.
 
 This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.

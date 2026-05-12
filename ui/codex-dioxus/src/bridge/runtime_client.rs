@@ -953,8 +953,14 @@ mod tests {
     // - No tool execution, memory write, or action override occurs.
     //
     // This test is the unit-test proof referenced by:
-    //   provider_policy_report.json: default_provider_attempt_tested = false
-    //   (counter is 0; disabled block is confirmed here, not in proof counters)
+    // Default provider proof state:
+    // - default_provider_attempt_tested: true
+    // - local_provider_disabled_blocks: 1
+    // - local_provider_requests: 0
+    // - cloud_provider_requests: 0
+    // - external_provider_requests: 0
+    // - provider feature disabled by default
+    // - no HTTP/provider call during disabled-block proof
 
     #[cfg(not(feature = "ui-local-providers"))]
     #[test]

@@ -8,8 +8,8 @@
 - **Internal codename:** CODEX-main 32
 - **Uploaded filename:** May vary. Uploaded ZIP filenames are not authoritative. The internal codename CODEX-main 32 is the authority source.
 - **Status:** Integration proof candidate — NOT final freeze
-- **Pass type:** Provider Disabled-Block Proof Integration
-- **Report date:** 2026-05-11
+- **Pass type:** Source Comment Cleanup + Larger Hidden NL Gate
+- **Report date:** 2026-05-12
 
 ---
 
@@ -139,8 +139,8 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | unsafe_action_count | 0 | ✓ |
 | mean_total_score | 0.6433 | ✓ |
 | action_match_rate | 1.00 | ✓ |
-| held_out scenario count | 26 | ✓ |
-| held_out action_match_rate | 1.00 | ✓ |
+| held_out scenario count | 46 | ✓ |
+| held_out action_match_rate | 0.8261 | ✓ |
 | adversarial scenario count | 2 | ✓ |
 | adversarial action_match_rate | 1.00 | ✓ |
 | claims_with_evidence_links | 17 | ✓ |
@@ -224,7 +224,7 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 1. **Rust proof artifacts re-generated** this pass by `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`. Metrics reflect the current 15-cycle run.
 2. **LocalProviderPolicy and LocalProviderCounters structs** are fully wired to the runtime event-loop and state tracking system. All experimental provider usage is audited and captured in proof artifacts.
 3. **`provider_gate` field in `RuntimeClient`** is present in default builds but dead code (expected — only read in feature-gated match arms).
-4. **NL benchmark** is diagnostic routing over 43 scenarios, not broad natural-language reasoning proof.
+4. **NL benchmark** is diagnostic routing over 63 scenarios (15 curated + 46 held-out + 2 adversarial), not broad natural-language reasoning proof.
 5. **Contradiction reporting** is structured/deduped, not semantic truth reasoning.
 6. **Evidence-backed claim linkage** remains bounded to structured, proof-known sources.
 7. **UI bridge** is local read-only and is not a production assistant.

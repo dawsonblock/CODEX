@@ -64,7 +64,7 @@ Toolchain: cargo 1.95.0, rustc 1.95.0
 
 ### NL benchmark sets (diagnostic)
 - curated: 15 scenarios, match_rate 1.00
-- held_out: 26 scenarios, match_rate 0.9615384615
+- held_out: 46 scenarios, match_rate 0.8261
 - adversarial: 2 scenarios, match_rate 1.00
 
 ### Long-horizon
