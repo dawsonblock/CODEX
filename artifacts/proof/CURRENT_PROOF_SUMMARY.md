@@ -1,6 +1,6 @@
 # Current Proof Summary
 
-Regenerated: 2026-05-11 (live verification)
+Regenerated: 2026-05-12 (live verification)
 Official proof command: cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
 Toolchain: cargo 1.95.0, rustc 1.95.0
 
