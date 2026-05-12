@@ -63,6 +63,8 @@ Rust verification:
 - tool_scaffold_executed: 1
 - tools_blocked: 1
 - real_external_executions: 0
+- default_provider_attempt_tested: true
+- local_provider_disabled_blocks: 1
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
