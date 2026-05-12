@@ -8,7 +8,7 @@
 - **Internal codename:** CODEX-main 32
 - **Uploaded filename:** May vary. Uploaded ZIP filenames are not authoritative. The internal codename CODEX-main 32 is the authority source.
 - **Status:** Integration proof candidate — NOT final freeze
-- **Pass type:** Report Filename Cleanup + Provider Disabled-Block Test
+- **Pass type:** Provider Disabled-Block Proof Integration
 - **Report date:** 2026-05-11
 
 ---
@@ -134,7 +134,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | Metric | Value | Status |
 |--------|-------|--------|
 | cycles | 15 | ✓ |
-| event_count | 556 | ✓ |
+| event_count | 557 | ✓ |
 | resource_survival | 0.974 | ✓ |
 | unsafe_action_count | 0 | ✓ |
 | mean_total_score | 0.6433 | ✓ |
@@ -158,11 +158,11 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | `real_external_executions` | **0** | ✓ tool_policy_report.json |
 | `ui_local_providers_feature_enabled` | **false** (default build) | ✓ provider_policy_report.json |
 | `local_provider_modes_available` | **false** (default build) | ✓ provider_policy_report.json |
-| `policy_basis` | **runtime_event_counters** | ✓ provider_policy_report.json |
+| `policy_basis` | **static_build_policy_with_disabled_attempt_check** | ✓ provider_policy_report.json |
 | `local_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
 | `local_provider_successes` | **0** | ✓ provider_policy_report.json (Live Counter) |
 | `local_provider_failures` | **0** | ✓ provider_policy_report.json (Live Counter) |
-| `local_provider_disabled_blocks` | **0** | ✓ provider_policy_report.json (Live Counter) |
+| `local_provider_disabled_blocks` | **1** | ✓ provider_policy_report.json (Live Counter) |
 | `external_provider_requests` | **0** | ✓ provider_policy_report.json |
 | `cloud_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
 | `api_key_storage_enabled` | **false** | ✓ provider_policy_report.json |
@@ -174,7 +174,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | `provider_action_override_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
 | `provider_output_authority` | **non_authoritative** | ✓ provider_policy_report.json |
 | `codex_runtime_authoritative` | **true** | ✓ provider_policy_report.json |
-| `default_provider_attempt_tested` | **false** | ✓ provider_policy_report.json (disabled-block confirmed by unit tests; no proof-run attempt) |
+| `default_provider_attempt_tested` | **true** | ✓ provider_policy_report.json (disabled-block attempted and verified in proof-run) |
 | `localhost:11434` in default binary | **absent** | ✓ feature-gate scan (consistency script) |
 | `reqwest` in default binary | **absent** | ✓ Cargo.toml optional dependency |
 
@@ -229,7 +229,7 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 6. **Evidence-backed claim linkage** remains bounded to structured, proof-known sources.
 7. **UI bridge** is local read-only and is not a production assistant.
 8. **Dioxus CLI (`dx build`)** was not invoked this pass; UI artifact build is not verified.
-9. **Phase 2 disabled-block tests** (2 new tests): `default_build_local_provider_attempt_is_blocked` proves the full default-build mode cycle never reaches `LocalOllamaProvider` or `LocalTurboquantProvider`, counters remain 0, and no HTTP call path is reachable. `default_build_local_provider_activation_returns_disabled_status` confirms `ExternalProviderDisabled` mode defers without any counter leakage. These tests are the unit-test evidence for `default_provider_attempt_tested: false`.
+9. **Phase 2 disabled-block tests** (2 new tests): `default_build_local_provider_attempt_is_blocked` proves the full default-build mode cycle never reaches `LocalOllamaProvider` or `LocalTurboquantProvider`, counters remain 0, and no HTTP call path is reachable. `default_build_local_provider_activation_returns_disabled_status` confirms `ExternalProviderDisabled` mode defers without any counter leakage. These tests complement the runtime proof's injected verification that block counters act correctly in default builds.
 
 ---
 
@@ -239,9 +239,9 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 
 All provider boundary assertions pass. The 10-action schema is unchanged. Python tests pass.
 UI tests pass (default: 41+, feature-gated: 28+). Proof consistency script passes all 77+ assertions.
-`provider_policy_report.json` exposes 21 fields including `default_provider_attempt_tested: false`,
-which documents that no provider request is attempted in the default proof; disabled-provider blocking
-is proven by two dedicated unit tests in ui/codex-dioxus. All fields are cross-checked against
+`provider_policy_report.json` exposes 21 fields including `default_provider_attempt_tested: true`,
+which documents that a simulated provider request was attempted and cleanly blocked in the default proof; disabled-provider blocking
+is proven both by the proof log and dedicated unit tests in ui/codex-dioxus. All fields are cross-checked against
 `proof_manifest.json`. Provider execution is unambiguously disabled in the default build.
 The feature-gated path is clearly documented, approval-gated, and non-authoritative.
 
