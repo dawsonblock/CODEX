@@ -289,7 +289,7 @@ def main() -> int:
         provider = load_json(provider_path)
         man_provider = manifest.get("provider_policy", {})
 
-        # Hard security assertions
+        # Hard security assertions — any deviation is a SECURITY_VIOLATION
         if provider.get("external_provider_requests") != 0:
             failures.append("SECURITY_VIOLATION: provider external_provider_requests must be exactly 0.")
         if provider.get("cloud_provider_requests") != 0:
@@ -300,18 +300,105 @@ def main() -> int:
             failures.append("SECURITY_VIOLATION: provider_can_execute_tools must be false.")
         if provider.get("provider_can_override_codex_action") is not False:
             failures.append("SECURITY_VIOLATION: provider_can_override_codex_action must be false.")
+        if provider.get("provider_can_write_memory") is not False:
+            failures.append("SECURITY_VIOLATION: provider_can_write_memory must be false.")
+        if provider.get("codex_runtime_authoritative") is not True:
+            failures.append("SECURITY_VIOLATION: codex_runtime_authoritative must be true.")
+        if provider.get("provider_tool_execution_attempts") != 0:
+            failures.append("SECURITY_VIOLATION: provider_tool_execution_attempts must be 0.")
+        if provider.get("provider_memory_write_attempts") != 0:
+            failures.append("SECURITY_VIOLATION: provider_memory_write_attempts must be 0.")
+        if provider.get("provider_action_override_attempts") != 0:
+            failures.append("SECURITY_VIOLATION: provider_action_override_attempts must be 0.")
+        if provider.get("provider_output_authority") != "non_authoritative":
+            failures.append("SECURITY_VIOLATION: provider_output_authority must be non_authoritative.")
+        if provider.get("pass") is not True:
+            failures.append("SECURITY_VIOLATION: provider_policy_report.pass must be true.")
 
+        # Verify policy_basis is declared (either value is acceptable but must be present)
+        policy_basis = provider.get("policy_basis")
+        if policy_basis not in ("runtime_event_counters", "static_build_policy"):
+            failures.append(f"MISSING_FIELD: policy_basis must be runtime_event_counters or static_build_policy, got {policy_basis!r}")
+        else:
+            print(f"  OK  policy_basis: {policy_basis}")
+
+        # Verify build_profile is present
+        build_profile = provider.get("build_profile")
+        if not build_profile:
+            failures.append("MISSING_FIELD: build_profile must be present in provider_policy_report.json")
+        else:
+            print(f"  OK  build_profile: {build_profile}")
+
+        # Print the hard-assertion results
         print("  OK  external_provider_requests: 0")
         print("  OK  cloud_provider_requests: 0")
         print("  OK  api_key_storage_enabled: false")
         print("  OK  provider_can_execute_tools: false")
+        print("  OK  provider_can_write_memory: false")
         print("  OK  provider_can_override_codex_action: false")
+        print("  OK  codex_runtime_authoritative: true")
+        print("  OK  provider_tool_execution_attempts: 0")
+        print("  OK  provider_memory_write_attempts: 0")
+        print("  OK  provider_action_override_attempts: 0")
+        print("  OK  provider_output_authority: non_authoritative")
 
-        # Cross-check manifest
-        for field in ["api_key_storage_enabled", "provider_can_execute_tools", "provider_can_write_memory", "provider_can_override_codex_action"]:
-            field_check(failures, f"provider_policy.{field}", provider.get(field), man_provider.get(field))
+        # Check counter fields are present and consistent with default-build expectations
+        for counter_field in [
+            "local_provider_requests",
+            "local_provider_successes",
+            "local_provider_failures",
+            "local_provider_disabled_blocks",
+        ]:
+            val = provider.get(counter_field)
+            if val is None:
+                failures.append(f"MISSING_FIELD: {counter_field} must be present in provider_policy_report.json")
+            else:
+                print(f"  OK  {counter_field}: {val}")
+
+        # Cross-check manifest for all provider_policy fields
+        for field in [
+            "pass",
+            "policy_basis",
+            "build_profile",
+            "ui_local_providers_feature_enabled",
+            "local_provider_modes_available",
+            "local_provider_requests",
+            "local_provider_successes",
+            "local_provider_failures",
+            "local_provider_disabled_blocks",
+            "external_provider_requests",
+            "cloud_provider_requests",
+            "api_key_storage_enabled",
+            "provider_can_execute_tools",
+            "provider_can_write_memory",
+            "provider_can_override_codex_action",
+            "provider_tool_execution_attempts",
+            "provider_memory_write_attempts",
+            "provider_action_override_attempts",
+            "provider_output_authority",
+            "codex_runtime_authoritative",
+        ]:
+            field_check(
+                failures,
+                f"provider_policy.{field}",
+                provider.get(field),
+                man_provider.get(field),
+            )
+
+        # If default build, confirm ui_local_providers_feature_enabled == false
+        if build_profile == "default":
+            if provider.get("ui_local_providers_feature_enabled") is not False:
+                failures.append("SECURITY_VIOLATION: default build must have ui_local_providers_feature_enabled: false")
+            else:
+                print("  OK  default build: ui_local_providers_feature_enabled false")
+            if provider.get("local_provider_modes_available") is not False:
+                failures.append("SECURITY_VIOLATION: default build must have local_provider_modes_available: false")
+            else:
+                print("  OK  default build: local_provider_modes_available false")
     else:
-        print("  WARN provider_policy_report.json not found. Skipping provider policy checks.")
+        failures.append("MISSING_FILE: provider_policy_report.json not found. Provider policy cannot be verified.")
+        print("  FAIL provider_policy_report.json not found.")
+
 
     # Phase 8 stale scan: check that localhost:11434 is not in active UI code (non-feature context)
     print("\nChecking for stale provider code in default UI build ...")

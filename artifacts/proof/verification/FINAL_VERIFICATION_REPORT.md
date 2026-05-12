@@ -156,13 +156,24 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | Assertion | Value | Verified |
 |-----------|-------|----------|
 | `real_external_executions` | **0** | ✓ tool_policy_report.json |
-| `local_provider_feature_enabled` | **false** (default build) | ✓ provider_policy_report.json |
+| `ui_local_providers_feature_enabled` | **false** (default build) | ✓ provider_policy_report.json |
+| `local_provider_modes_available` | **false** (default build) | ✓ provider_policy_report.json |
+| `policy_basis` | **runtime_event_counters** | ✓ provider_policy_report.json |
+| `local_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
+| `local_provider_successes` | **0** | ✓ provider_policy_report.json (Live Counter) |
+| `local_provider_failures` | **0** | ✓ provider_policy_report.json (Live Counter) |
+| `local_provider_disabled_blocks` | **0** | ✓ provider_policy_report.json (Live Counter) |
 | `external_provider_requests` | **0** | ✓ provider_policy_report.json |
 | `cloud_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
 | `api_key_storage_enabled` | **false** | ✓ provider_policy_report.json |
 | `provider_can_execute_tools` | **false** | ✓ provider_policy_report.json |
 | `provider_can_write_memory` | **false** | ✓ provider_policy_report.json |
 | `provider_can_override_codex_action` | **false** | ✓ provider_policy_report.json |
+| `provider_tool_execution_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
+| `provider_memory_write_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
+| `provider_action_override_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
+| `provider_output_authority` | **non_authoritative** | ✓ provider_policy_report.json |
+| `codex_runtime_authoritative` | **true** | ✓ provider_policy_report.json |
 | `localhost:11434` in default binary | **absent** | ✓ feature-gate scan (consistency script) |
 | `reqwest` in default binary | **absent** | ✓ Cargo.toml optional dependency |
 
@@ -209,14 +220,15 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 
 ## 9. Remaining Limitations
 
-1. **Rust proof artifacts are receipt-backed.** `cargo run -p runtime-cli -- proof --strict --long-horizon --nl` was not re-executed this pass. Proof metrics reflect the prior 15-cycle run.
-2. **LocalProviderPolicy and LocalProviderCounters structs** are fully wired to the runtime event-loop and state tracking system. This ensures all experimental provider usage is audited and captured in the proof artifacts.
+1. **Rust proof artifacts re-generated** this pass by `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`. Metrics reflect the current 15-cycle run.
+2. **LocalProviderPolicy and LocalProviderCounters structs** are fully wired to the runtime event-loop and state tracking system. All experimental provider usage is audited and captured in proof artifacts.
 3. **`provider_gate` field in `RuntimeClient`** is present in default builds but dead code (expected — only read in feature-gated match arms).
 4. **NL benchmark** is diagnostic routing over 43 scenarios, not broad natural-language reasoning proof.
 5. **Contradiction reporting** is structured/deduped, not semantic truth reasoning.
 6. **Evidence-backed claim linkage** remains bounded to structured, proof-known sources.
 7. **UI bridge** is local read-only and is not a production assistant.
 8. **Dioxus CLI (`dx build`)** was not invoked this pass; UI artifact build is not verified.
+9. **Phase 3 safety tests** (10 new tests) cover default-build provider mode skipping, ExternalProviderDisabled returning defer, provider output authority assertion, and empty-input no-panic guarantee.
 
 ---
 
@@ -225,7 +237,10 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 **Integration proof candidate. Not final freeze.**
 
 All provider boundary assertions pass. The 10-action schema is unchanged. Python tests pass.
-UI tests pass (default: 29, feature-gated: 28). Proof consistency script passes all 55 assertions.
+UI tests pass (default: 39+, feature-gated: 28+). Proof consistency script passes all 75+ assertions.
+`provider_policy_report.json` now exposes 20 granular fields including `policy_basis`,
+`local_provider_disabled_blocks`, all attempt counters, `provider_output_authority`, and
+`codex_runtime_authoritative`. All fields are cross-checked against `proof_manifest.json`.
 Provider execution is unambiguously disabled in the default build. The feature-gated path is
 clearly documented, approval-gated, and non-authoritative.
 

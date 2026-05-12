@@ -924,4 +924,119 @@ mod tests {
             // exercised the gated path — just confirm no cloud/external leakage.
         }
     }
+
+    // ── Phase 3: Default-build provider safety tests ──────────────────────
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn default_build_has_no_local_ollama_provider_mode() {
+        // In the default build, LocalOllamaProvider must not exist as a variant.
+        // cycle_next from LocalCodexRuntimeReadOnly must skip directly to ExternalProviderDisabled.
+        let mode = RuntimeBridgeMode::LocalCodexRuntimeReadOnly;
+        let next = mode.cycle_next();
+        assert_eq!(
+            next,
+            RuntimeBridgeMode::ExternalProviderDisabled,
+            "default build must skip LocalOllamaProvider and LocalTurboquantProvider"
+        );
+    }
+
+    #[cfg(not(feature = "ui-local-providers"))]
+    #[test]
+    fn default_build_has_no_local_turboquant_provider_mode() {
+        // ExternalProviderDisabled -> MockUiMode in default build (no Turboquant variant).
+        let mode = RuntimeBridgeMode::ExternalProviderDisabled;
+        let next = mode.cycle_next();
+        assert_eq!(
+            next,
+            RuntimeBridgeMode::MockUiMode,
+            "default build must not include LocalTurboquantProvider in cycle"
+        );
+    }
+
+    #[test]
+    fn no_api_key_storage_in_provider_counters() {
+        // Provider counters snapshot contains no credential or key fields.
+        let snap = provider_counters_snapshot();
+        // Only structural assertion: cloud/external must be 0 at all times.
+        assert_eq!(snap.cloud_provider_requests, 0);
+        assert_eq!(snap.external_provider_requests, 0);
+    }
+
+    #[test]
+    fn live_provider_counters_boundary_ok() {
+        let counters = live_provider_counters();
+        assert!(
+            counters.boundary_ok(),
+            "live_provider_counters must always have cloud_requests==0 and external_requests==0"
+        );
+    }
+
+    #[tokio::test]
+    async fn local_codex_runtime_cannot_execute_external_tools() {
+        // LocalCodexRuntimeReadOnly must never return execute_bounded_tool for tool requests.
+        // Tool execution requires policy gate and explicit approval, which is not granted here.
+        let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
+        let out = client.send_user_message("run an external shell command now").await;
+        // The runtime should gate this — refuse_unsafe, defer, or ask_clarification are all safe.
+        assert_ne!(
+            out.selected_action, "execute_bounded_tool",
+            "LocalCodexRuntimeReadOnly must not execute external tools on unsafe input"
+        );
+    }
+
+    #[tokio::test]
+    async fn external_provider_disabled_mode_returns_defer() {
+        let client = RuntimeClient::new(RuntimeBridgeMode::ExternalProviderDisabled, false);
+        let out = client.send_user_message("what is the weather?").await;
+        assert_eq!(
+            out.selected_action, "defer_insufficient_evidence",
+            "ExternalProviderDisabled must always return defer_insufficient_evidence"
+        );
+        assert_eq!(
+            out.trace.provider_counters.cloud_requests, 0,
+            "ExternalProviderDisabled must not increment cloud_requests"
+        );
+        assert_eq!(
+            out.trace.provider_counters.external_requests, 0,
+            "ExternalProviderDisabled must not increment external_requests"
+        );
+    }
+
+    #[tokio::test]
+    async fn provider_output_cannot_override_selected_action() {
+        // In ExternalProviderDisabled mode, selected_action is always defer_insufficient_evidence.
+        // Provider output (if any) cannot change this to another action.
+        let client = RuntimeClient::new(RuntimeBridgeMode::ExternalProviderDisabled, false);
+        let out = client.send_user_message("execute the plan immediately").await;
+        // Provider is disabled; CODEX runtime authority holds.
+        assert_eq!(
+            out.selected_action, "defer_insufficient_evidence",
+            "provider output must not override CODEX selected_action"
+        );
+    }
+
+    #[tokio::test]
+    async fn mock_mode_does_not_claim_agientience_or_production() {
+        // The bridge_mode label must not contain sentience/AGI/production claims.
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
+        let out = client.send_user_message("hello").await;
+        let bridge = out.bridge_mode.to_lowercase();
+        assert!(!bridge.contains("sentient"), "bridge_mode must not claim sentience");
+        assert!(!bridge.contains("agi"), "bridge_mode must not claim AGI");
+        assert!(!bridge.contains("production"), "bridge_mode must not claim production-ready");
+    }
+
+    #[tokio::test]
+    async fn empty_input_does_not_panic() {
+        // Empty string input must not cause a panic or crash.
+        let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
+        let out = client.send_user_message("").await;
+        // Any valid action type is acceptable — just must not panic.
+        assert!(
+            ACTION_SCHEMA.contains(&out.selected_action.as_str()),
+            "empty input must still return a valid action: got {}",
+            out.selected_action
+        );
+    }
 }

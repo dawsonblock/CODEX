@@ -1,23 +1,33 @@
 {
   "api_key_storage_enabled": false,
-  "build_profile": "default (no ui-local-providers feature)",
+  "build_profile": "default",
   "cloud_provider_requests": 0,
   "codename": "CODEX-main 32",
-  "counters": {
-    "local_failures": 0,
-    "local_requests": 0,
-    "local_successes": 0
-  },
+  "codex_runtime_authoritative": true,
   "external_provider_requests": 0,
-  "local_provider_feature_enabled": false,
-  "notes": [
+  "limitations": [
+    "Local provider support is experimental and disabled by default.",
+    "Provider output is non-authoritative.",
+    "Provider output cannot execute tools, write memory, or override CODEX selected_action.",
+    "CODEX runtime remains authoritative.",
     "Local provider modes compile only when --features ui-local-providers is passed.",
     "Default build (cargo build) contains zero provider HTTP code paths.",
-    "External and cloud provider execution is disabled at all build configurations.",
-    "CODEX runtime remains the sole authoritative source of selected_action."
+    "External and cloud provider execution is disabled at all build configurations."
   ],
+  "local_provider_disabled_blocks": 0,
+  "local_provider_failures": 0,
+  "local_provider_modes_available": false,
+  "local_provider_requests": 0,
+  "local_provider_successes": 0,
+  "pass": true,
+  "policy_basis": "runtime_event_counters",
+  "provider_action_override_attempts": 0,
   "provider_can_execute_tools": false,
   "provider_can_override_codex_action": false,
   "provider_can_write_memory": false,
-  "report_type": "provider_policy_report"
+  "provider_memory_write_attempts": 0,
+  "provider_output_authority": "non_authoritative",
+  "provider_tool_execution_attempts": 0,
+  "report_type": "provider_policy",
+  "ui_local_providers_feature_enabled": false
 }

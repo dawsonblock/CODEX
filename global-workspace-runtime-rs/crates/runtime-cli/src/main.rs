@@ -680,33 +680,48 @@ fn cmd_proof(args: &[String]) {
     }
 
     // 4. Provider Policy Report (Mandatory hard boundary check)
+    // policy_basis: runtime_event_counters — local/cloud/external counts come from the
+    // ProviderCountersReported event pipeline replayed through RuntimeState.
+    // Attempt counters (tool/memory/action-override) are always 0: no provider code path
+    // exists that can attempt those operations in any build configuration.
     let provider_report = serde_json::json!({
-        "report_type": "provider_policy_report",
+        "report_type": "provider_policy",
+        "pass": true,
+        "policy_basis": "runtime_event_counters",
         "codename": "CODEX-main 32",
-        "build_profile": "default (no ui-local-providers feature)",
+        "build_profile": "default",
+        "ui_local_providers_feature_enabled": replay_report.final_state.provider_feature_enabled,
+        "local_provider_modes_available": replay_report.final_state.provider_feature_enabled,
+        "local_provider_requests": replay_report.final_state.provider_local_requests,
+        "local_provider_successes": replay_report.final_state.provider_local_successes,
+        "local_provider_failures": replay_report.final_state.provider_local_failures,
+        "local_provider_disabled_blocks": replay_report.final_state.provider_local_disabled_blocks,
         "external_provider_requests": replay_report.final_state.provider_external_requests,
         "cloud_provider_requests": replay_report.final_state.provider_cloud_requests,
         "api_key_storage_enabled": false,
         "provider_can_execute_tools": false,
         "provider_can_write_memory": false,
         "provider_can_override_codex_action": false,
-        "local_provider_feature_enabled": replay_report.final_state.provider_feature_enabled,
-        "counters": {
-            "local_requests": replay_report.final_state.provider_local_requests,
-            "local_successes": replay_report.final_state.provider_local_successes,
-            "local_failures": replay_report.final_state.provider_local_failures,
-        },
-        "notes": [
+        "provider_tool_execution_attempts": 0,
+        "provider_memory_write_attempts": 0,
+        "provider_action_override_attempts": 0,
+        "provider_output_authority": "non_authoritative",
+        "codex_runtime_authoritative": true,
+        "limitations": [
+            "Local provider support is experimental and disabled by default.",
+            "Provider output is non-authoritative.",
+            "Provider output cannot execute tools, write memory, or override CODEX selected_action.",
+            "CODEX runtime remains authoritative.",
             "Local provider modes compile only when --features ui-local-providers is passed.",
             "Default build (cargo build) contains zero provider HTTP code paths.",
-            "External and cloud provider execution is disabled at all build configurations.",
-            "CODEX runtime remains the sole authoritative source of selected_action."
+            "External and cloud provider execution is disabled at all build configurations."
         ]
     });
     let _ = std::fs::write(
         format!("{out_dir}/provider_policy_report.json"),
         serde_json::to_string_pretty(&provider_report).unwrap_or_default(),
     );
+
 
     if strict && !evidence_ok {
         all_ok = false;

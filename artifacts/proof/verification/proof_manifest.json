@@ -358,18 +358,26 @@
     "tools_blocked": 1
   },
   "provider_policy": {
-    "local_provider_feature_enabled": false,
-    "local_provider_feature_flag": "ui-local-providers",
+    "pass": true,
+    "policy_basis": "runtime_event_counters",
+    "build_profile": "default",
+    "ui_local_providers_feature_enabled": false,
+    "local_provider_modes_available": false,
     "local_provider_requests": 0,
     "local_provider_successes": 0,
     "local_provider_failures": 0,
     "local_provider_disabled_blocks": 0,
-    "cloud_provider_requests": 0,
     "external_provider_requests": 0,
+    "cloud_provider_requests": 0,
     "api_key_storage_enabled": false,
     "provider_can_execute_tools": false,
     "provider_can_write_memory": false,
-    "provider_can_override_codex_action": false
+    "provider_can_override_codex_action": false,
+    "provider_tool_execution_attempts": 0,
+    "provider_memory_write_attempts": 0,
+    "provider_action_override_attempts": 0,
+    "provider_output_authority": "non_authoritative",
+    "codex_runtime_authoritative": true
   },
   "limitations": [
     "NL benchmark is diagnostic routing over a bounded set, not broad natural-language reasoning proof",
