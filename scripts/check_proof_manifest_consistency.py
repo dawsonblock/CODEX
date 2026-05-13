@@ -461,6 +461,76 @@ def main() -> int:
         failures.append("MISSING_FILE: provider_policy_report.json not found. Provider policy cannot be verified.")
         print("  FAIL provider_policy_report.json not found.")
 
+    # Phase 7b: Governed-memory integration report checks
+    print("\nChecking governed_memory_integration_report.json assertions ...")
+    gm_path = CURRENT_DIR / "governed_memory_integration_report.json"
+    if gm_path.exists():
+        gm_report = load_json(gm_path)
+        gm_counters = gm_report.get("counters", {})
+        man_gm = manifest.get("governed_memory", {})
+
+        # Hard invariants for governed-memory
+        if gm_report.get("pass") is not True:
+            failures.append("SECURITY_VIOLATION: governed_memory_integration_report.pass must be true")
+        else:
+            print("  OK  governed_memory_integration_report.pass: True")
+
+        if gm_counters.get("runtime_integrated") is not True:
+            failures.append("INTEGRATION_VIOLATION: runtime_integrated must be true after Phase 3")
+        else:
+            print("  OK  runtime_integrated: true")
+
+        # Verify no governed-memory writes to ClaimStore
+        if gm_counters.get("claimstore_writes_performed_by_governed_memory") != 0:
+            failures.append("AUTHORITY_VIOLATION: governed-memory should not write to ClaimStore directly")
+        else:
+            print("  OK  claimstore_writes_performed_by_governed_memory: 0")
+
+        # Verify all safety invariants
+        for safety_field in ["no_api_keys", "no_external_calls", "no_mv2_activation"]:
+            if gm_counters.get(safety_field) is not True:
+                failures.append(f"SECURITY_VIOLATION: governed_memory_integration_report.{safety_field} must be true")
+            else:
+                print(f"  OK  {safety_field}: true")
+
+        # Verify counters are reasonable
+        if gm_counters.get("candidates_evaluated", 0) < 1:
+            failures.append("INTEGRATION_ERROR: candidates_evaluated must be >= 1 in proof")
+        else:
+            print(f"  OK  candidates_evaluated: {gm_counters.get('candidates_evaluated')}")
+
+        if gm_counters.get("provider_requests", 0) != 0:
+            failures.append("BOUNDARY_VIOLATION: provider_requests must be 0")
+        else:
+            print("  OK  provider_requests: 0")
+
+        if gm_counters.get("tool_executions", 0) != 0:
+            failures.append("BOUNDARY_VIOLATION: tool_executions must be 0")
+        else:
+            print("  OK  tool_executions: 0")
+
+        # Cross-check key fields with manifest
+        gm_fields_to_check = [
+            "runtime_integrated",
+            "candidates_evaluated",
+            "claimstore_writes_performed_by_codex",
+            "claimstore_writes_performed_by_governed_memory",
+            "no_api_keys",
+            "no_external_calls",
+            "no_mv2_activation",
+        ]
+        for field in gm_fields_to_check:
+            manifest_val = man_gm.get(field)
+            report_val = gm_counters.get(field)
+            if manifest_val != report_val:
+                failures.append(
+                    f"MANIFEST_MISMATCH: governed_memory.{field} differs: manifest={manifest_val}, report={report_val}"
+                )
+            else:
+                print(f"  OK  governed_memory.{field}: {report_val}")
+    else:
+        failures.append("MISSING_FILE: governed_memory_integration_report.json not found. Governed-memory integration cannot be verified.")
+        print("  FAIL governed_memory_integration_report.json not found.")
 
     # Phase 8 stale scan: check that localhost:11434 is not in active UI code (non-feature context)
     print("\nChecking for stale provider code in default UI build ...")

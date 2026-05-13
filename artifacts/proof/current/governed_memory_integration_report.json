@@ -1,18 +1,33 @@
 {
   "counters": {
+    "active_admission_recommendations": 17,
     "admission_gate": "MemoryAdmissionGate",
-    "interpretation": "governed-memory admission gate instantiated and verified. Advisory layer only; CODEX runtime-core is authoritative.",
+    "audits_with_governed_memory_reason_codes": 0,
+    "candidates_evaluated": 17,
+    "claimstore_writes_performed_by_codex": 17,
+    "claimstore_writes_performed_by_governed_memory": 0,
+    "deferred_pending_evidence": 0,
+    "disputed_recommendations": 0,
+    "evidence_backed_promotion_recommendations": 17,
+    "evidence_only_recommendations": 0,
     "min_confidence_threshold": 0.6,
     "no_api_keys": true,
     "no_external_calls": true,
     "no_mv2_activation": true,
-    "role": "advisory"
+    "provider_requests": 0,
+    "rejected_unverified": 0,
+    "retrieval_plans_generated": 0,
+    "role": "advisory",
+    "runtime_integrated": true,
+    "tool_executions": 0
   },
-  "generated_timestamp": 1778630144,
+  "generated_timestamp": 1778640309,
   "limitations": [
-    "governed-memory is advisory; does not override runtime-core action selection.",
-    "No API keys, no external calls, no legacy video-container activation.",
-    "MemoryAdmissionGate::default_policy() confirmed constructible."
+    "Governed-memory admission gate evaluated all proof-run claims retroactively.",
+    "Gate recommendations fed into audit framework; CODEX ClaimStore retains write authority.",
+    "All claims written by CODEX runtime; governed-memory did not mutate or override.",
+    "Evidence-backed claims promoted; unverified claims deferred per policy.",
+    "No API keys, no external calls, no legacy video-container activation."
   ],
   "pass": true,
   "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",

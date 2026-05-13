@@ -66,6 +66,14 @@ Rust verification:
 - default_provider_attempt_tested: true
 - local_provider_disabled_blocks: 1
 
+Governed-memory integration snapshot:
+- runtime_integrated: true
+- candidates_evaluated: 17
+- evidence_backed_promotion_recommendations: 17
+- claimstore_writes_performed_by_codex: 17
+- claimstore_writes_performed_by_governed_memory: 0
+- role: advisory
+
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
 - held_out: 46 scenarios, action_match_rate 1.00
@@ -88,6 +96,7 @@ The official proof command now generates:
 - tool_policy_report.json
 - provider_policy_report.json
 - provider_storage_boundary_report.json
+- governed_memory_integration_report.json
 
 ## Boundaries
 

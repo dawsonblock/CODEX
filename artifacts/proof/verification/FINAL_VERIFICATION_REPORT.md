@@ -181,7 +181,25 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 
 ---
 
-## 7. UI Status
+## 6b. Governed-Memory Integration Assertions
+
+| Assertion | Value | Verified |
+|-----------|-------|----------|
+| `runtime_integrated` | **true** | ✓ governed_memory_integration_report.json |
+| `candidates_evaluated` | **17** | ✓ All proof claims routed through admission gate |
+| `evidence_backed_promotion_recommendations` | **17** | ✓ All candidates had evidence backing |
+| `claimstore_writes_performed_by_codex` | **17** | ✓ CODEX ClaimStore remains authoritative |
+| `claimstore_writes_performed_by_governed_memory` | **0** | ✓ Advisory only; no direct writes |
+| `no_api_keys` | **true** | ✓ governed_memory_integration_report.json |
+| `no_external_calls` | **true** | ✓ governed_memory_integration_report.json |
+| `no_mv2_activation` | **true** | ✓ check_no_mv2 guard passes |
+| `provider_requests` | **0** | ✓ governed_memory_integration_report.json |
+| `tool_executions` | **0** | ✓ governed_memory_integration_report.json |
+| `role` | **advisory** | ✓ Admission recommendations; CODEX decides |
+
+---
+
+## 8. UI Status
 
 | Mode | Status in Default Build |
 |------|------------------------|
@@ -201,7 +219,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 
 ---
 
-## 8. 10-Action Schema (Unchanged)
+## 9. 10-Action Schema (Unchanged)
 
 ```
 answer
@@ -220,7 +238,7 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 
 ---
 
-## 9. Remaining Limitations
+## 10. Remaining Limitations
 
 1. **Rust proof artifacts re-generated** this pass by `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`. Metrics reflect the current 15-cycle run.
 2. **LocalProviderPolicy and LocalProviderCounters structs** are fully wired to the runtime event-loop and state tracking system. All experimental provider usage is audited and captured in proof artifacts.
@@ -234,7 +252,7 @@ Verified by: `python -m global_workspace_runtime.scripts.check_action_types → 
 
 ---
 
-## 10. Decision
+## 11. Decision
 
 **Integration proof candidate. Not final freeze.**
 

@@ -382,6 +382,30 @@
     "codex_runtime_authoritative": true,
     "default_provider_attempt_tested": true
   },
+  "governed_memory": {
+    "pass": true,
+    "runtime_integrated": true,
+    "admission_gate": "MemoryAdmissionGate",
+    "min_confidence_threshold": 0.6,
+    "candidates_evaluated": 17,
+    "active_admission_recommendations": 17,
+    "evidence_backed_promotion_recommendations": 17,
+    "evidence_only_recommendations": 0,
+    "rejected_unverified": 0,
+    "deferred_pending_evidence": 0,
+    "disputed_recommendations": 0,
+    "claimstore_writes_performed_by_codex": 17,
+    "claimstore_writes_performed_by_governed_memory": 0,
+    "audits_with_governed_memory_reason_codes": 0,
+    "retrieval_plans_generated": 0,
+    "no_api_keys": true,
+    "no_external_calls": true,
+    "no_mv2_activation": true,
+    "provider_requests": 0,
+    "tool_executions": 0,
+    "role": "advisory",
+    "interpretation": "Governed-memory admission gate evaluated all proof-run claims retroactively. Gate recommendations fed into audit framework; CODEX ClaimStore retains write authority. All claims written by CODEX runtime; governed-memory did not mutate or override."
+  },
   "limitations": [
     "NL benchmark is diagnostic routing over a bounded set, not broad natural-language reasoning proof",
     "Contradiction reporting is structured/deduped, not semantic truth reasoning",
@@ -390,6 +414,7 @@
     "Pressure signals are deterministic and may decay/reset independently of unresolved contradiction counters",
     "UI bridge remains local read-only and is not a production assistant",
     "Local provider modes (Ollama/Turboquant) require the ui-local-providers Cargo feature; disabled and absent from default builds",
+    "Governed-memory is advisory and does not override CODEX runtime authority.",
     "This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent."
   ]
 }

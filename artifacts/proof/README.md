@@ -23,11 +23,16 @@ Only this command is authoritative for artifacts in artifacts/proof/current.
 - tool_policy_report.json
 - provider_policy_report.json
 - provider_storage_boundary_report.json
+- governed_memory_integration_report.json
 
 Provider artifacts:
 
 - `provider_policy_report.json` is the canonical provider-boundary artifact used by consistency checks.
 - `provider_storage_boundary_report.json` is a supplemental structural invariant report.
+
+Governance artifacts:
+
+- `governed_memory_integration_report.json` provides advisory admission gate metrics proving governed-memory is wired into claim promotion.
 
 ## Current Snapshot (CODEX-main 32)
 

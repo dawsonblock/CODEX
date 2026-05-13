@@ -78,7 +78,8 @@ pub fn verify_replay(log: &EventLog) -> ReplayReport {
     });
 
     // Check 6: Provider counters at zero (Hard boundary assertion)
-    let providers_ok = state1.provider_cloud_requests == 0 && state1.provider_external_requests == 0;
+    let providers_ok =
+        state1.provider_cloud_requests == 0 && state1.provider_external_requests == 0;
     checks.push(ReplayCheck {
         name: "provider_boundary_zero".into(),
         passed: providers_ok,

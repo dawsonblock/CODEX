@@ -28,7 +28,7 @@ pub enum ReasonSeverity {
 ///
 /// Each admission, retrieval routing, or conflict decision logs at least one reason code
 /// explaining the choice to subsequent audit or proof systems.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReasonCode {
     /// Canonical code identifier (e.g., "ADMISSION_VERIFIED_EVIDENCE")
     pub code: String,
