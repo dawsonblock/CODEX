@@ -60,7 +60,8 @@ Local provider modes (`LocalOllamaProvider`, `LocalTurboquantProvider`) are comp
 | File | Change |
 |------|--------|
 | `artifacts/proof/current/provider_policy_report.json` | **[NEW]** Provider boundary policy artifact |
-| `artifacts/proof/verification/proof_manifest.json` | Added `provider_policy_report.json` to artifact list; added `provider_policy` section |
+| `artifacts/proof/current/provider_storage_boundary_report.json` | **[NEW]** Supplemental provider structural-invariants artifact (non-canonical) |
+| `artifacts/proof/verification/proof_manifest.json` | Added provider artifacts to artifact list; added `provider_policy` section |
 
 ### Scripts
 | File | Change |
@@ -140,7 +141,7 @@ Rust proof artifacts were not regenerated this pass. The runtime-core code was f
 | mean_total_score | 0.6433 | ✓ |
 | action_match_rate | 1.00 | ✓ |
 | held_out scenario count | 46 | ✓ |
-| held_out action_match_rate | 0.8261 | ✓ |
+| held_out action_match_rate | 1.00 | ✓ |
 | adversarial scenario count | 2 | ✓ |
 | adversarial action_match_rate | 1.00 | ✓ |
 | claims_with_evidence_links | 17 | ✓ |

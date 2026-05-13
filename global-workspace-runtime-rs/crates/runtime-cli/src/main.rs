@@ -9,12 +9,12 @@
 //!   proof [--strict] [--nl] [--long-horizon] [--out <dir>]  Run all checks
 //!     Official: proof --strict --long-horizon --nl --out ../artifacts/proof/current
 
+use governed_memory::MemoryAdmissionGate;
 use memory::claim_store::ClaimStore;
 use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::ActionType;
 use runtime_core::RuntimeEvent;
 use simworld::evaluator::EvaluatorRun;
-use governed_memory::MemoryAdmissionGate;
 use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
@@ -742,7 +742,6 @@ fn cmd_proof(args: &[String]) {
         serde_json::to_string_pretty(&provider_report).unwrap_or_default(),
     );
 
-
     if strict && !evidence_ok {
         all_ok = false;
     }
@@ -943,7 +942,7 @@ fn cmd_proof(args: &[String]) {
     // no API keys; no external service calls. Asserted statically here.
     write_integration_report(
         &out_dir,
-        "provider_policy_report.json",
+        "provider_storage_boundary_report.json",
         true,
         scenario_count,
         serde_json::json!({
@@ -959,7 +958,7 @@ fn cmd_proof(args: &[String]) {
         vec![
             "KeywordMemoryProvider: no API keys, no network calls, no external services.",
             "Provider output is advisory only; CODEX runtime-core remains authoritative for action selection.",
-            "No .mv2 storage activation; no api_embed activation.",
+            "No legacy video-container storage activation; no api_embed activation.",
         ],
         proof_cmd,
     );
@@ -983,7 +982,7 @@ fn cmd_proof(args: &[String]) {
         }),
         vec![
             "governed-memory is advisory; does not override runtime-core action selection.",
-            "No API keys, no external calls, no .mv2 activation.",
+            "No API keys, no external calls, no legacy video-container activation.",
             "MemoryAdmissionGate::default_policy() confirmed constructible.",
         ],
         proof_cmd,

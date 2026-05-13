@@ -184,7 +184,8 @@ impl ObservationInterpreter {
             || lower.contains("steps to")
             || lower.contains("how do i set up")
             || lower.contains("how to build"))
-            && !lower.contains("not sure") && !lower.contains("clarify")
+            && !lower.contains("not sure")
+            && !lower.contains("clarify")
         {
             ObservationKind::PlanningRequest
         } else if lower.contains("ambiguous")

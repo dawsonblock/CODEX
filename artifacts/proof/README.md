@@ -22,6 +22,12 @@ Only this command is authoritative for artifacts in artifacts/proof/current.
 - reasoning_audit_report.json
 - tool_policy_report.json
 - provider_policy_report.json
+- provider_storage_boundary_report.json
+
+Provider artifacts:
+
+- `provider_policy_report.json` is the canonical provider-boundary artifact used by consistency checks.
+- `provider_storage_boundary_report.json` is a supplemental structural invariant report.
 
 ## Current Snapshot (CODEX-main 32)
 

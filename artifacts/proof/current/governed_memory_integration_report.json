@@ -8,10 +8,10 @@
     "no_mv2_activation": true,
     "role": "advisory"
   },
-  "generated_timestamp": 1778627979,
+  "generated_timestamp": 1778630144,
   "limitations": [
     "governed-memory is advisory; does not override runtime-core action selection.",
-    "No API keys, no external calls, no .mv2 activation.",
+    "No API keys, no external calls, no legacy video-container activation.",
     "MemoryAdmissionGate::default_policy() confirmed constructible."
   ],
   "pass": true,

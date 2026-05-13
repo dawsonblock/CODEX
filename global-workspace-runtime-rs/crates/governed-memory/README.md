@@ -25,7 +25,7 @@ This is an **advisory layer** that improves memory admission, source trust evalu
 - ✅ `cloud_provider_requests == 0` (no Azure OpenAI, Anthropic, etc.)
 - ✅ `external_provider_requests == 0` (no Tavily, search APIs)
 - ✅ No API keys stored anywhere
-- ✅ No .mv2 storage activation
+- ✅ No legacy video-container storage activation
 - ✅ No api_embed activation
 - ✅ Provider output non-authoritative (advisory only)
 
@@ -156,7 +156,7 @@ Queries are routed to appropriate runtime actions based on intent:
 - ✅ Audit records reason codes
 - ✅ No provider metadata in conversions
 - ✅ CODEX runtime still owns selected_action
-- ✅ No .mv2 active path
+- ✅ No legacy video-container active path
 - ✅ No api_embed active path
 - ✅ No provider/network paths
 
@@ -224,12 +224,12 @@ Governed-memory contributes to:
 **Invariant validation scripts:**
 - `check_action_types.py` — Verify 10-action schema unchanged
 - `check_sentience_claims.py` — Verify no consciousness/AGI claims
-- `check_no_mv2.py` — Verify no .mv2 storage activation  
+- `check_no_mv2.py` — Verify no legacy video-container storage activation  
 - `check_resource_recovery.py` — Verify no orphaned handles
 
 ## Not Included (Intentionally Excluded)
 
-- ❌ Memvid storage (.mv2, mvz, etc.)
+- ❌ Memvid container formats (mv2, mvz, etc.)
 - ❌ Embedding/vector search (api_embed, text_embed, clip, etc.)
 - ❌ Provider execution (OpenAI, Anthropic, Tavily, etc.)
 - ❌ Network access (HTTP clients, search APIs)

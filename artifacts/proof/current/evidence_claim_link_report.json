@@ -11,7 +11,7 @@
     "synthetic_unlinked_claims": 0,
     "unsupported_unlinked_claims": 0
   },
-  "generated_timestamp": 1778627979,
+  "generated_timestamp": 1778630144,
   "limitations": [
     "Bounded structured evidence linking only.",
     "No arbitrary free-form semantic extraction.",

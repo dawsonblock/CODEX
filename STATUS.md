@@ -68,7 +68,7 @@ Rust verification:
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
-- held_out: 46 scenarios, action_match_rate 0.8261
+- held_out: 46 scenarios, action_match_rate 1.00
 - adversarial: 2 scenarios, action_match_rate 1.00
 
 ## Expanded Proof Artifacts
@@ -87,6 +87,7 @@ The official proof command now generates:
 - reasoning_audit_report.json
 - tool_policy_report.json
 - provider_policy_report.json
+- provider_storage_boundary_report.json
 
 ## Boundaries
 

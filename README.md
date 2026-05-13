@@ -121,7 +121,7 @@ What it provides:
 
 What it intentionally does not provide:
 
-- `.mv2` storage as a default path
+- Memvid video-container storage as a default path
 - OpenAI / Anthropic / Tavily execution paths
 - automatic memory writes from external providers
 - replacement of CODEX evidence, claim, contradiction, or proof systems
