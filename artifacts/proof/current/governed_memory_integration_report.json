@@ -2,7 +2,7 @@
   "counters": {
     "active_admission_recommendations": 17,
     "admission_gate": "MemoryAdmissionGate",
-    "audits_with_governed_memory_reason_codes": 0,
+    "audits_with_governed_memory_reason_codes": 33,
     "candidates_evaluated": 17,
     "claimstore_writes_performed_by_codex": 17,
     "claimstore_writes_performed_by_governed_memory": 0,
@@ -16,17 +16,18 @@
     "no_mv2_activation": true,
     "provider_requests": 0,
     "rejected_unverified": 0,
-    "retrieval_plans_generated": 0,
+    "retrieval_plans_generated": 15,
     "role": "advisory",
     "runtime_integrated": true,
     "tool_executions": 0
   },
-  "generated_timestamp": 1778640309,
+  "generated_timestamp": 1778702498,
   "limitations": [
     "Governed-memory admission gate evaluated all proof-run claims retroactively.",
     "Gate recommendations fed into audit framework; CODEX ClaimStore retains write authority.",
     "All claims written by CODEX runtime; governed-memory did not mutate or override.",
     "Evidence-backed claims promoted; unverified claims deferred per policy.",
+    "Audit/retrieval counters are populated from runtime replay metrics while authority remains with CODEX.",
     "No API keys, no external calls, no legacy video-container activation."
   ],
   "pass": true,

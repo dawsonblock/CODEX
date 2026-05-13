@@ -1011,6 +1011,13 @@ fn cmd_proof(args: &[String]) {
         admission_tracker.record_claim_written_by_codex();
     }
 
+    // Record runtime-observed audit and retrieval activity.
+    // These counters are advisory instrumentation only and do not alter authority boundaries.
+    admission_tracker
+        .record_audits_with_reason_codes(replay_report.final_state.reasoning_audits as usize);
+    admission_tracker
+        .record_retrieval_plans_generated(replay_report.final_state.memory_query_count as usize);
+
     // All evaluated claims were written by CODEX (authority), none by governed-memory.
     let gm_stats = admission_tracker.into_stats();
 
@@ -1046,6 +1053,7 @@ fn cmd_proof(args: &[String]) {
             "Gate recommendations fed into audit framework; CODEX ClaimStore retains write authority.",
             "All claims written by CODEX runtime; governed-memory did not mutate or override.",
             "Evidence-backed claims promoted; unverified claims deferred per policy.",
+            "Audit/retrieval counters are populated from runtime replay metrics while authority remains with CODEX.",
             "No API keys, no external calls, no legacy video-container activation.",
         ],
         proof_cmd,

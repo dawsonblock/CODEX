@@ -22,6 +22,8 @@ CURRENT_DIR = REPO_ROOT / "artifacts/proof/current"
 MANIFEST = REPO_ROOT / "artifacts/proof/verification/proof_manifest.json"
 SUMMARY_MD = REPO_ROOT / "artifacts/proof/CURRENT_PROOF_SUMMARY.md"
 README_MD = REPO_ROOT / "artifacts/proof/README.md"
+PHASE_ROADMAP_MD = REPO_ROOT / "docs/PHASE_STATUS_AND_ROADMAP.md"
+PROOF_MODEL_MD = REPO_ROOT / "docs/PROOF_MODEL.md"
 
 SIMWORLD_JSON = CURRENT_DIR / "simworld_summary.json"
 REPLAY_JSON = CURRENT_DIR / "replay_report.json"
@@ -42,6 +44,9 @@ STALE_MARKERS = [
     "0.9615384615",
     "event_count: 541",
     "event_count: 556",
+    "43 diagnostic",
+    "26 held-out",
+    "(15 curated, 26 held-out, 2 adversarial)",
 ]
 
 
@@ -81,6 +86,68 @@ def lookup_nl_set(report: dict[str, Any], name: str) -> dict[str, Any]:
         if name in entry:
             return entry[name]
     return {}
+
+
+def check_doc_benchmark_consistency(
+    failures: list[str],
+    nl_report: dict[str, Any],
+) -> None:
+    curated = lookup_nl_set(nl_report, "curated")
+    held_out = lookup_nl_set(nl_report, "held_out")
+    adversarial = lookup_nl_set(nl_report, "adversarial")
+
+    curated_count = curated.get("scenarios")
+    held_out_count = held_out.get("scenarios")
+    adversarial_count = adversarial.get("scenarios")
+
+    if (
+        curated_count is None
+        or held_out_count is None
+        or adversarial_count is None
+    ):
+        failures.append(
+            "MISSING_FIELD: nl_benchmark_report sets must contain curated/held_out/adversarial scenario counts"
+        )
+        return
+
+    total_count = curated_count + held_out_count + adversarial_count
+    expected_tuple = (
+        f"({curated_count} curated, {held_out_count} held-out, {adversarial_count} adversarial)"
+    )
+    expected_diagnostic = f"{total_count} diagnostic"
+
+    print("\nChecking docs benchmark consistency ...")
+
+    for doc_path in [PHASE_ROADMAP_MD, PROOF_MODEL_MD]:
+        if not doc_path.exists():
+            failures.append(f"MISSING_FILE: {doc_path}")
+            continue
+
+        text = doc_path.read_text()
+
+        if "43 diagnostic" in text:
+            failures.append(f"STALE_DOC: {doc_path.name} contains '43 diagnostic'")
+        if "26 held-out" in text:
+            failures.append(f"STALE_DOC: {doc_path.name} contains '26 held-out'")
+        if "(15 curated, 26 held-out, 2 adversarial)" in text:
+            failures.append(
+                f"STALE_DOC: {doc_path.name} contains '(15 curated, 26 held-out, 2 adversarial)'"
+            )
+
+        if expected_tuple not in text:
+            failures.append(
+                f"DOC_MISMATCH: {doc_path.name} missing expected benchmark tuple {expected_tuple}"
+            )
+        else:
+            print(f"  OK  {doc_path.name} contains {expected_tuple}")
+
+        if doc_path == PHASE_ROADMAP_MD:
+            if expected_diagnostic not in text:
+                failures.append(
+                    f"DOC_MISMATCH: {doc_path.name} missing expected diagnostic count '{expected_diagnostic}'"
+                )
+            else:
+                print(f"  OK  {doc_path.name} contains '{expected_diagnostic}'")
 
 
 def main() -> int:
@@ -289,9 +356,11 @@ def main() -> int:
             if "0.8260869565" not in readme_text:
                 failures.append(f"MARKDOWN_MISMATCH: {README_MD.name} missing held_out match_rate {ho_match_rate}")
             else:
-                 print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
+                print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
         else:
             print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
+
+    check_doc_benchmark_consistency(failures, nl)
 
     print("\nChecking rust_strict_proof.log vs current JSON ...")
     rust_log_path = REPO_ROOT / "artifacts/proof/verification/rust_strict_proof.log"
@@ -512,12 +581,25 @@ def main() -> int:
         # Cross-check key fields with manifest
         gm_fields_to_check = [
             "runtime_integrated",
+            "admission_gate",
+            "min_confidence_threshold",
             "candidates_evaluated",
+            "active_admission_recommendations",
+            "evidence_backed_promotion_recommendations",
+            "evidence_only_recommendations",
+            "rejected_unverified",
+            "deferred_pending_evidence",
+            "disputed_recommendations",
             "claimstore_writes_performed_by_codex",
             "claimstore_writes_performed_by_governed_memory",
+            "audits_with_governed_memory_reason_codes",
+            "retrieval_plans_generated",
             "no_api_keys",
             "no_external_calls",
             "no_mv2_activation",
+            "provider_requests",
+            "tool_executions",
+            "role",
         ]
         for field in gm_fields_to_check:
             manifest_val = man_gm.get(field)

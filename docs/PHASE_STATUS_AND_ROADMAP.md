@@ -11,7 +11,7 @@
 | Claim store | ✓ lifecycle + confidence | ✓ every 5th | ✓ harness events | JSONL | Not naturally cycle-driven | Integrate with evidence |
 | Contradiction engine | ✓ structured detect | ✓ every 10th | ✓ harness events | — | Same-subject/diff-pred only | Semantic patterns |
 | Self-model | ✓ ring buffer | ✓ per-cycle | — | — | No persistence | Persistent snapshots |
-| NL SimWorld | ✓ 43 diagnostic (15 curated, 26 held-out, 2 adversarial) | ✓ --nl flag | ✓ nl report | — | Diagnostic routing only; not broad natural-language reasoning proof | Expand stress sets without overclaiming capability |
+| NL SimWorld | ✓ 63 diagnostic (15 curated, 46 held-out, 2 adversarial) | ✓ --nl flag | ✓ nl report | — | Diagnostic routing only; not broad natural-language reasoning proof | Expand stress sets without overclaiming capability |
 | Reasoning audit | ✓ trace | ✓ per-cycle | ✓ harness events | — | No persistence | Persistent log |
 | Tool scaffold | ✓ enforced | ✓ critic gate | ✓ harness events | — | No real execution | — |
 | Long-horizon eval | ✓ full traces | ✓ --long-horizon | ✓ lh report | — | Not learning | — |
