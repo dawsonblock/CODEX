@@ -660,7 +660,7 @@ pub struct CommandApprovalRecord {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TimelineEvent {
     pub cycle: usize,
-    pub event_type: String,  // "claim", "evidence", "query", "answer", "pressure", "contradiction", "complete"
+    pub event_type: String, // "claim", "evidence", "query", "answer", "pressure", "contradiction", "complete"
     pub timestamp: String,
     pub claim_ids: Vec<String>,
     pub evidence_ids: Vec<String>,
@@ -706,14 +706,14 @@ pub struct EvidenceDisplay {
     pub source: String,
     pub confidence_pct: u8,
     pub content_hash: String,
-    pub provenance: String,  // "assertion", "query", "memory"
+    pub provenance: String, // "assertion", "query", "memory"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PressureMetrics {
     pub cycle: usize,
-    pub pressure: f64,           // 0.0-1.0
-    pub regulation: f64,         // 0.0-1.0
+    pub pressure: f64,   // 0.0-1.0
+    pub regulation: f64, // 0.0-1.0
     pub peak_pressure: f64,
     pub avg_pressure: f64,
     pub avg_regulation: f64,
