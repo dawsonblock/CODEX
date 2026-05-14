@@ -557,7 +557,7 @@ impl NLScenarioSet {
             NLScenario {
                 id: "nl_h53".into(),
                 text: "The audit log shows denied but the claim store shows approved. Which is authoritative?".into(),
-                expected_action: "ask_clarification".into(),
+                expected_action: "answer".into(),
                 difficulty: Difficulty::Hard,
                 category: ScenarioCategory::ContradictionDisputedClaim,
             },
