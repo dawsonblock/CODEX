@@ -4,6 +4,7 @@ pub mod audit_panel;
 pub mod basis_items_table;
 pub mod chat_input;
 pub mod chat_view;
+pub mod claim_details_panel;
 pub mod command_queue;
 pub mod console_panel;
 pub mod evidence_panel;
