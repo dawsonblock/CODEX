@@ -1,0 +1,67 @@
+{
+  "retrieval_policy_enforcement": {
+    "total_retrieval_plans_generated": 15,
+    "retrieval_plans_per_cycle": 1.0,
+    "total_cycles": 15,
+    "claims_retrieved_total": 17,
+    "claims_with_evidence_backing": 17,
+    "evidence_coverage_rate": 1.0,
+    "routing_confirmation": {
+      "description": "All retrieval queries routed through MemoryLookup category (diagnostic mode)",
+      "primary_intent_category": "memory_lookup",
+      "primary_action_routed": "retrieve_memory",
+      "routing_confidence": 0.95
+    }
+  },
+  "retrieval_intent_categories": {
+    "memory_lookup": {
+      "count_routed": 15,
+      "recommended_action": "retrieve_memory",
+      "confidence": 0.95,
+      "reason_codes": [
+        "RETRIEVAL_MEMORY_LOOKUP"
+      ]
+    },
+    "unsupported_factual": {
+      "count_routed": 0,
+      "recommended_action": "defer_insufficient_evidence",
+      "confidence": 0.9,
+      "reason_codes": [
+        "RETRIEVAL_UNSUPPORTED_FACTUAL"
+      ]
+    },
+    "high_stakes_low_evidence": {
+      "count_routed": 0,
+      "recommended_action": "defer_insufficient_evidence",
+      "confidence": 0.85,
+      "reason_codes": [
+        "RETRIEVAL_HIGH_STAKES_LOW_EVIDENCE"
+      ]
+    },
+    "ambiguous": {
+      "count_routed": 0,
+      "recommended_action": "ask_clarification",
+      "confidence": 0.8,
+      "reason_codes": [
+        "RETRIEVAL_AMBIGUOUS_MATCH"
+      ]
+    },
+    "provider_gated": {
+      "count_routed": 0,
+      "recommended_action": "defer_provider_unavailable",
+      "confidence": 0.95,
+      "reason_codes": [
+        "RETRIEVAL_PROVIDER_GATED"
+      ]
+    }
+  },
+  "summary": {
+    "status": "enforcement_active",
+    "total_queries_analyzed": 15,
+    "routing_accuracy": 1.0,
+    "average_routing_confidence": 0.95,
+    "memory_backed_retrieval_enabled": true,
+    "evidence_validation_enabled": true,
+    "policy_gating_status": "advisory"
+  }
+}
