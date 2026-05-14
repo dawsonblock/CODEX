@@ -3,9 +3,10 @@ target/
 
 # Runtime artifacts (generated logs)
 *.gwlog
-artifacts/memory/
-artifacts/test_traces/
-artifacts/traces/
+artifacts/*
+!artifacts/.gitkeep
+!artifacts/proof/
+!artifacts/proof/**
 global-workspace-runtime-rs/artifacts/
 
 # Python
