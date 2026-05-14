@@ -117,13 +117,23 @@ impl EvaluatorRun {
                 .iter()
                 .chain(retrieval.disputed_claims.iter())
             {
-                let confidence = claim_store
+                let (confidence, subject, predicate, object) = claim_store
                     .get(&claim_ref.claim_id)
-                    .map(|c| c.confidence)
-                    .unwrap_or(0.0);
+                    .map(|c| {
+                        (
+                            c.confidence,
+                            c.subject.clone(),
+                            c.predicate.clone(),
+                            c.object.clone(),
+                        )
+                    })
+                    .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
                 let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
                     cycle_id,
                     claim_id: claim_ref.claim_id.clone(),
+                    subject,
+                    predicate,
+                    object,
                     evidence_id: claim_ref.evidence_id.clone(),
                     status: format!("{:?}", claim_ref.status).to_lowercase(),
                     confidence,
@@ -300,13 +310,23 @@ impl EvaluatorRun {
                 .iter()
                 .chain(post_retrieval.disputed_claims.iter())
             {
-                let confidence = claim_store
+                let (confidence, subject, predicate, object) = claim_store
                     .get(&claim_ref.claim_id)
-                    .map(|c| c.confidence)
-                    .unwrap_or(0.0);
+                    .map(|c| {
+                        (
+                            c.confidence,
+                            c.subject.clone(),
+                            c.predicate.clone(),
+                            c.object.clone(),
+                        )
+                    })
+                    .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
                 let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
                     cycle_id,
                     claim_id: claim_ref.claim_id.clone(),
+                    subject,
+                    predicate,
+                    object,
                     evidence_id: claim_ref.evidence_id.clone(),
                     status: format!("{:?}", claim_ref.status).to_lowercase(),
                     confidence,
@@ -594,13 +614,23 @@ impl EvaluatorRun {
                 .iter()
                 .chain(retrieval.disputed_claims.iter())
             {
-                let confidence = claim_store
+                let (confidence, subject, predicate, object) = claim_store
                     .get(&claim_ref.claim_id)
-                    .map(|c| c.confidence)
-                    .unwrap_or(0.0);
+                    .map(|c| {
+                        (
+                            c.confidence,
+                            c.subject.clone(),
+                            c.predicate.clone(),
+                            c.object.clone(),
+                        )
+                    })
+                    .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
                 let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
                     cycle_id,
                     claim_id: claim_ref.claim_id.clone(),
+                    subject,
+                    predicate,
+                    object,
                     evidence_id: claim_ref.evidence_id.clone(),
                     status: format!("{:?}", claim_ref.status).to_lowercase(),
                     confidence,
@@ -763,13 +793,23 @@ impl EvaluatorRun {
                 .iter()
                 .chain(post_retrieval.disputed_claims.iter())
             {
-                let confidence = claim_store
+                let (confidence, subject, predicate, object) = claim_store
                     .get(&claim_ref.claim_id)
-                    .map(|c| c.confidence)
-                    .unwrap_or(0.0);
+                    .map(|c| {
+                        (
+                            c.confidence,
+                            c.subject.clone(),
+                            c.predicate.clone(),
+                            c.object.clone(),
+                        )
+                    })
+                    .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
                 let _ = self.log.append(RuntimeEvent::ClaimRetrieved {
                     cycle_id,
                     claim_id: claim_ref.claim_id.clone(),
+                    subject,
+                    predicate,
+                    object,
                     evidence_id: claim_ref.evidence_id.clone(),
                     status: format!("{:?}", claim_ref.status).to_lowercase(),
                     confidence,

@@ -1,5 +1,6 @@
 //! DurableMemoryProvider: SQLite-backed persistent memory for CODEX-1.
 
+use crate::{MemoryKind, MemoryStatus};
 use parking_lot::Mutex;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
@@ -75,6 +76,50 @@ pub struct ClaimQuery {
     pub limit: Option<usize>,
 }
 
+/// A structured knowledge record with subject/predicate/object encoding.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryRecord {
+    pub record_id: String,
+    pub claim_id: Option<String>,
+    pub subject: String,
+    pub predicate: String,
+    pub object: Option<String>,
+    pub kind: MemoryKind,
+    pub status: MemoryStatus,
+    pub confidence: f32,
+    pub source_ref: Option<String>,
+    pub metadata_json: String,
+    pub created_at_unix_ms: i64,
+    pub updated_at_unix_ms: i64,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MemoryRecordQuery<'a> {
+    pub text_filter: Option<&'a str>,
+    pub subject: Option<&'a str>,
+    pub predicate: Option<&'a str>,
+    pub object: Option<&'a str>,
+    pub kind_filter: Option<MemoryKind>,
+    pub status_filter: Option<MemoryStatus>,
+    pub min_confidence: Option<f64>,
+    pub max_confidence: Option<f64>,
+    pub start_unix_ms: Option<i64>,
+    pub end_unix_ms: Option<i64>,
+    pub source_ref_filter: Option<&'a str>,
+    pub limit: usize,
+    pub offset: usize,
+}
+
+/// A link between a claim and a piece of supporting or refuting evidence.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EvidenceLink {
+    pub link_id: i64,
+    pub claim_id: String,
+    pub evidence_id: String,
+    pub support_type: String,
+    pub confidence: f32,
+}
+
 #[allow(dead_code)]
 pub struct DurableMemoryProvider {
     db_path: PathBuf,
@@ -140,6 +185,66 @@ impl DurableMemoryProvider {
 
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_claim_links_claim ON claim_links(claim_id)",
+            [],
+        )?;
+
+        // ── claim_evidence_links: supersedes claim_links; adds support_type + confidence ──
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS claim_evidence_links (
+                link_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                claim_id  TEXT    NOT NULL,
+                evidence_id TEXT  NOT NULL,
+                support_type TEXT NOT NULL DEFAULT 'supports',
+                confidence REAL   NOT NULL DEFAULT 1.0,
+                UNIQUE (claim_id, evidence_id, support_type),
+                FOREIGN KEY (claim_id) REFERENCES claims(claim_id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_cel_claim ON claim_evidence_links(claim_id)",
+            [],
+        )?;
+
+        // ── memory_records: structured SPO knowledge store ──
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS memory_records (
+                record_id   TEXT  PRIMARY KEY,
+                claim_id    TEXT,
+                subject     TEXT  NOT NULL,
+                predicate   TEXT  NOT NULL,
+                object      TEXT  NOT NULL,
+                kind        TEXT  NOT NULL,
+                status      TEXT  NOT NULL,
+                confidence  REAL  NOT NULL DEFAULT 1.0,
+                source_ref  TEXT,
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                created_at_unix_ms  INTEGER NOT NULL,
+                updated_at_unix_ms  INTEGER NOT NULL,
+                FOREIGN KEY (claim_id) REFERENCES claims(claim_id) ON DELETE SET NULL
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mr_claim_id  ON memory_records(claim_id)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mr_subject   ON memory_records(subject)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mr_kind      ON memory_records(kind)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mr_status    ON memory_records(status)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mr_created_at ON memory_records(created_at_unix_ms)",
             [],
         )?;
 
@@ -237,6 +342,269 @@ impl DurableMemoryProvider {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(records)
+    }
+
+    // ── memory_records API ────────────────────────────────────────────────
+
+    /// Insert a structured SPO knowledge record.
+    pub fn insert_record(&self, record: MemoryRecord) -> MemoryResult<()> {
+        let conn = self.conn.lock();
+        conn.execute(
+            "INSERT INTO memory_records
+                (record_id, claim_id, subject, predicate, object, kind, status,
+                 confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                record.record_id,
+                record.claim_id,
+                record.subject,
+                record.predicate,
+                record.object,
+                record.kind.as_str(),
+                record.status.as_str(),
+                record.confidence,
+                record.source_ref,
+                record.metadata_json,
+                record.created_at_unix_ms,
+                record.updated_at_unix_ms,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Return all records of the given kind, ordered by confidence descending.
+    pub fn get_by_kind(&self, kind: MemoryKind, limit: usize) -> MemoryResult<Vec<MemoryRecord>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(
+            "SELECT record_id, claim_id, subject, predicate, object, kind, status,
+                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms
+             FROM memory_records
+             WHERE kind = ?
+             ORDER BY confidence DESC
+             LIMIT ?",
+        )?;
+        let rows = stmt
+            .query_map(params![kind.as_str(), limit as i64], Self::map_record)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Return all records whose subject exactly matches `subject`.
+    pub fn get_by_subject(&self, subject: &str, limit: usize) -> MemoryResult<Vec<MemoryRecord>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(
+            "SELECT record_id, claim_id, subject, predicate, object, kind, status,
+                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms
+             FROM memory_records
+             WHERE subject = ?
+             ORDER BY confidence DESC
+             LIMIT ?",
+        )?;
+        let rows = stmt
+            .query_map(params![subject, limit as i64], Self::map_record)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Update the status of a memory record.
+    pub fn update_record_status(
+        &self,
+        record_id: &str,
+        new_status: MemoryStatus,
+    ) -> MemoryResult<()> {
+        let conn = self.conn.lock();
+        let now = Self::now_ms();
+        conn.execute(
+            "UPDATE memory_records SET status = ?, updated_at_unix_ms = ? WHERE record_id = ?",
+            params![new_status.as_str(), now, record_id],
+        )?;
+        Ok(())
+    }
+
+    /// Link a piece of evidence to a claim via `claim_evidence_links`.
+    pub fn link_evidence(
+        &self,
+        claim_id: &str,
+        evidence_id: &str,
+        support_type: &str,
+        confidence: f32,
+    ) -> MemoryResult<()> {
+        let conn = self.conn.lock();
+        conn.execute(
+            "INSERT OR IGNORE INTO claim_evidence_links
+                (claim_id, evidence_id, support_type, confidence)
+             VALUES (?, ?, ?, ?)",
+            params![claim_id, evidence_id, support_type, confidence],
+        )?;
+        Ok(())
+    }
+
+    /// Return all evidence links for the given claim.
+    pub fn get_linked_evidence(&self, claim_id: &str) -> MemoryResult<Vec<EvidenceLink>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(
+            "SELECT link_id, claim_id, evidence_id, support_type, confidence
+             FROM claim_evidence_links
+             WHERE claim_id = ?
+             ORDER BY confidence DESC",
+        )?;
+        let rows = stmt
+            .query_map(params![claim_id], |row| {
+                Ok(EvidenceLink {
+                    link_id: row.get(0)?,
+                    claim_id: row.get(1)?,
+                    evidence_id: row.get(2)?,
+                    support_type: row.get(3)?,
+                    confidence: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Search records whose predicate contains `predicate` as a substring.
+    pub fn search_by_predicate(
+        &self,
+        predicate: &str,
+        limit: usize,
+    ) -> MemoryResult<Vec<MemoryRecord>> {
+        let conn = self.conn.lock();
+        let pattern = format!("%{predicate}%");
+        let mut stmt = conn.prepare(
+            "SELECT record_id, claim_id, subject, predicate, object, kind, status,
+                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms
+             FROM memory_records
+             WHERE predicate LIKE ?
+             ORDER BY confidence DESC
+             LIMIT ?",
+        )?;
+        let rows = stmt
+            .query_map(params![pattern, limit as i64], Self::map_record)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Delete a memory record by its ID.
+    pub fn delete_record(&self, record_id: &str) -> MemoryResult<()> {
+        let conn = self.conn.lock();
+        conn.execute(
+            "DELETE FROM memory_records WHERE record_id = ?",
+            params![record_id],
+        )?;
+        Ok(())
+    }
+
+    /// Query `memory_records` with optional filters, returning matching records
+    /// ordered by confidence descending.
+    ///
+    /// Text search targets subject, predicate, and object via LIKE.
+    pub fn query_records(&self, query: &MemoryRecordQuery<'_>) -> MemoryResult<Vec<MemoryRecord>> {
+        use rusqlite::types::Value;
+        let conn = self.conn.lock();
+        let mut conditions: Vec<String> = Vec::new();
+        let mut param_values: Vec<Value> = Vec::new();
+
+        if let Some(text) = query.text_filter {
+            if !text.is_empty() {
+                let pattern = format!("%{text}%");
+                conditions.push("(subject LIKE ? OR predicate LIKE ? OR object LIKE ?)".into());
+                param_values.push(Value::Text(pattern.clone()));
+                param_values.push(Value::Text(pattern.clone()));
+                param_values.push(Value::Text(pattern));
+            }
+        }
+        if let Some(s) = query.subject {
+            conditions.push("subject LIKE ?".into());
+            param_values.push(Value::Text(format!("%{s}%")));
+        }
+        if let Some(p) = query.predicate {
+            conditions.push("predicate LIKE ?".into());
+            param_values.push(Value::Text(format!("%{p}%")));
+        }
+        if let Some(o) = query.object {
+            conditions.push("object LIKE ?".into());
+            param_values.push(Value::Text(format!("%{o}%")));
+        }
+        if let Some(k) = query.kind_filter {
+            conditions.push("kind = ?".into());
+            param_values.push(Value::Text(k.as_str().to_string()));
+        }
+        if let Some(s) = query.status_filter {
+            conditions.push("status = ?".into());
+            param_values.push(Value::Text(s.as_str().to_string()));
+        }
+        if let Some(min) = query.min_confidence {
+            conditions.push("confidence >= ?".into());
+            param_values.push(Value::Real(min));
+        }
+        if let Some(max) = query.max_confidence {
+            conditions.push("confidence <= ?".into());
+            param_values.push(Value::Real(max));
+        }
+        if let Some(start) = query.start_unix_ms {
+            conditions.push("created_at_unix_ms >= ?".into());
+            param_values.push(Value::Integer(start));
+        }
+        if let Some(end) = query.end_unix_ms {
+            conditions.push("created_at_unix_ms <= ?".into());
+            param_values.push(Value::Integer(end));
+        }
+        if let Some(sr) = query.source_ref_filter {
+            conditions.push("source_ref LIKE ?".into());
+            param_values.push(Value::Text(format!("%{sr}%")));
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        let sql = format!(
+            "SELECT record_id, claim_id, subject, predicate, object, kind, status, \
+             confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms \
+             FROM memory_records \
+             {where_clause} \
+             ORDER BY confidence DESC \
+             LIMIT ? OFFSET ?",
+        );
+
+        param_values.push(Value::Integer(query.limit as i64));
+        param_values.push(Value::Integer(query.offset as i64));
+
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt
+            .query_map(rusqlite::params_from_iter(param_values), Self::map_record)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────
+
+    fn now_ms() -> i64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as i64
+    }
+
+    fn map_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<MemoryRecord> {
+        let kind_raw: String = row.get(5)?;
+        let status_raw: String = row.get(6)?;
+        Ok(MemoryRecord {
+            record_id: row.get(0)?,
+            claim_id: row.get(1)?,
+            subject: row.get(2)?,
+            predicate: row.get(3)?,
+            object: row.get(4)?,
+            kind: MemoryKind::from_db_str(&kind_raw),
+            status: MemoryStatus::from_db_str(&status_raw),
+            confidence: row.get(7)?,
+            source_ref: row.get(8)?,
+            metadata_json: row.get(9)?,
+            created_at_unix_ms: row.get(10)?,
+            updated_at_unix_ms: row.get(11)?,
+        })
     }
 
     pub fn stats(&self) -> MemoryResult<serde_json::Value> {
@@ -345,5 +713,254 @@ mod tests {
         assert_eq!(rejected[0].claim_id, "c2");
         assert_eq!(rejected[1].claim_id, "c3");
         assert_eq!(rejected[2].claim_id, "c1");
+    }
+
+    // ── memory_records tests ──────────────────────────────────────────────
+
+    fn record(
+        id: &str,
+        subject: &str,
+        predicate: &str,
+        object: &str,
+        kind: MemoryKind,
+    ) -> MemoryRecord {
+        MemoryRecord {
+            record_id: id.to_string(),
+            claim_id: None,
+            subject: subject.to_string(),
+            predicate: predicate.to_string(),
+            object: Some(object.to_string()),
+            kind,
+            status: MemoryStatus::Active,
+            confidence: 0.9,
+            source_ref: None,
+            metadata_json: "{}".to_string(),
+            created_at_unix_ms: 1000,
+            updated_at_unix_ms: 1000,
+        }
+    }
+
+    #[test]
+    fn test_insert_record_basic() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        let rec = record("r1", "codex", "is_type", "runtime", MemoryKind::Factual);
+        provider.insert_record(rec).unwrap();
+        let results = provider.get_by_kind(MemoryKind::Factual, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].record_id, "r1");
+    }
+
+    #[test]
+    fn test_get_by_kind_factual() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("f1", "s", "p", "o", MemoryKind::Factual))
+            .unwrap();
+        provider
+            .insert_record(record("p1", "s", "p", "o", MemoryKind::Procedural))
+            .unwrap();
+        let results = provider.get_by_kind(MemoryKind::Factual, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].record_id, "f1");
+        assert_eq!(results[0].kind, MemoryKind::Factual);
+    }
+
+    #[test]
+    fn test_get_by_kind_procedural() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("p1", "s", "p", "o", MemoryKind::Procedural))
+            .unwrap();
+        let results = provider.get_by_kind(MemoryKind::Procedural, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].kind, MemoryKind::Procedural);
+    }
+
+    #[test]
+    fn test_get_by_kind_episodic() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("e1", "s", "p", "o", MemoryKind::Episodic))
+            .unwrap();
+        let results = provider.get_by_kind(MemoryKind::Episodic, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].kind, MemoryKind::Episodic);
+    }
+
+    #[test]
+    fn test_get_by_kind_semantic() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("s1", "s", "p", "o", MemoryKind::Semantic))
+            .unwrap();
+        let results = provider.get_by_kind(MemoryKind::Semantic, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].kind, MemoryKind::Semantic);
+    }
+
+    #[test]
+    fn test_get_by_kind_contextual() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("c1", "s", "p", "o", MemoryKind::Contextual))
+            .unwrap();
+        let results = provider.get_by_kind(MemoryKind::Contextual, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].kind, MemoryKind::Contextual);
+    }
+
+    #[test]
+    fn test_get_by_kind_empty() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        let results = provider.get_by_kind(MemoryKind::Factual, 10).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_get_by_subject_exact_match() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("r1", "alpha", "is", "x", MemoryKind::Factual))
+            .unwrap();
+        provider
+            .insert_record(record("r2", "beta", "is", "y", MemoryKind::Factual))
+            .unwrap();
+        let results = provider.get_by_subject("alpha", 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].record_id, "r1");
+    }
+
+    #[test]
+    fn test_get_by_subject_no_match() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("r1", "alpha", "is", "x", MemoryKind::Factual))
+            .unwrap();
+        let results = provider.get_by_subject("gamma", 10).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_update_record_status() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("r1", "s", "p", "o", MemoryKind::Factual))
+            .unwrap();
+        provider
+            .update_record_status("r1", MemoryStatus::Validated)
+            .unwrap();
+        let results = provider.get_by_kind(MemoryKind::Factual, 10).unwrap();
+        assert_eq!(results[0].status, MemoryStatus::Validated);
+    }
+
+    #[test]
+    fn test_link_evidence_and_get_linked() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        let c = claim("c1", ClaimStatus::Asserted, 0.9);
+        provider.assert_claim(c, &[]).unwrap();
+
+        provider
+            .link_evidence("c1", "ev-001", "supports", 0.85)
+            .unwrap();
+        provider
+            .link_evidence("c1", "ev-002", "refutes", 0.30)
+            .unwrap();
+
+        let links = provider.get_linked_evidence("c1").unwrap();
+        assert_eq!(links.len(), 2);
+        // ordered by confidence desc
+        assert_eq!(links[0].evidence_id, "ev-001");
+        assert_eq!(links[0].support_type, "supports");
+        assert_eq!(links[1].evidence_id, "ev-002");
+    }
+
+    #[test]
+    fn test_link_evidence_duplicate_ignored() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        let c = claim("c1", ClaimStatus::Asserted, 0.9);
+        provider.assert_claim(c, &[]).unwrap();
+
+        provider
+            .link_evidence("c1", "ev-001", "supports", 0.9)
+            .unwrap();
+        // identical (claim_id, evidence_id, support_type) → should be silently ignored
+        provider
+            .link_evidence("c1", "ev-001", "supports", 0.9)
+            .unwrap();
+
+        let links = provider.get_linked_evidence("c1").unwrap();
+        assert_eq!(links.len(), 1);
+    }
+
+    #[test]
+    fn test_search_by_predicate() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record(
+                "r1",
+                "s",
+                "causes_shutdown",
+                "o",
+                MemoryKind::Factual,
+            ))
+            .unwrap();
+        provider
+            .insert_record(record("r2", "s2", "causes_delay", "o", MemoryKind::Factual))
+            .unwrap();
+        provider
+            .insert_record(record(
+                "r3",
+                "s3",
+                "monitors_latency",
+                "o",
+                MemoryKind::Factual,
+            ))
+            .unwrap();
+        let results = provider.search_by_predicate("causes", 10).unwrap();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_search_by_predicate_no_match() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("r1", "s", "causes", "o", MemoryKind::Factual))
+            .unwrap();
+        let results = provider.search_by_predicate("monitors", 10).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_delete_record() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        provider
+            .insert_record(record("r1", "s", "p", "o", MemoryKind::Factual))
+            .unwrap();
+        provider.delete_record("r1").unwrap();
+        let results = provider.get_by_kind(MemoryKind::Factual, 10).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_delete_record_not_found_is_ok() {
+        let dir = tempdir().unwrap();
+        let provider = DurableMemoryProvider::open(dir.path().join("m.sqlite")).unwrap();
+        // Deleting a nonexistent record should not return an error
+        provider.delete_record("nonexistent-id").unwrap();
     }
 }

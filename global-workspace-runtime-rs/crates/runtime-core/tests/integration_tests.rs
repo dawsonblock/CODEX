@@ -96,6 +96,9 @@ mod tests {
             RuntimeEvent::ClaimRetrieved {
                 cycle_id: 7,
                 claim_id: "claim_1".into(),
+                subject: "claim_1_subject".into(),
+                predicate: "claim_1_predicate".into(),
+                object: None,
                 evidence_id: Some("ev_1".into()),
                 status: "active".into(),
                 confidence: 0.8,
@@ -143,5 +146,134 @@ mod tests {
         assert_eq!(state.last_pressure_social_risk, 0.3);
         assert_eq!(state.audits_with_evidence_refs, 1);
         assert_eq!(state.audits_with_claim_refs, 1);
+    }
+
+    // ── Policy regression tests ───────────────────────────────────────────
+
+    #[test]
+    fn tool_request_without_gate_is_not_satisfied() {
+        // RuntimeLoop with no tool gate must reject ExecuteBoundedTool with
+        // "tool_policy_not_satisfied" — ensuring no tool slips through by default.
+        use runtime_core::{KeywordMemoryProvider, RuntimeLoop};
+        let memory = Box::new(KeywordMemoryProvider::new());
+        let mut rt = RuntimeLoop::new(memory);
+        let result = rt.run_cycle("run a tool to fetch data", 1, 1.0);
+        let policy_rejected = result.rejected_actions.iter().any(|r| {
+            r.action_type == ActionType::ExecuteBoundedTool
+                && r.reason == "tool_policy_not_satisfied"
+        });
+        assert!(
+            policy_rejected,
+            "ExecuteBoundedTool must be rejected with 'tool_policy_not_satisfied' when no gate is set; \
+             rejected_actions: {:?}",
+            result.rejected_actions
+        );
+    }
+
+    #[test]
+    fn tool_gate_blocks_unregistered_tool() {
+        // ToolGate with no policies and no allowlist must deny "default_tool"
+        // with reason "tool_policy_denied: no policy registered".
+        use runtime_core::{KeywordMemoryProvider, RuntimeLoop};
+        let memory = Box::new(KeywordMemoryProvider::new());
+        let gate = tools::ToolGate::new(); // empty — no policies, no allowlist
+        let mut rt = RuntimeLoop::with_tool_gate(memory, gate);
+        let result = rt.run_cycle("execute the default tool", 1, 1.0);
+        let denied = result.rejected_actions.iter().any(|r| {
+            r.action_type == ActionType::ExecuteBoundedTool
+                && r.reason.starts_with("tool_policy_denied:")
+        });
+        assert!(
+            denied,
+            "ExecuteBoundedTool must be rejected with 'tool_policy_denied:' prefix when gate has \
+             no policy for 'default_tool'; rejected_actions: {:?}",
+            result.rejected_actions
+        );
+    }
+
+    #[test]
+    fn tool_gate_allowlist_bypasses_policy_check() {
+        // Allowlisting "default_tool" must allow ExecuteBoundedTool through the
+        // gate (no "tool_policy_denied" or "tool_policy_not_satisfied" rejection).
+        use runtime_core::{KeywordMemoryProvider, RuntimeLoop};
+        let memory = Box::new(KeywordMemoryProvider::new());
+        let mut gate = tools::ToolGate::new();
+        gate.allowlist_add("default_tool");
+        let mut rt = RuntimeLoop::with_tool_gate(memory, gate);
+        let result = rt.run_cycle("execute the default tool", 1, 1.0);
+        let policy_blocked = result.rejected_actions.iter().any(|r| {
+            r.action_type == ActionType::ExecuteBoundedTool
+                && (r.reason.starts_with("tool_policy_denied:")
+                    || r.reason == "tool_policy_not_satisfied")
+        });
+        assert!(
+            !policy_blocked,
+            "ExecuteBoundedTool must NOT be blocked by policy when 'default_tool' is allowlisted; \
+             rejected_actions: {:?}",
+            result.rejected_actions
+        );
+    }
+
+    #[test]
+    fn policy_bias_applications_counter_increments() {
+        // Replaying PolicyBiasApplied events must increment policy_bias_applications.
+        let events = vec![
+            RuntimeEvent::PolicyBiasApplied {
+                cycle_id: 1,
+                dominant_pressures: vec!["tool_risk".into()],
+                selected_action: "defer_insufficient_evidence".into(),
+            },
+            RuntimeEvent::PolicyBiasApplied {
+                cycle_id: 2,
+                dominant_pressures: vec!["social_risk".into(), "tool_risk".into()],
+                selected_action: "ask_clarification".into(),
+            },
+        ];
+        let state = runtime_core::replay(&events);
+        assert_eq!(
+            state.policy_bias_applications, 2,
+            "policy_bias_applications must equal the number of PolicyBiasApplied events replayed"
+        );
+    }
+
+    #[test]
+    fn claim_retrieved_event_content_fields_are_preserved() {
+        // ClaimRetrieved events must carry subject/predicate/object through round-trip
+        // serialization so the UI bridge can build real claim text.
+        let evt = RuntimeEvent::ClaimRetrieved {
+            cycle_id: 42,
+            claim_id: "c1".into(),
+            subject: "water".into(),
+            predicate: "boils at 100°C".into(),
+            object: Some("at sea level".to_string()),
+            evidence_id: Some("ev_42".into()),
+            status: "active".into(),
+            confidence: 0.95,
+        };
+        // Replay a single ClaimRetrieved — the reducer tracks claim_retrieval_pressure.
+        let state = runtime_core::replay(std::slice::from_ref(&evt));
+        assert!(
+            state.claims_retrieved > 0,
+            "claims_retrieved must be non-zero after ClaimRetrieved replay"
+        );
+        // Verify round-trip JSON fidelity for the new content fields.
+        let json = serde_json::to_string(&evt).expect("ClaimRetrieved must serialize");
+        let decoded: RuntimeEvent =
+            serde_json::from_str(&json).expect("ClaimRetrieved must deserialize");
+        match decoded {
+            RuntimeEvent::ClaimRetrieved {
+                subject,
+                predicate,
+                object,
+                confidence,
+                ..
+            } => {
+                assert_eq!(subject, "water");
+                assert_eq!(predicate, "boils at 100°C");
+                assert_eq!(object.as_deref(), Some("at sea level"));
+                assert!((confidence - 0.95).abs() < 1e-9);
+            }
+            other => panic!("Expected ClaimRetrieved, got {:?}", other),
+        }
     }
 }
