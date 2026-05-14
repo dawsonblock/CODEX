@@ -176,7 +176,7 @@ impl MemoryProvider for ClaimStore {
                     "{} {} {}",
                     claim.subject,
                     claim.predicate,
-                    claim.object.clone().unwrap_or_default()
+                    claim.object.as_deref().unwrap_or_default()
                 )
                 .to_lowercase();
                 let relevance_ok = obs.is_empty()
