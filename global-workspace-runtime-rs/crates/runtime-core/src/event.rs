@@ -206,9 +206,13 @@ pub enum RuntimeEvent {
         claim_id: String,
         subject: String,
         predicate: String,
+        #[serde(default)]
         object: Option<String>,
+        #[serde(default)]
         evidence_id: Option<String>,
+        #[serde(default)]
         status: String,
+        #[serde(default)]
         confidence: f64,
     },
     /// A claim was superseded by a newer claim (Active → Superseded).
