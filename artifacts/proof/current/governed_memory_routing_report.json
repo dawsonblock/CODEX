@@ -1,0 +1,27 @@
+{
+  "counters": {
+    "refuse_unsafe_occurrences_replaced": 7,
+    "files_modified": 3,
+    "files_modified_list": [
+      "crates/governed-memory/src/retrieval_intent.rs",
+      "crates/governed-memory/tests/retrieval_intent_tests.rs",
+      "crates/governed-memory/src/reason_codes.rs"
+    ],
+    "provider_gated_action_value": "defer_provider_unavailable",
+    "unit_test_assertion_updated": true,
+    "integration_test_assertion_updated": true,
+    "reason_code_description_updated": true,
+    "modulation_pressure_refuse_unsafe_untouched": true,
+    "modulation_pressure_field_is_unrelated_bias_param": true
+  },
+  "generated_timestamp": 1778793146,
+  "limitations": [
+    "defer_provider_unavailable is a string action value returned by recommended_action(); it is not a Rust enum variant — callers must match the string.",
+    "The ProviderGated arm does not change routing logic, only the returned action label.",
+    "modulation/pressure.rs retains a field named refuse_unsafe (f64 bias parameter); this is a separate, unrelated concern and was intentionally not renamed.",
+    "reason_codes.rs description update is cosmetic; the reason code identifier itself is unchanged."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

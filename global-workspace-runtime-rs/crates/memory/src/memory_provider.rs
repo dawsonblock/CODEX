@@ -29,6 +29,12 @@ pub struct MemoryQuery {
     pub max_confidence: Option<f64>,
     pub offset: usize,
     pub include_evidence_ids: bool,
+    // ── admission policy flags ────────────────────────────────────────────
+    pub include_stale: bool,
+    pub include_disputed: bool,
+    pub require_evidence: bool,
+    pub exclude_denied: bool,
+    pub governance_only: bool,
 }
 
 impl MemoryQuery {
@@ -48,6 +54,11 @@ impl MemoryQuery {
             max_confidence: None,
             offset: 0,
             include_evidence_ids: true,
+            include_stale: false,
+            include_disputed: false,
+            require_evidence: false,
+            exclude_denied: true,
+            governance_only: false,
         }
     }
 
@@ -112,7 +123,7 @@ impl MemoryQuery {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct MemoryHit {
     pub claim_id: String,
     pub subject: String,
@@ -121,6 +132,16 @@ pub struct MemoryHit {
     pub status: MemoryStatus,
     pub confidence: f64,
     pub evidence_ids: Vec<String>,
+    // ── extended provenance and policy fields ─────────────────────────────
+    pub source_ref: Option<String>,
+    pub kind: Option<MemoryKind>,
+    pub created_at_unix_ms: Option<i64>,
+    pub retrieval_score: Option<f64>,
+    pub recency_score: Option<f64>,
+    pub contradiction_ids: Vec<String>,
+    pub governance_reason_code: Option<String>,
+    pub is_stale: Option<bool>,
+    pub is_disputed: Option<bool>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -202,6 +223,7 @@ impl MemoryProvider for ClaimStore {
                 } else {
                     Vec::new()
                 },
+                ..Default::default()
             })
             .collect::<Vec<_>>();
 
@@ -233,6 +255,7 @@ impl MemoryProvider for ClaimStore {
                 status: legacy_to_canonical(claim.status),
                 confidence: claim.confidence,
                 evidence_ids: claim.evidence_ids.clone(),
+                ..Default::default()
             })
             .collect::<Vec<_>>();
 
@@ -300,6 +323,7 @@ impl MemoryProvider for DurableMemoryProvider {
                 status: record.status,
                 confidence: record.confidence as f64,
                 evidence_ids,
+                ..Default::default()
             });
         }
         Ok(hits)
@@ -324,6 +348,7 @@ impl MemoryProvider for DurableMemoryProvider {
                 status: durable_to_canonical(row.status),
                 confidence: row.confidence as f64,
                 evidence_ids: Vec::new(),
+                ..Default::default()
             })
             .collect();
 
@@ -478,6 +503,12 @@ mod tests {
             metadata_json: "{}".into(),
             created_at_unix_ms: 1_000_000,
             updated_at_unix_ms: 1_000_000,
+            retrieval_score: 0.0,
+            recency_score: 0.0,
+            contradiction_ids: "[]".into(),
+            governance_reason_code: None,
+            is_stale: false,
+            is_disputed: false,
         }
     }
 

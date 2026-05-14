@@ -287,12 +287,13 @@ pub struct MemoryHealthStats {
 ///
 /// Use [`status_mapping::durable_to_canonical`] / [`status_mapping::canonical_to_durable`]
 /// to convert between this and the durable store's `ClaimStatus` without losing information.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum MemoryStatus {
     /// Admitted and currently active in reasoning.
     Active,
     /// Asserted but not yet validated.
+    #[default]
     Unverified,
     /// Passed validation; high confidence.
     Validated,

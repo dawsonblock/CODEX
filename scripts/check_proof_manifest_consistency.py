@@ -22,6 +22,7 @@ CURRENT_DIR = REPO_ROOT / "artifacts/proof/current"
 MANIFEST = REPO_ROOT / "artifacts/proof/verification/proof_manifest.json"
 SUMMARY_MD = REPO_ROOT / "artifacts/proof/CURRENT_PROOF_SUMMARY.md"
 README_MD = REPO_ROOT / "artifacts/proof/README.md"
+STATUS_MD = REPO_ROOT / "STATUS.md"
 PHASE_ROADMAP_MD = REPO_ROOT / "docs/PHASE_STATUS_AND_ROADMAP.md"
 PROOF_MODEL_MD = REPO_ROOT / "docs/PROOF_MODEL.md"
 PROOF_LIMITATIONS_MD = REPO_ROOT / "docs/PROOF_LIMITATIONS.md"
@@ -49,6 +50,8 @@ STALE_MARKERS = [
     "43 diagnostic",
     "26 held-out",
     "(15 curated, 26 held-out, 2 adversarial)",
+    "held_out: 46 scenarios",
+    "match_rate 1.0000",
 ]
 
 
@@ -339,6 +342,8 @@ def main() -> int:
 
     print("\nChecking CURRENT_PROOF_SUMMARY.md stale markers ...")
     summary_text = SUMMARY_MD.read_text() if SUMMARY_MD.exists() else ""
+    print("\nChecking STATUS.md stale markers ...")
+    status_text = STATUS_MD.read_text() if STATUS_MD.exists() else ""
     print("\nChecking artifacts/proof/README.md stale markers ...")
     readme_text = README_MD.read_text() if README_MD.exists() else ""
     for marker in STALE_MARKERS:
@@ -346,6 +351,14 @@ def main() -> int:
             failures.append(f"STALE_MARKER_FOUND in README.md: {marker}")
         else:
             print(f"  OK  missing stale marker in README.md: {marker}")
+        if marker in summary_text:
+            failures.append(f"STALE_MARKER_FOUND in CURRENT_PROOF_SUMMARY.md: {marker}")
+        else:
+            print(f"  OK  missing stale marker in CURRENT_PROOF_SUMMARY.md: {marker}")
+        if marker in status_text:
+            failures.append(f"STALE_MARKER_FOUND in STATUS.md: {marker}")
+        else:
+            print(f"  OK  missing stale marker in STATUS.md: {marker}")
 
     print("\nChecking Markdown consistency vs JSON ...")
     expected_event_count = replay.get("event_count")
@@ -368,7 +381,7 @@ def main() -> int:
     if ho_scenarios is not None:
         ho_scenarios_str = f"scenario_count: {ho_scenarios}"
         if ho_scenarios_str not in readme_text:
-            # Also check for "held_out: 46 scenarios" pattern
+            # Also check for "held_out: N scenarios" pattern
             alt_ho_str = f"held_out: {ho_scenarios} scenarios"
             if alt_ho_str not in readme_text and f"held_out scenario_count: {ho_scenarios}" not in readme_text:
                 failures.append(f"MARKDOWN_MISMATCH: {README_MD.name} missing scenario count {ho_scenarios}")
@@ -376,6 +389,24 @@ def main() -> int:
                 print(f"  OK  {README_MD.name} contains scenario count {ho_scenarios}")
         else:
             print(f"  OK  {README_MD.name} contains '{ho_scenarios_str}'")
+
+        # CURRENT_PROOF_SUMMARY.md must contain the correct held_out scenario count
+        summary_ho_str = f"held_out: {ho_scenarios} scenarios"
+        if summary_ho_str not in summary_text:
+            failures.append(
+                f"SUMMARY_MD_MISMATCH: {SUMMARY_MD.name} missing '{summary_ho_str}'"
+            )
+        else:
+            print(f"  OK  {SUMMARY_MD.name} contains '{summary_ho_str}'")
+
+        # STATUS.md must contain the correct held_out scenario count
+        status_ho_str = f"held_out: {ho_scenarios} scenarios"
+        if status_ho_str not in status_text:
+            failures.append(
+                f"STATUS_MD_MISMATCH: {STATUS_MD.name} missing '{status_ho_str}'"
+            )
+        else:
+            print(f"  OK  {STATUS_MD.name} contains '{status_ho_str}'")
 
     if ho_match_rate is not None:
         # Check for exact long float or at least 4-decimal rounded version
@@ -389,6 +420,23 @@ def main() -> int:
                 print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
         else:
             print(f"  OK  {README_MD.name} contains match_rate {ho_match_rate}")
+
+        # CURRENT_PROOF_SUMMARY.md must contain the exact match rate
+        if ho_match_str not in summary_text:
+            failures.append(
+                f"SUMMARY_MD_MISMATCH: {SUMMARY_MD.name} missing held_out match_rate {ho_match_rate}"
+            )
+        else:
+            print(f"  OK  {SUMMARY_MD.name} contains match_rate {ho_match_rate}")
+
+        # STATUS.md must contain the exact action_match_rate
+        status_rate_str = f"action_match_rate {ho_match_rate}"
+        if status_rate_str not in status_text:
+            failures.append(
+                f"STATUS_MD_MISMATCH: {STATUS_MD.name} missing '{status_rate_str}' in NL benchmark snapshot"
+            )
+        else:
+            print(f"  OK  {STATUS_MD.name} contains '{status_rate_str}'")
 
     check_doc_benchmark_consistency(failures, nl)
 
@@ -685,6 +733,30 @@ def main() -> int:
                     print(f"  OK  localhost:11434 at line {i+1} is inside feature gate")
     else:
         print("  WARN runtime_client.rs not found. Skipping stale provider code scan.")
+
+    # Phase H: reconciliation sprint evidence report checks
+    print("\nChecking reconciliation sprint evidence reports ...")
+    reconciliation_reports = [
+        "memory_schema_reconciliation_report.json",
+        "governed_memory_routing_report.json",
+        "event_log_sequence_report.json",
+    ]
+    manifest_artifacts = set(manifest.get("proof_artifacts", []))
+    for report_name in reconciliation_reports:
+        report_path = CURRENT_DIR / report_name
+        artifact_key = f"artifacts/proof/current/{report_name}"
+        if not report_path.exists():
+            failures.append(f"MISSING_FILE: {report_name} not found in artifacts/proof/current/")
+        else:
+            report_data = load_json(report_path)
+            if report_data.get("pass") is not True:
+                failures.append(f"REPORT_FAIL: {report_name} has pass != true")
+            else:
+                print(f"  OK  {report_name}: pass=true")
+        if artifact_key not in manifest_artifacts:
+            failures.append(f"MANIFEST_MISSING: {artifact_key} not registered in proof_manifest.json proof_artifacts")
+        else:
+            print(f"  OK  {report_name} registered in manifest")
 
     if failures:
         print("\nFAIL: Consistency mismatches detected:")

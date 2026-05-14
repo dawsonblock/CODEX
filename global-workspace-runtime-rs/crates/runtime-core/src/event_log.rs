@@ -2,7 +2,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use thiserror::Error;
 
-use crate::event::RuntimeEvent;
+use crate::event::{EventEnvelope, EventOrigin, RuntimeEvent};
 
 #[derive(Debug, Error)]
 pub enum EventLogError {
@@ -17,6 +17,7 @@ pub enum EventLogError {
 pub struct EventLog {
     events: Vec<RuntimeEvent>,
     path: Option<PathBuf>,
+    sequence_counter: u64,
 }
 
 impl EventLog {
@@ -28,6 +29,7 @@ impl EventLog {
         Self {
             events: Vec::new(),
             path: Some(path),
+            sequence_counter: 0,
         }
     }
 
@@ -35,6 +37,32 @@ impl EventLog {
     pub fn append(&mut self, event: RuntimeEvent) -> Result<(), EventLogError> {
         if let Some(ref p) = self.path {
             let line = serde_json::to_string(&event)?;
+            let mut f = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(p)?;
+            writeln!(f, "{}", line)?;
+        }
+        self.events.push(event);
+        Ok(())
+    }
+
+    /// Append one event wrapped in an [`EventEnvelope`] with origin metadata.
+    ///
+    /// Increments the internal sequence counter.  If a path is set the envelope
+    /// (not the bare event) is written to the JSONL file so that sequence and
+    /// origin are durable.  The bare event is also pushed to `self.events` for
+    /// in-process queries via [`Self::events`].
+    pub fn append_with_origin(
+        &mut self,
+        origin: EventOrigin,
+        event: RuntimeEvent,
+    ) -> Result<(), EventLogError> {
+        let seq = self.sequence_counter;
+        self.sequence_counter += 1;
+        let envelope = EventEnvelope::new(seq, origin, event.clone());
+        if let Some(ref p) = self.path {
+            let line = serde_json::to_string(&envelope)?;
             let mut f = std::fs::OpenOptions::new()
                 .create(true)
                 .append(true)

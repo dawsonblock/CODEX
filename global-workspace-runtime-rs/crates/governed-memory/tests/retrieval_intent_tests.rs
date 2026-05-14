@@ -5,7 +5,7 @@
 //! - Unsupported factual routes to defer_insufficient_evidence
 //! - High-stakes low-evidence routes to defer or ask
 //! - Ambiguous routes to ask_clarification
-//! - Provider-gated routes to refuse_unsafe
+//! - Provider-gated routes to defer_provider_unavailable
 
 #[cfg(test)]
 mod tests {
@@ -95,7 +95,7 @@ mod tests {
         };
 
         let decision = RetrievalRouter::route(&query);
-        assert_eq!(decision.recommended_action, "refuse_unsafe");
+        assert_eq!(decision.recommended_action, "defer_provider_unavailable");
         assert_eq!(decision.confidence_in_route, 0.95);
     }
 

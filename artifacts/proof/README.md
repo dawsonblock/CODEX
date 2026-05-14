@@ -34,17 +34,17 @@ Governance artifacts:
 
 - `governed_memory_integration_report.json` provides advisory admission gate metrics split by live admission-hook decisions and retroactive comparison evaluations.
 
-## Current Snapshot (CODEX-main 32)
+## Current Snapshot (CODEX-main 34)
 
-- Package identity: Internal codename CODEX-main 32. Uploaded ZIP filename may vary and is not the authority source.
+- Package identity: Internal codename CODEX-main 34. Uploaded ZIP filename may vary and is not the authority source.
 - Package status: integration proof candidate (not final freeze)
 - SimWorld cycles: 15
 - resource_survival: 0.9740
 - mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
 - replay event_count: 589
-- held_out scenario_count: 46
-- held_out action_match_rate: 1.0
+- held_out scenario_count: 59
+- held_out action_match_rate: 0.8983050847457628 (6 failures)
 - raw_contradictions_detected: 1
 - unique_contradictions_detected: 1
 - duplicate_contradictions_suppressed: 0

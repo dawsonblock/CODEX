@@ -224,12 +224,12 @@ All runtime decisions use exactly 10 action types:
 7. **Resource Survival:** Resource pressure scoring keeps resources from collapse
 8. **Action Correctness:** Bounded action vocabulary strictly enforced
 
-Canonical NL benchmark tuple: (15 curated, 46 held-out, 2 adversarial)
+Canonical NL benchmark tuple: (15 curated, 59 held-out, 2 adversarial)
 
 ### **What Proof Does NOT Verify**
 
 - ❌ Real-world correctness (SimWorld is synthetic)
-- ❌ Broad NL reasoning (benchmark is diagnostic on 63 scenarios)
+- ❌ Broad NL reasoning (benchmark is diagnostic on 76 scenarios)
 - ❌ General intelligence (action_match_rate is noise on closed set)
 - ❌ External truth (evidence links only prove proof-harness linkage)
 - ❌ Production readiness (no security/scalability/reliability hardening)
@@ -286,7 +286,7 @@ Canonical NL benchmark tuple: (15 curated, 46 held-out, 2 adversarial)
 1. **Memory backend:** Keyword-based retrieval only (SQLite durable backend planned)
 2. **Claim lifecycle:** Basic scaffolding; contradiction handling not complete
 3. **Grounded answers:** `memory::answer_builder` is implemented and wired into the UI bridge via `build_with_context`, producing `AnswerEnvelope` with `basis`, `evidence_ids`, `action_type`, and `cited_claim_ids`; `ClaimRetrieved` events now carry `subject`/`predicate`/`object` content from the claim store — the UI bridge uses real claim text in `MemoryClaim` objects and answer envelopes
-4. **SimWorld scenarios:** 7 templates (63 diagnostic benchmark scenarios); not real environment
+4. **SimWorld scenarios:** 7 templates (76 diagnostic benchmark scenarios); not real environment
 5. **Symbolic reasoning:** Internal routing only; not general inference engine
 6. **Memvid integration:** Stubbed; no real multi-modal reasoning
 7. **Evidence source:** Proof-harness-only; no external real-world data ingestion
@@ -370,7 +370,7 @@ cd ui/codex-dioxus && dx build --release
 | `reasoning_audit_report.json` | Audit event generation | events_emitted: 17 |
 | `claim_retrieval_report.json` | Claim retrieval signal | retrieved: 17 |
 | `pressure_replay_report.json` | Pressure state tracking | resource_survival: 0.9740 |
-| `nl_benchmark_report.json` | NL diagnostic benchmark | action_match_rate: 1.0 (diagnostic) |
+| `nl_benchmark_report.json` | NL diagnostic benchmark | action_match_rate: 0.8983050847457628 (diagnostic, 6 failures) |
 | `long_horizon_report.json` | Multi-episode stability | cycles: 15, stable: true |
 
 ---

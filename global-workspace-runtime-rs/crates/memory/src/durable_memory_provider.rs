@@ -91,6 +91,12 @@ pub struct MemoryRecord {
     pub metadata_json: String,
     pub created_at_unix_ms: i64,
     pub updated_at_unix_ms: i64,
+    pub retrieval_score: f64,
+    pub recency_score: f64,
+    pub contradiction_ids: String, // JSON-encoded array e.g. "[]"
+    pub governance_reason_code: Option<String>,
+    pub is_stale: bool,
+    pub is_disputed: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -222,6 +228,12 @@ impl DurableMemoryProvider {
                 metadata_json TEXT NOT NULL DEFAULT '{}',
                 created_at_unix_ms  INTEGER NOT NULL,
                 updated_at_unix_ms  INTEGER NOT NULL,
+                retrieval_score REAL NOT NULL DEFAULT 0.0,
+                recency_score REAL NOT NULL DEFAULT 0.0,
+                contradiction_ids TEXT NOT NULL DEFAULT '[]',
+                governance_reason_code TEXT,
+                is_stale INTEGER NOT NULL DEFAULT 0,
+                is_disputed INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY (claim_id) REFERENCES claims(claim_id) ON DELETE SET NULL
             )",
             [],
@@ -352,8 +364,10 @@ impl DurableMemoryProvider {
         conn.execute(
             "INSERT INTO memory_records
                 (record_id, claim_id, subject, predicate, object, kind, status,
-                 confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms,
+                 retrieval_score, recency_score, contradiction_ids,
+                 governance_reason_code, is_stale, is_disputed)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 record.record_id,
                 record.claim_id,
@@ -367,6 +381,12 @@ impl DurableMemoryProvider {
                 record.metadata_json,
                 record.created_at_unix_ms,
                 record.updated_at_unix_ms,
+                record.retrieval_score,
+                record.recency_score,
+                record.contradiction_ids,
+                record.governance_reason_code,
+                record.is_stale as i64,
+                record.is_disputed as i64,
             ],
         )?;
         Ok(())
@@ -377,7 +397,9 @@ impl DurableMemoryProvider {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT record_id, claim_id, subject, predicate, object, kind, status,
-                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms
+                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms,
+                    retrieval_score, recency_score, contradiction_ids,
+                    governance_reason_code, is_stale, is_disputed
              FROM memory_records
              WHERE kind = ?
              ORDER BY confidence DESC
@@ -394,7 +416,9 @@ impl DurableMemoryProvider {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare(
             "SELECT record_id, claim_id, subject, predicate, object, kind, status,
-                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms
+                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms,
+                    retrieval_score, recency_score, contradiction_ids,
+                    governance_reason_code, is_stale, is_disputed
              FROM memory_records
              WHERE subject = ?
              ORDER BY confidence DESC
@@ -472,7 +496,9 @@ impl DurableMemoryProvider {
         let pattern = format!("%{predicate}%");
         let mut stmt = conn.prepare(
             "SELECT record_id, claim_id, subject, predicate, object, kind, status,
-                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms
+                    confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms,
+                    retrieval_score, recency_score, contradiction_ids,
+                    governance_reason_code, is_stale, is_disputed
              FROM memory_records
              WHERE predicate LIKE ?
              ORDER BY confidence DESC
@@ -562,7 +588,9 @@ impl DurableMemoryProvider {
 
         let sql = format!(
             "SELECT record_id, claim_id, subject, predicate, object, kind, status, \
-             confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms \
+             confidence, source_ref, metadata_json, created_at_unix_ms, updated_at_unix_ms, \
+             retrieval_score, recency_score, contradiction_ids, \
+             governance_reason_code, is_stale, is_disputed \
              FROM memory_records \
              {where_clause} \
              ORDER BY confidence DESC \
@@ -604,6 +632,14 @@ impl DurableMemoryProvider {
             metadata_json: row.get(9)?,
             created_at_unix_ms: row.get(10)?,
             updated_at_unix_ms: row.get(11)?,
+            retrieval_score: row.get(12)?,
+            recency_score: row.get(13)?,
+            contradiction_ids: row
+                .get::<_, Option<String>>(14)?
+                .unwrap_or_else(|| "[]".to_string()),
+            governance_reason_code: row.get(15)?,
+            is_stale: row.get::<_, i64>(16)? != 0,
+            is_disputed: row.get::<_, i64>(17)? != 0,
         })
     }
 
@@ -737,6 +773,12 @@ mod tests {
             metadata_json: "{}".to_string(),
             created_at_unix_ms: 1000,
             updated_at_unix_ms: 1000,
+            retrieval_score: 0.0,
+            recency_score: 0.0,
+            contradiction_ids: "[]".to_string(),
+            governance_reason_code: None,
+            is_stale: false,
+            is_disputed: false,
         }
     }
 

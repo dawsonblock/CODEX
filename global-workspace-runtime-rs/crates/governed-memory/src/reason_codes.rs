@@ -176,7 +176,7 @@ impl ReasonCode {
             "RETRIEVAL_PROVIDER_GATED",
             ReasonCodeSource::SecurityPolicy,
             ReasonSeverity::Warning,
-            "Query would require external tool/provider; refuse_unsafe (tools disabled)",
+            "Query would require external tool/provider; defer_provider_unavailable (tools disabled)",
         )
     }
 
