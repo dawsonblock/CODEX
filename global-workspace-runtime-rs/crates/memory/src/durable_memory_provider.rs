@@ -21,6 +21,8 @@ pub enum ClaimStatus {
     Asserted,
     Validated,
     Rejected,
+    Stale,
+    Disputed,
     Superseded,
     Unknown,
 }
@@ -31,8 +33,22 @@ impl ClaimStatus {
             Self::Asserted => "asserted",
             Self::Validated => "validated",
             Self::Rejected => "rejected",
+            Self::Stale => "stale",
+            Self::Disputed => "disputed",
             Self::Superseded => "superseded",
             Self::Unknown => "unknown",
+        }
+    }
+
+    pub fn from_db_str(value: &str) -> Self {
+        match value {
+            "asserted" => Self::Asserted,
+            "validated" => Self::Validated,
+            "rejected" => Self::Rejected,
+            "stale" => Self::Stale,
+            "disputed" => Self::Disputed,
+            "superseded" => Self::Superseded,
+            _ => Self::Unknown,
         }
     }
 }
@@ -75,7 +91,7 @@ impl DurableMemoryProvider {
         }
         let conn = rusqlite::Connection::open(&db_path)?;
         conn.execute("PRAGMA foreign_keys = ON", [])?;
-        conn.execute("PRAGMA journal_mode = WAL", [])?;
+        conn.pragma_update(None, "journal_mode", "WAL")?;
         Self::init_schema(&conn)?;
         Ok(Self {
             db_path,
@@ -204,10 +220,11 @@ impl DurableMemoryProvider {
 
         let records = stmt
             .query_map(params![status.as_str(), limit as i32], |row| {
+                let status_raw: String = row.get(2)?;
                 Ok(ClaimRecord {
                     claim_id: row.get(0)?,
                     claim_text: row.get(1)?,
-                    status: ClaimStatus::Validated, // Simplified
+                    status: ClaimStatus::from_db_str(status_raw.as_str()),
                     confidence: row.get(3)?,
                     salience: row.get(4)?,
                     source_ref: row.get(5)?,
@@ -235,26 +252,98 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
-    #[test]
-    #[ignore]
-    fn test_open_and_assert() {
-        let dir = tempdir().unwrap();
-        let db_path = dir.path().join("mem.sqlite");
-        let provider = DurableMemoryProvider::open(&db_path).unwrap();
-
-        let claim = ClaimRecord {
-            claim_id: "c1".to_string(),
-            claim_text: "Test".to_string(),
-            status: ClaimStatus::Asserted,
-            confidence: 0.9,
+    fn claim(id: &str, status: ClaimStatus, confidence: f32) -> ClaimRecord {
+        ClaimRecord {
+            claim_id: id.to_string(),
+            claim_text: format!("Claim {id}"),
+            status,
+            confidence,
             salience: 0.75,
             source_ref: None,
             timestamp_unix_ms: 1000,
             metadata_json: "{}".to_string(),
             created_at_unix_ms: 1000,
             updated_at_unix_ms: 1000,
-        };
+        }
+    }
+
+    #[test]
+    fn test_open_and_assert() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("mem.sqlite");
+        let provider = DurableMemoryProvider::open(&db_path).unwrap();
+
+        let claim = claim("c1", ClaimStatus::Asserted, 0.9);
 
         provider.assert_claim(claim, &[]).unwrap();
+
+        let asserted = provider.get_by_status(ClaimStatus::Asserted, 10).unwrap();
+        assert_eq!(asserted.len(), 1);
+        assert_eq!(asserted[0].status, ClaimStatus::Asserted);
+        assert_eq!(asserted[0].claim_id, "c1");
+    }
+
+    #[test]
+    fn get_by_status_filters_rejected_stale_disputed_superseded() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("mem.sqlite");
+        let provider = DurableMemoryProvider::open(&db_path).unwrap();
+
+        provider
+            .assert_claim(claim("c_rejected", ClaimStatus::Rejected, 0.8), &[])
+            .unwrap();
+        provider
+            .assert_claim(claim("c_stale", ClaimStatus::Stale, 0.7), &[])
+            .unwrap();
+        provider
+            .assert_claim(claim("c_disputed", ClaimStatus::Disputed, 0.6), &[])
+            .unwrap();
+        provider
+            .assert_claim(claim("c_superseded", ClaimStatus::Superseded, 0.5), &[])
+            .unwrap();
+
+        let rejected = provider.get_by_status(ClaimStatus::Rejected, 10).unwrap();
+        let stale = provider.get_by_status(ClaimStatus::Stale, 10).unwrap();
+        let disputed = provider.get_by_status(ClaimStatus::Disputed, 10).unwrap();
+        let superseded = provider.get_by_status(ClaimStatus::Superseded, 10).unwrap();
+
+        assert_eq!(rejected.len(), 1);
+        assert_eq!(rejected[0].claim_id, "c_rejected");
+        assert_eq!(rejected[0].status, ClaimStatus::Rejected);
+
+        assert_eq!(stale.len(), 1);
+        assert_eq!(stale[0].claim_id, "c_stale");
+        assert_eq!(stale[0].status, ClaimStatus::Stale);
+
+        assert_eq!(disputed.len(), 1);
+        assert_eq!(disputed[0].claim_id, "c_disputed");
+        assert_eq!(disputed[0].status, ClaimStatus::Disputed);
+
+        assert_eq!(superseded.len(), 1);
+        assert_eq!(superseded[0].claim_id, "c_superseded");
+        assert_eq!(superseded[0].status, ClaimStatus::Superseded);
+    }
+
+    #[test]
+    fn get_by_status_returns_ordered_by_confidence_desc() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("mem.sqlite");
+        let provider = DurableMemoryProvider::open(&db_path).unwrap();
+
+        provider
+            .assert_claim(claim("c1", ClaimStatus::Rejected, 0.20), &[])
+            .unwrap();
+        provider
+            .assert_claim(claim("c2", ClaimStatus::Rejected, 0.80), &[])
+            .unwrap();
+        provider
+            .assert_claim(claim("c3", ClaimStatus::Rejected, 0.50), &[])
+            .unwrap();
+
+        let rejected = provider.get_by_status(ClaimStatus::Rejected, 10).unwrap();
+        assert_eq!(rejected.len(), 3);
+        assert_eq!(rejected[0].claim_id, "c2");
+        assert_eq!(rejected[1].claim_id, "c3");
+        assert_eq!(rejected[2].claim_id, "c1");
     }
 }

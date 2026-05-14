@@ -30,6 +30,8 @@ cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifact
 - reasoning_audit_report.json
 - tool_policy_report.json
 - provider_policy_report.json
+- governed_memory_integration_report.json
+- provider_storage_boundary_report.json
 
 ## Pass model
 

@@ -24,6 +24,8 @@ SUMMARY_MD = REPO_ROOT / "artifacts/proof/CURRENT_PROOF_SUMMARY.md"
 README_MD = REPO_ROOT / "artifacts/proof/README.md"
 PHASE_ROADMAP_MD = REPO_ROOT / "docs/PHASE_STATUS_AND_ROADMAP.md"
 PROOF_MODEL_MD = REPO_ROOT / "docs/PROOF_MODEL.md"
+PROOF_LIMITATIONS_MD = REPO_ROOT / "docs/PROOF_LIMITATIONS.md"
+REPO_INVENTORY_MD = REPO_ROOT / "docs/REPO_INVENTORY.md"
 
 SIMWORLD_JSON = CURRENT_DIR / "simworld_summary.json"
 REPLAY_JSON = CURRENT_DIR / "replay_report.json"
@@ -118,7 +120,12 @@ def check_doc_benchmark_consistency(
 
     print("\nChecking docs benchmark consistency ...")
 
-    for doc_path in [PHASE_ROADMAP_MD, PROOF_MODEL_MD]:
+    for doc_path in [
+        PHASE_ROADMAP_MD,
+        PROOF_MODEL_MD,
+        PROOF_LIMITATIONS_MD,
+        REPO_INVENTORY_MD,
+    ]:
         if not doc_path.exists():
             failures.append(f"MISSING_FILE: {doc_path}")
             continue
@@ -141,7 +148,7 @@ def check_doc_benchmark_consistency(
         else:
             print(f"  OK  {doc_path.name} contains {expected_tuple}")
 
-        if doc_path == PHASE_ROADMAP_MD:
+        if doc_path in {PHASE_ROADMAP_MD, REPO_INVENTORY_MD}:
             if expected_diagnostic not in text:
                 failures.append(
                     f"DOC_MISMATCH: {doc_path.name} missing expected diagnostic count '{expected_diagnostic}'"

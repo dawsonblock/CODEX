@@ -2,6 +2,8 @@ use super::types::{
     ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary, RuntimeBridgeMode,
     RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus, RuntimeStepResult,
 };
+use memory::answer_builder::{AnswerBuildContext, AnswerBuilder};
+use memory::{ClaimStatus as MemoryClaimStatus, MemoryClaim};
 use governed_memory::codex_adapter::evidence_entry_to_candidate;
 use governed_memory::{
     MemoryAdmissionGate, RetrievalIntentCategory, RetrievalPlanner, RetrievalQuery, RetrievalRouter,
@@ -169,6 +171,7 @@ impl RuntimeClient {
 fn local_runtime_response(input: &str) -> RuntimeStepResult {
     let mut runtime = RuntimeLoop::default();
     let step = runtime.run_cycle(input, 1, 0.9);
+    let answer_builder = AnswerBuilder::new();
 
     // Extract real IDs from emitted runtime events.
     //
@@ -245,11 +248,61 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
     }
 
     let selected_action = step.selected_action.as_str().to_string();
-    let message = local_message_for_action(&step.selected_action, &step.selection_reason);
+
+    let mut claims_for_answer = claim_ids
+        .iter()
+        .map(|claim_id| MemoryClaim {
+            id: claim_id.clone(),
+            subject: claim_id.clone(),
+            predicate: "is_retrieved".to_string(),
+            object: None,
+            status: MemoryClaimStatus::Active,
+            confidence: 0.75,
+            evidence_ids: evidence_ids.clone(),
+            evidence_hashes: evidence_hashes.clone(),
+            source_label: "runtime_event_claim_retrieved".to_string(),
+            evidence_links: Vec::new(),
+            created_at: "1970-01-01T00:00:00Z".to_string(),
+            updated_at: None,
+            audit_trail: Vec::new(),
+            superseded_by: None,
+        })
+        .collect::<Vec<_>>();
+
+    if claims_for_answer.is_empty() {
+        for hit in &step.memory_hits {
+            claims_for_answer.push(MemoryClaim {
+                id: format!("memhit:{}", hit.key),
+                subject: hit.key.clone(),
+                predicate: "indicates".to_string(),
+                object: Some(hit.value.clone()),
+                status: MemoryClaimStatus::Unverified,
+                confidence: hit.relevance,
+                evidence_ids: evidence_ids.clone(),
+                evidence_hashes: evidence_hashes.clone(),
+                source_label: "runtime_memory_hit".to_string(),
+                evidence_links: Vec::new(),
+                created_at: "1970-01-01T00:00:00Z".to_string(),
+                updated_at: None,
+                audit_trail: Vec::new(),
+                superseded_by: None,
+            });
+        }
+    }
+
+    let answer = answer_builder.build_with_context(
+        input,
+        &claims_for_answer,
+        AnswerBuildContext {
+            action_type: selected_action.clone(),
+            evidence_ids: evidence_ids.clone(),
+        },
+    );
+
     let missing_evidence_reason = if step.selected_action == ActionType::DeferInsufficientEvidence {
         Some(step.selection_reason.clone())
     } else {
-        None
+        answer.missing_evidence_reason.clone()
     };
     let metadata_quality = if audit_id.is_some()
         || !evidence_ids.is_empty()
@@ -262,8 +315,10 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
     };
 
     RuntimeStepResult {
-        response_text: message,
+        response_text: answer.text,
         selected_action: selected_action.clone(),
+        answer_basis: Some(answer.basis),
+        answer_warnings: answer.warnings,
         bridge_mode: RuntimeBridgeMode::LocalCodexRuntimeReadOnly
             .label()
             .to_string(),
@@ -282,39 +337,6 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
         metadata_quality,
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
-    }
-}
-
-fn local_message_for_action(action: &ActionType, reason: &str) -> String {
-    match action {
-        ActionType::Answer => {
-            "Local runtime selected answer in read-only mode. Response remains bounded to available context.".to_string()
-        }
-        ActionType::AskClarification => {
-            "Local runtime selected clarification in read-only mode. Please narrow the request scope.".to_string()
-        }
-        ActionType::RetrieveMemory => {
-            "Local runtime selected retrieve_memory in read-only mode before answering.".to_string()
-        }
-        ActionType::RefuseUnsafe => {
-            "Local runtime refused this request in read-only mode due to safety constraints.".to_string()
-        }
-        ActionType::DeferInsufficientEvidence => {
-            format!("Local runtime deferred in read-only mode: {reason}")
-        }
-        ActionType::Summarize => {
-            "Local runtime selected summarize in read-only mode.".to_string()
-        }
-        ActionType::Plan => {
-            "Local runtime selected plan in read-only mode.".to_string()
-        }
-        ActionType::ExecuteBoundedTool => {
-            "Local runtime does not execute tools in this UI mode; execution remains disabled.".to_string()
-        }
-        ActionType::NoOp => "Local runtime selected no_op in read-only mode.".to_string(),
-        ActionType::InternalDiagnostic => {
-            "Local runtime selected internal diagnostic; no user-facing action emitted.".to_string()
-        }
     }
 }
 
@@ -453,6 +475,8 @@ fn mock_runtime_response(input: &str) -> RuntimeStepResult {
     RuntimeStepResult {
         response_text: message,
         selected_action: action.to_string(),
+        answer_basis: None,
+        answer_warnings: vec![],
         bridge_mode: RuntimeBridgeMode::MockUiMode.label().to_string(),
         evidence_ids: vec![],
         evidence_hashes: vec![],
@@ -574,6 +598,8 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeStepRe
     RuntimeStepResult {
         response_text: message,
         selected_action: "answer".to_string(),
+        answer_basis: None,
+        answer_warnings: vec![],
         bridge_mode: bridge_mode_label,
         evidence_ids: vec![],
         evidence_hashes: vec![],
@@ -672,6 +698,8 @@ async fn ollama_runtime_stream(
         response_text: full_message,
         bridge_mode: bridge_mode_label,
         selected_action: "answer".to_string(),
+        answer_basis: None,
+        answer_warnings: vec![],
         evidence_ids: vec![],
         evidence_hashes: vec![],
         claim_ids: vec![],

@@ -10,6 +10,8 @@
 pub mod answer_builder;
 pub mod claim_store;
 pub mod durable_memory_provider;
+pub mod memory_provider;
+pub mod status_mapping;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

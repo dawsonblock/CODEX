@@ -33,6 +33,10 @@ jobs:
         run: python -m global_workspace_runtime.scripts.check_resource_recovery
       - name: Run Python tests (legacy)
         run: python -m pytest -q
+      - name: Clean generated Python artifacts
+        run: python3 scripts/clean_python_artifacts.py
+      - name: Final generated artifact check
+        run: python3 scripts/check_no_generated_artifacts.py
 
   rust-authoritative:
     runs-on: ubuntu-latest
@@ -60,3 +64,7 @@ jobs:
         run: cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
       - name: Oracle guard
         run: cargo test --workspace -- oracle
+      - name: Clean generated Python artifacts
+        run: python3 ../scripts/clean_python_artifacts.py
+      - name: Final generated artifact check
+        run: python3 ../scripts/check_no_generated_artifacts.py
