@@ -41,11 +41,11 @@ pub enum EventOrigin {
 
 /// Typed wrapper around a [`RuntimeEvent`] with provenance metadata.
 ///
-/// `EventEnvelope` is the at-rest representation written to the event log.  Each
-/// envelope carries a monotonically increasing sequence number (within a session),
-/// the wall-clock timestamp at emission time, and the subsystem origin so that
-/// readers can filter, audit, or replay events by provenance without unpacking the
-/// inner payload.
+/// Each envelope carries a monotonically increasing sequence number (within a
+/// session), the wall-clock timestamp at emission time, and the subsystem
+/// origin alongside the inner event payload. This metadata allows callers to
+/// filter, audit, or replay events by provenance when working with enveloped
+/// events, without changing the underlying [`RuntimeEvent`] shape.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EventEnvelope {
     /// Monotonically increasing sequence number within a session.
