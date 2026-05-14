@@ -285,7 +285,7 @@ Canonical NL benchmark tuple: (15 curated, 46 held-out, 2 adversarial)
 ### **Known Limitations**
 1. **Memory backend:** Keyword-based retrieval only (SQLite durable backend planned)
 2. **Claim lifecycle:** Basic scaffolding; contradiction handling not complete
-3. **AnswerBuilder:** Not yet implemented; UI uses mocked responses
+3. **Grounded answers:** `memory::answer_builder` now produces grounded answer envelopes for the UI bridge; answer quality and coverage are still bounded by the current retrieval/memory backend
 4. **SimWorld scenarios:** 7 templates (63 diagnostic benchmark scenarios); not real environment
 5. **Symbolic reasoning:** Internal routing only; not general inference engine
 6. **Memvid integration:** Stubbed; no real multi-modal reasoning
