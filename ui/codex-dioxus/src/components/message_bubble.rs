@@ -1,4 +1,5 @@
 use crate::bridge::types::{ChatMessage, ChatRole};
+use crate::components::basis_items_table::BasisItemsTable;
 use dioxus::prelude::*;
 
 #[component]
@@ -33,6 +34,18 @@ pub fn MessageBubble(
                         span { "metadata: {trace.metadata_quality.label()}" }
                         if trace.provider_executions_local > 0 {
                             span { class: "badge warning", "Non-Authoritative Provider ({trace.provider_executions_local})" }
+                        }
+                    }
+                }
+                // Phase 9: Display answer basis items for grounded answers
+                if let Some(trace) = &message.runtime {
+                    if !trace.answer_basis_items.is_empty() {
+                        div { class: "message-basis-section",
+                            BasisItemsTable {
+                                basis_items: trace.answer_basis_items.clone(),
+                                warnings: trace.answer_warnings.clone(),
+                                show_warnings: true,
+                            }
                         }
                     }
                 }

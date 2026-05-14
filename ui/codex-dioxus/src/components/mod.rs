@@ -1,6 +1,7 @@
 pub mod action_schema_panel;
 pub mod action_trace_panel;
 pub mod audit_panel;
+pub mod basis_items_table;
 pub mod chat_input;
 pub mod chat_view;
 pub mod command_queue;
