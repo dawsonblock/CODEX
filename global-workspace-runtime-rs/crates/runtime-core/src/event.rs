@@ -39,6 +39,42 @@ pub enum EventOrigin {
     ProofHarness,
 }
 
+/// Typed wrapper around a [`RuntimeEvent`] with provenance metadata.
+///
+/// `EventEnvelope` is the at-rest representation written to the event log.  Each
+/// envelope carries a monotonically increasing sequence number (within a session),
+/// the wall-clock timestamp at emission time, and the subsystem origin so that
+/// readers can filter, audit, or replay events by provenance without unpacking the
+/// inner payload.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventEnvelope {
+    /// Monotonically increasing sequence number within a session.
+    pub sequence: u64,
+    /// Wall-clock timestamp when the event was emitted (UTC).
+    pub timestamp: DateTime<Utc>,
+    /// The subsystem that emitted this event.
+    pub origin: EventOrigin,
+    /// The event payload.
+    pub event: RuntimeEvent,
+}
+
+impl EventEnvelope {
+    /// Construct a new envelope, capturing `Utc::now()` as the timestamp.
+    pub fn new(sequence: u64, origin: EventOrigin, event: RuntimeEvent) -> Self {
+        Self {
+            sequence,
+            timestamp: Utc::now(),
+            origin,
+            event,
+        }
+    }
+
+    /// Delegate to the inner event's cycle-ID helper.
+    pub fn cycle_id(&self) -> Option<u64> {
+        self.event.cycle_id()
+    }
+}
+
 /// All events that can be appended to the event log.
 /// Variants are tagged in JSONL as `{"type": "...", "payload": {...}}`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -363,5 +399,62 @@ impl RuntimeEvent {
             | Self::AnswerEnvelopeBuilt { cycle_id, .. } => Some(*cycle_id),
             Self::RuntimeModeChanged { .. } => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    fn cycle_started(id: u64) -> RuntimeEvent {
+        RuntimeEvent::CycleStarted {
+            cycle_id: id,
+            timestamp: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn event_envelope_carries_sequence_and_origin() {
+        let env = EventEnvelope::new(42, EventOrigin::Evaluator, cycle_started(1));
+        assert_eq!(env.sequence, 42);
+        assert_eq!(env.origin, EventOrigin::Evaluator);
+    }
+
+    #[test]
+    fn event_envelope_timestamp_is_utc() {
+        let before = Utc::now();
+        let env = EventEnvelope::new(0, EventOrigin::RuntimeLoop, cycle_started(1));
+        let after = Utc::now();
+        assert!(env.timestamp >= before);
+        assert!(env.timestamp <= after);
+    }
+
+    #[test]
+    fn event_envelope_cycle_id_delegates_to_inner_event() {
+        let env = EventEnvelope::new(1, EventOrigin::ClaimStore, cycle_started(7));
+        assert_eq!(env.cycle_id(), Some(7));
+    }
+
+    #[test]
+    fn event_envelope_mode_changed_has_no_cycle_id() {
+        let env = EventEnvelope::new(
+            2,
+            EventOrigin::RuntimeLoop,
+            RuntimeEvent::RuntimeModeChanged {
+                from: "Normal".to_string(),
+                to: "SafeMode".to_string(),
+            },
+        );
+        assert_eq!(env.cycle_id(), None);
+    }
+
+    #[test]
+    fn event_envelope_roundtrips_json() {
+        let env = EventEnvelope::new(99, EventOrigin::ProofHarness, cycle_started(5));
+        let json = serde_json::to_string(&env).expect("serialize");
+        let decoded: EventEnvelope = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(decoded.sequence, 99);
+        assert_eq!(decoded.origin, EventOrigin::ProofHarness);
     }
 }

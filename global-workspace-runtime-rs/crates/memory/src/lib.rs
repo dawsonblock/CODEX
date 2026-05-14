@@ -271,15 +271,116 @@ pub struct ClaimEvidenceLink {
     pub weight: f64,
 }
 
-/// Overall memory health status.
+/// Overall memory health summary (stats, not lifecycle status).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MemoryStatus {
+pub struct MemoryHealthStats {
     pub total_claims: usize,
     pub active_claims: usize,
     pub contradicted_claims: usize,
     pub superseded_claims: usize,
     pub unverified_claims: usize,
     pub total_evidence: usize,
+}
+
+/// Canonical 10-variant claim-lifecycle status — non-lossy counterpart to
+/// `durable_memory_provider::ClaimStatus`.
+///
+/// Use [`status_mapping::durable_to_canonical`] / [`status_mapping::canonical_to_durable`]
+/// to convert between this and the durable store's `ClaimStatus` without losing information.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MemoryStatus {
+    /// Admitted and currently active in reasoning.
+    Active,
+    /// Asserted but not yet validated.
+    Unverified,
+    /// Passed validation; high confidence.
+    Validated,
+    /// No longer current; content may still be valid but superseded.
+    Stale,
+    /// Under active dispute; contradicting evidence exists.
+    Disputed,
+    /// Directly contradicted by validated evidence.
+    Contradicted,
+    /// Explicitly rejected; must not be used in reasoning.
+    Rejected,
+    /// Replaced by a newer claim.
+    Superseded,
+    /// Retired and archived; no longer active but preserved for audit.
+    Archived,
+    /// Status unknown or could not be determined.
+    Unknown,
+}
+
+impl MemoryStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Unverified => "unverified",
+            Self::Validated => "validated",
+            Self::Stale => "stale",
+            Self::Disputed => "disputed",
+            Self::Contradicted => "contradicted",
+            Self::Rejected => "rejected",
+            Self::Superseded => "superseded",
+            Self::Archived => "archived",
+            Self::Unknown => "unknown",
+        }
+    }
+
+    pub fn from_db_str(s: &str) -> Self {
+        match s {
+            "active" => Self::Active,
+            "unverified" => Self::Unverified,
+            "validated" => Self::Validated,
+            "stale" => Self::Stale,
+            "disputed" => Self::Disputed,
+            "contradicted" => Self::Contradicted,
+            "rejected" => Self::Rejected,
+            "superseded" => Self::Superseded,
+            "archived" => Self::Archived,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+/// Classification of a memory record by the kind of knowledge it encodes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MemoryKind {
+    /// A verifiable fact about the world or the system.
+    Factual,
+    /// A procedure, rule, or executable plan.
+    Procedural,
+    /// A specific past event or observation.
+    Episodic,
+    /// A generalisation, concept, or category definition.
+    Semantic,
+    /// Contextual state valid only for the current session or scope.
+    Contextual,
+}
+
+impl MemoryKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Factual => "factual",
+            Self::Procedural => "procedural",
+            Self::Episodic => "episodic",
+            Self::Semantic => "semantic",
+            Self::Contextual => "contextual",
+        }
+    }
+
+    pub fn from_db_str(s: &str) -> Self {
+        match s {
+            "factual" => Self::Factual,
+            "procedural" => Self::Procedural,
+            "episodic" => Self::Episodic,
+            "semantic" => Self::Semantic,
+            "contextual" => Self::Contextual,
+            _ => Self::Factual,
+        }
+    }
 }
 
 /// A contradiction between two claims.

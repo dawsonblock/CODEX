@@ -3,11 +3,23 @@
 use crate::{ClaimStatus, MemoryClaim};
 use serde::{Deserialize, Serialize};
 
+/// One claim's structured contribution to a grounded answer basis.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AnswerBasisItem {
+    pub claim_id: String,
+    pub subject: String,
+    pub predicate: String,
+    pub object: Option<String>,
+    pub confidence: f64,
+    pub evidence_ids: Vec<String>,
+}
+
 /// Stable response contract for downstream UI/reporting.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AnswerEnvelope {
     pub text: String,
     pub basis: String,
+    pub basis_items: Vec<AnswerBasisItem>,
     pub evidence_ids: Vec<String>,
     pub action_type: String,
     pub confidence: f64,
@@ -121,9 +133,22 @@ impl AnswerBuilder {
             snippets
         };
 
+        let basis_items = active_claims
+            .iter()
+            .map(|c| AnswerBasisItem {
+                claim_id: c.id.clone(),
+                subject: c.subject.clone(),
+                predicate: c.predicate.clone(),
+                object: c.object.clone(),
+                confidence: c.confidence,
+                evidence_ids: c.evidence_ids.clone(),
+            })
+            .collect();
+
         AnswerEnvelope {
             text,
             basis,
+            basis_items,
             evidence_ids: ctx.evidence_ids,
             action_type: ctx.action_type,
             confidence,
@@ -234,5 +259,72 @@ mod tests {
 
         assert_eq!(out.action_type, "summarize");
         assert_eq!(out.evidence_ids, vec!["e1".to_string(), "e2".to_string()]);
+    }
+
+    #[test]
+    fn basis_items_populated_for_active_claims() {
+        let b = AnswerBuilder::new();
+        let out = b.build("query", &[claim("c1", ClaimStatus::Active, 0.8)]);
+        assert_eq!(out.basis_items.len(), 1);
+        let item = &out.basis_items[0];
+        assert_eq!(item.claim_id, "c1");
+        assert_eq!(item.subject, "sky");
+        assert_eq!(item.predicate, "is");
+        assert_eq!(item.object.as_deref(), Some("blue"));
+        assert!((item.confidence - 0.8).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn basis_items_empty_when_no_active_claims() {
+        let b = AnswerBuilder::new();
+        let out = b.build(
+            "query",
+            &[
+                claim("c1", ClaimStatus::Superseded, 0.9),
+                claim("c2", ClaimStatus::Unverified, 0.7),
+            ],
+        );
+        assert!(out.basis_items.is_empty());
+    }
+
+    #[test]
+    fn basis_items_excludes_contradicted_claims() {
+        let b = AnswerBuilder::new();
+        let out = b.build(
+            "query",
+            &[
+                claim("c1", ClaimStatus::Active, 0.7),
+                claim("c2", ClaimStatus::Contradicted, 0.9),
+            ],
+        );
+        assert_eq!(out.basis_items.len(), 1);
+        assert_eq!(out.basis_items[0].claim_id, "c1");
+    }
+
+    #[test]
+    fn basis_item_carries_evidence_ids_from_claim() {
+        let mut c = claim("c1", ClaimStatus::Active, 0.6);
+        c.evidence_ids = vec!["ev-a".to_string(), "ev-b".to_string()];
+        let b = AnswerBuilder::new();
+        let out = b.build("query", &[c]);
+        assert_eq!(
+            out.basis_items[0].evidence_ids,
+            vec!["ev-a".to_string(), "ev-b".to_string()]
+        );
+    }
+
+    #[test]
+    fn basis_items_multiple_active_claims_ordered() {
+        let b = AnswerBuilder::new();
+        let out = b.build(
+            "query",
+            &[
+                claim("c1", ClaimStatus::Active, 0.3),
+                claim("c2", ClaimStatus::Active, 0.9),
+            ],
+        );
+        assert_eq!(out.basis_items.len(), 2);
+        assert_eq!(out.basis_items[0].claim_id, "c1");
+        assert_eq!(out.basis_items[1].claim_id, "c2");
     }
 }

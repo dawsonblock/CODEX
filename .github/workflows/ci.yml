@@ -29,12 +29,12 @@ jobs:
         run: python -m global_workspace_runtime.scripts.check_sentience_claims
       - name: Check no mv2
         run: python -m global_workspace_runtime.scripts.check_no_mv2 .
-      - name: Check resource recovery
-        run: python -m global_workspace_runtime.scripts.check_resource_recovery
       - name: Run Python tests (legacy)
         run: python -m pytest -q
-      - name: Clean generated Python artifacts
-        run: python3 scripts/clean_python_artifacts.py
+      - name: Check resource recovery
+        run: python -m global_workspace_runtime.scripts.check_resource_recovery
+      - name: Clean generated artifacts
+        run: python3 scripts/clean_generated_artifacts.py
       - name: Final generated artifact check
         run: python3 scripts/check_no_generated_artifacts.py
 
@@ -64,7 +64,7 @@ jobs:
         run: cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
       - name: Oracle guard
         run: cargo test --workspace -- oracle
-      - name: Clean generated Python artifacts
-        run: python3 ../scripts/clean_python_artifacts.py
+      - name: Clean generated artifacts
+        run: python3 ../scripts/clean_generated_artifacts.py
       - name: Final generated artifact check
         run: python3 ../scripts/check_no_generated_artifacts.py

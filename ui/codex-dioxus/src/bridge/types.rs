@@ -21,11 +21,24 @@ pub enum ChatRole {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BasisItemSummary {
+    pub claim_id: String,
+    pub subject: String,
+    pub predicate: String,
+    pub object: Option<String>,
+    /// Confidence as an integer percentage (0–100).
+    pub confidence_pct: u8,
+    pub evidence_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuntimeStepResult {
     pub selected_action: String,
     pub response_text: String,
     #[serde(default)]
     pub answer_basis: Option<String>,
+    #[serde(default)]
+    pub answer_basis_items: Vec<BasisItemSummary>,
     #[serde(default)]
     pub answer_warnings: Vec<String>,
     pub audit_id: Option<String>,
@@ -573,6 +586,32 @@ mod tests {
         assert!(trace.provider_counters.boundary_ok());
         assert_eq!(trace.provider_counters.cloud_requests, 0);
         assert_eq!(trace.provider_counters.external_requests, 0);
+    }
+
+    #[test]
+    fn basis_item_summary_confidence_pct_from_float() {
+        let item = BasisItemSummary {
+            claim_id: "c1".to_string(),
+            subject: "entity".to_string(),
+            predicate: "is".to_string(),
+            object: None,
+            confidence_pct: (0.8_f64 * 100.0).round().clamp(0.0, 100.0) as u8,
+            evidence_ids: vec![],
+        };
+        assert_eq!(item.confidence_pct, 80);
+    }
+
+    #[test]
+    fn basis_item_summary_confidence_pct_clamped_at_max() {
+        let raw = 1.05_f64;
+        let pct = (raw * 100.0).round().clamp(0.0, 100.0) as u8;
+        assert_eq!(pct, 100);
+    }
+
+    #[test]
+    fn runtime_step_result_answer_basis_items_default_empty() {
+        let result = RuntimeStepResult::default();
+        assert!(result.answer_basis_items.is_empty());
     }
 }
 

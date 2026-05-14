@@ -1,6 +1,7 @@
 use super::types::{
-    ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary, RuntimeBridgeMode,
-    RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus, RuntimeStepResult,
+    BasisItemSummary, ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary,
+    RuntimeBridgeMode, RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus,
+    RuntimeStepResult,
 };
 use memory::answer_builder::{AnswerBuildContext, AnswerBuilder};
 use memory::{ClaimStatus as MemoryClaimStatus, MemoryClaim};
@@ -339,6 +340,18 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
         response_text: answer.text,
         selected_action: selected_action.clone(),
         answer_basis: Some(answer.basis),
+        answer_basis_items: answer
+            .basis_items
+            .iter()
+            .map(|item| BasisItemSummary {
+                claim_id: item.claim_id.clone(),
+                subject: item.subject.clone(),
+                predicate: item.predicate.clone(),
+                object: item.object.clone(),
+                confidence_pct: (item.confidence * 100.0).round().clamp(0.0, 100.0) as u8,
+                evidence_ids: item.evidence_ids.clone(),
+            })
+            .collect(),
         answer_warnings: answer.warnings,
         bridge_mode: RuntimeBridgeMode::LocalCodexRuntimeReadOnly
             .label()
@@ -497,6 +510,7 @@ fn mock_runtime_response(input: &str) -> RuntimeStepResult {
         response_text: message,
         selected_action: action.to_string(),
         answer_basis: None,
+        answer_basis_items: vec![],
         answer_warnings: vec![],
         bridge_mode: RuntimeBridgeMode::MockUiMode.label().to_string(),
         evidence_ids: vec![],
@@ -620,6 +634,7 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeStepRe
         response_text: message,
         selected_action: "answer".to_string(),
         answer_basis: None,
+        answer_basis_items: vec![],
         answer_warnings: vec![],
         bridge_mode: bridge_mode_label,
         evidence_ids: vec![],
@@ -720,6 +735,7 @@ async fn ollama_runtime_stream(
         bridge_mode: bridge_mode_label,
         selected_action: "answer".to_string(),
         answer_basis: None,
+        answer_basis_items: vec![],
         answer_warnings: vec![],
         evidence_ids: vec![],
         evidence_hashes: vec![],

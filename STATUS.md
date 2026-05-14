@@ -1,10 +1,15 @@
 # STATUS.md
 
-Last updated: 2026-05-13 (live verified)
-Codename: CODEX-main 32
-Status: CODEX-main 32 Integration Proof Candidate
+Last updated: 2026-05-14 (live verified)
+Codename: CODEX-main 33
+Status: CODEX-main 33 Integration Proof Candidate — 10-hardening sprint complete
 
-CODEX-main 32 is an integration proof candidate, not final freeze.
+CODEX-main 33 is an integration proof candidate, not final freeze.
+
+10-hardening sprint completed: EventEnvelope struct + 5 tests; AnswerBasisItem/BasisItemSummary +
+UI bridge; DurableMemoryProvider schema with 82 SQL-backed tests; NL benchmark expanded to
+12 ScenarioCategory variants + 59 held-out scenarios; policy regression tests (4 new tests
+assert tool gate invariants); 2 new proof artifact reports; all workspace checks CLEAN.
 
 Reasons for Integration Proof Candidate status:
 - Local provider support exists only behind an experimental feature flag.
@@ -83,8 +88,10 @@ Governed-memory integration snapshot:
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
-- held_out: 46 scenarios, action_match_rate 1.00
+- held_out: 59 scenarios, action_match_rate 1.00
 - adversarial: 2 scenarios, action_match_rate 1.00
+- scenario_categories: 12 (added ToolRequestWithoutApproval, EvidenceGap,
+  ContradictionDisputedClaim, InternalDiagnosticTrigger, SpoofingTest)
 
 ## Expanded Proof Artifacts
 
@@ -104,6 +111,8 @@ The official proof command now generates:
 - provider_policy_report.json
 - provider_storage_boundary_report.json
 - governed_memory_integration_report.json
+- answer_basis_integration_report.json
+- event_envelope_report.json
 
 ## Boundaries
 
@@ -115,7 +124,7 @@ The official proof command now generates:
 - When `ui-local-providers` is active, provider calls are localhost-only, approval-gated, and non-authoritative.
   Provider output cannot execute tools, write memory, or override CODEX selected_action.
 - Contradiction handling remains structured, not semantic truth reasoning.
-- NL benchmark remains diagnostic routing over 63 scenarios (15 curated + 46 held-out + 2 adversarial), not broad reasoning proof.
+- NL benchmark remains diagnostic routing over 76 scenarios (15 curated + 59 held-out + 2 adversarial) across 12 categories, not broad reasoning proof.
 - Evidence-backed claim linkage improved for proof-known evaluator evidence and remains bounded to structured sources.
 
 This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.
