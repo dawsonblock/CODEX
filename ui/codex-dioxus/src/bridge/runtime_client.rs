@@ -181,7 +181,9 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
     // audit_id: from ReasoningAuditGenerated event (emitted by runtime_loop stage 8a).
     let mut evidence_ids: Vec<String> = Vec::new();
     let mut evidence_hashes: Vec<String> = Vec::new();
-    let mut claim_ids: Vec<String> = Vec::new();
+    // Capture full claim event data (id, status, confidence) to build meaningful MemoryClaim
+    // objects later — avoids using raw IDs as claim subjects in the answer text.
+    let mut claim_data: Vec<(String, String, f64)> = Vec::new();
     let mut contradiction_ids: Vec<String> = Vec::new();
     let mut audit_id: Option<String> = None;
     let mut dominant_pressures: Vec<String> = Vec::new();
@@ -196,9 +198,14 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
                 evidence_ids.push(entry_id.clone());
                 evidence_hashes.push(content_hash.clone());
             }
-            RuntimeEvent::ClaimRetrieved { claim_id, .. } => {
-                if !claim_ids.contains(claim_id) {
-                    claim_ids.push(claim_id.clone());
+            RuntimeEvent::ClaimRetrieved {
+                claim_id,
+                status,
+                confidence,
+                ..
+            } => {
+                if !claim_data.iter().any(|(id, _, _)| id == claim_id) {
+                    claim_data.push((claim_id.clone(), status.clone(), *confidence));
                 }
             }
             RuntimeEvent::ContradictionChecked {
@@ -249,23 +256,37 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
 
     let selected_action = step.selected_action.as_str().to_string();
 
-    let mut claims_for_answer = claim_ids
+    // Derive claim_ids for downstream metadata tracking; build MemoryClaim objects using
+    // the actual status and confidence captured from each ClaimRetrieved event so the answer
+    // builder produces coherent text ("claim retrieved <id>") instead of rendering raw IDs as
+    // claim subjects.
+    let claim_ids: Vec<String> = claim_data.iter().map(|(id, _, _)| id.clone()).collect();
+
+    let mut claims_for_answer = claim_data
         .iter()
-        .map(|claim_id| MemoryClaim {
-            id: claim_id.clone(),
-            subject: claim_id.clone(),
-            predicate: "is_retrieved".to_string(),
-            object: None,
-            status: MemoryClaimStatus::Active,
-            confidence: 0.75,
-            evidence_ids: evidence_ids.clone(),
-            evidence_hashes: evidence_hashes.clone(),
-            source_label: "runtime_event_claim_retrieved".to_string(),
-            evidence_links: Vec::new(),
-            created_at: "1970-01-01T00:00:00Z".to_string(),
-            updated_at: None,
-            audit_trail: Vec::new(),
-            superseded_by: None,
+        .map(|(claim_id, status_str, conf)| {
+            let status = match status_str.as_str() {
+                "active" => MemoryClaimStatus::Active,
+                "contradicted" => MemoryClaimStatus::Contradicted,
+                "superseded" => MemoryClaimStatus::Superseded,
+                _ => MemoryClaimStatus::Unverified,
+            };
+            MemoryClaim {
+                id: claim_id.clone(),
+                subject: "claim".to_string(),
+                predicate: "retrieved".to_string(),
+                object: Some(claim_id.clone()),
+                status,
+                confidence: *conf,
+                evidence_ids: evidence_ids.clone(),
+                evidence_hashes: evidence_hashes.clone(),
+                source_label: "runtime_event_claim_retrieved".to_string(),
+                evidence_links: Vec::new(),
+                created_at: "1970-01-01T00:00:00Z".to_string(),
+                updated_at: None,
+                audit_trail: Vec::new(),
+                superseded_by: None,
+            }
         })
         .collect::<Vec<_>>();
 
