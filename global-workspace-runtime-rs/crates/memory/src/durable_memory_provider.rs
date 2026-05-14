@@ -93,6 +93,23 @@ pub struct MemoryRecord {
     pub updated_at_unix_ms: i64,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct MemoryRecordQuery<'a> {
+    pub text_filter: Option<&'a str>,
+    pub subject: Option<&'a str>,
+    pub predicate: Option<&'a str>,
+    pub object: Option<&'a str>,
+    pub kind_filter: Option<MemoryKind>,
+    pub status_filter: Option<MemoryStatus>,
+    pub min_confidence: Option<f64>,
+    pub max_confidence: Option<f64>,
+    pub start_unix_ms: Option<i64>,
+    pub end_unix_ms: Option<i64>,
+    pub source_ref_filter: Option<&'a str>,
+    pub limit: usize,
+    pub offset: usize,
+}
+
 /// A link between a claim and a piece of supporting or refuting evidence.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvidenceLink {
@@ -481,28 +498,13 @@ impl DurableMemoryProvider {
     /// ordered by confidence descending.
     ///
     /// Text search targets subject, predicate, and object via LIKE.
-    pub fn query_records(
-        &self,
-        text_filter: Option<&str>,
-        subject: Option<&str>,
-        predicate: Option<&str>,
-        object: Option<&str>,
-        kind_filter: Option<MemoryKind>,
-        status_filter: Option<MemoryStatus>,
-        min_confidence: Option<f64>,
-        max_confidence: Option<f64>,
-        start_unix_ms: Option<i64>,
-        end_unix_ms: Option<i64>,
-        source_ref_filter: Option<&str>,
-        limit: usize,
-        offset: usize,
-    ) -> MemoryResult<Vec<MemoryRecord>> {
+    pub fn query_records(&self, query: &MemoryRecordQuery<'_>) -> MemoryResult<Vec<MemoryRecord>> {
         use rusqlite::types::Value;
         let conn = self.conn.lock();
         let mut conditions: Vec<String> = Vec::new();
         let mut param_values: Vec<Value> = Vec::new();
 
-        if let Some(text) = text_filter {
+        if let Some(text) = query.text_filter {
             if !text.is_empty() {
                 let pattern = format!("%{text}%");
                 conditions.push("(subject LIKE ? OR predicate LIKE ? OR object LIKE ?)".into());
@@ -511,43 +513,43 @@ impl DurableMemoryProvider {
                 param_values.push(Value::Text(pattern));
             }
         }
-        if let Some(s) = subject {
+        if let Some(s) = query.subject {
             conditions.push("subject LIKE ?".into());
             param_values.push(Value::Text(format!("%{s}%")));
         }
-        if let Some(p) = predicate {
+        if let Some(p) = query.predicate {
             conditions.push("predicate LIKE ?".into());
             param_values.push(Value::Text(format!("%{p}%")));
         }
-        if let Some(o) = object {
+        if let Some(o) = query.object {
             conditions.push("object LIKE ?".into());
             param_values.push(Value::Text(format!("%{o}%")));
         }
-        if let Some(k) = kind_filter {
+        if let Some(k) = query.kind_filter {
             conditions.push("kind = ?".into());
             param_values.push(Value::Text(k.as_str().to_string()));
         }
-        if let Some(s) = status_filter {
+        if let Some(s) = query.status_filter {
             conditions.push("status = ?".into());
             param_values.push(Value::Text(s.as_str().to_string()));
         }
-        if let Some(min) = min_confidence {
+        if let Some(min) = query.min_confidence {
             conditions.push("confidence >= ?".into());
             param_values.push(Value::Real(min));
         }
-        if let Some(max) = max_confidence {
+        if let Some(max) = query.max_confidence {
             conditions.push("confidence <= ?".into());
             param_values.push(Value::Real(max));
         }
-        if let Some(start) = start_unix_ms {
+        if let Some(start) = query.start_unix_ms {
             conditions.push("created_at_unix_ms >= ?".into());
             param_values.push(Value::Integer(start));
         }
-        if let Some(end) = end_unix_ms {
+        if let Some(end) = query.end_unix_ms {
             conditions.push("created_at_unix_ms <= ?".into());
             param_values.push(Value::Integer(end));
         }
-        if let Some(sr) = source_ref_filter {
+        if let Some(sr) = query.source_ref_filter {
             conditions.push("source_ref LIKE ?".into());
             param_values.push(Value::Text(format!("%{sr}%")));
         }
@@ -567,8 +569,8 @@ impl DurableMemoryProvider {
              LIMIT ? OFFSET ?",
         );
 
-        param_values.push(Value::Integer(limit as i64));
-        param_values.push(Value::Integer(offset as i64));
+        param_values.push(Value::Integer(query.limit as i64));
+        param_values.push(Value::Integer(query.offset as i64));
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt
@@ -727,7 +729,7 @@ mod tests {
             claim_id: None,
             subject: subject.to_string(),
             predicate: predicate.to_string(),
-            object: object.to_string(),
+            object: Some(object.to_string()),
             kind,
             status: MemoryStatus::Active,
             confidence: 0.9,

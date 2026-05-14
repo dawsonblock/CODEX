@@ -102,10 +102,7 @@ pub fn durable_to_memory(status: DurableClaimStatus) -> MemoryClaimStatus {
 ///
 /// **Lossy:** `Contradicted` becomes `Disputed` (not `Rejected`).  Prefer
 /// [`canonical_to_durable`] in new code.
-#[deprecated(
-    since = "codex-main-12",
-    note = "lossy — use canonical_to_durable instead"
-)]
+#[deprecated(note = "lossy — use canonical_to_durable instead")]
 pub fn memory_to_durable(status: MemoryClaimStatus) -> DurableClaimStatus {
     match status {
         MemoryClaimStatus::Unverified => DurableClaimStatus::Asserted,

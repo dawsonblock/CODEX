@@ -1,7 +1,7 @@
 //! Concrete memory-provider contracts shared by in-memory and durable stores.
 
 use crate::claim_store::ClaimStore;
-use crate::durable_memory_provider::DurableMemoryProvider;
+use crate::durable_memory_provider::{DurableMemoryProvider, MemoryRecordQuery};
 use crate::status_mapping::{durable_to_canonical, legacy_to_canonical};
 use crate::{MemoryKind, MemoryStatus};
 
@@ -249,58 +249,54 @@ impl MemoryProvider for ClaimStore {
 impl MemoryProvider for DurableMemoryProvider {
     fn query(&self, query: &MemoryQuery) -> Result<Vec<MemoryHit>, MemoryProviderError> {
         let records = self
-            .query_records(
-                if query.observation.is_empty() {
+            .query_records(&MemoryRecordQuery {
+                text_filter: if query.observation.is_empty() {
                     None
                 } else {
                     Some(query.observation.as_str())
                 },
-                query.subject.as_deref(),
-                query.predicate.as_deref(),
-                query.object.as_deref(),
-                query.kind,
-                query.status,
-                query.min_confidence,
-                query.max_confidence,
-                query.time_range.map(|r| r.start_unix_ms),
-                query.time_range.map(|r| r.end_unix_ms),
-                query.source_ref.as_deref(),
-                query.limit,
-                query.offset,
-            )
+                subject: query.subject.as_deref(),
+                predicate: query.predicate.as_deref(),
+                object: query.object.as_deref(),
+                kind_filter: query.kind,
+                status_filter: query.status,
+                min_confidence: query.min_confidence,
+                max_confidence: query.max_confidence,
+                start_unix_ms: query.time_range.map(|r| r.start_unix_ms),
+                end_unix_ms: query.time_range.map(|r| r.end_unix_ms),
+                source_ref_filter: query.source_ref.as_deref(),
+                limit: query.limit,
+                offset: query.offset,
+            })
             .map_err(|e| MemoryProviderError::Durable(e.to_string()))?;
 
         let mut hits = Vec::new();
         for record in records {
-            let evidence_ids: Vec<String> = if query.include_evidence_ids {
-                if let Some(ref cid) = record.claim_id {
-                    self.get_linked_evidence(cid)
-                        .unwrap_or_default()
-                        .into_iter()
-                        .map(|l| l.evidence_id)
-                        .collect()
-                } else {
-                    Vec::new()
-                }
+            let linked_evidence_ids: Vec<String> = if let Some(ref cid) = record.claim_id {
+                self.get_linked_evidence(cid)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|l| l.evidence_id)
+                    .collect()
             } else {
                 Vec::new()
             };
-
             if let Some(ref eid) = query.evidence_id {
-                if !evidence_ids.iter().any(|e| e == eid) {
+                if !linked_evidence_ids.iter().any(|e| e == eid) {
                     continue;
                 }
             }
+            let evidence_ids: Vec<String> = if query.include_evidence_ids {
+                linked_evidence_ids
+            } else {
+                Vec::new()
+            };
 
             hits.push(MemoryHit {
                 claim_id: record.claim_id.unwrap_or_else(|| record.record_id.clone()),
                 subject: record.subject,
                 predicate: record.predicate,
-                object: if record.object.is_empty() {
-                    None
-                } else {
-                    Some(record.object)
-                },
+                object: record.object.filter(|object| !object.is_empty()),
                 status: record.status,
                 confidence: record.confidence as f64,
                 evidence_ids,
@@ -474,7 +470,7 @@ mod tests {
             claim_id: None,
             subject: subject.into(),
             predicate: predicate.into(),
-            object: object.into(),
+            object: Some(object.into()),
             kind,
             status,
             confidence,
