@@ -17,7 +17,9 @@ use std::collections::HashMap;
 use evidence::EvidenceEntry;
 
 // Re-export types needed by the store
+pub use crate::ClaimAuditEvent;
 pub use crate::ClaimEvidenceLink;
+pub use crate::ClaimLifecycleEvent;
 pub use crate::ClaimStatus;
 pub use crate::MemoryClaim;
 
@@ -101,6 +103,24 @@ pub struct ClaimStore {
 }
 
 impl ClaimStore {
+    fn now_rfc3339() -> String {
+        chrono::Utc::now().to_rfc3339()
+    }
+
+    fn append_event(
+        claim: &mut MemoryClaim,
+        event: ClaimLifecycleEvent,
+        reason: impl Into<String>,
+    ) {
+        let ts = Self::now_rfc3339();
+        claim.updated_at = Some(ts.clone());
+        claim.audit_trail.push(ClaimAuditEvent {
+            timestamp: ts,
+            event,
+            reason: reason.into(),
+        });
+    }
+
     /// Create an empty claim store.
     pub fn new() -> Self {
         Self {
@@ -155,8 +175,13 @@ impl ClaimStore {
             evidence_hashes: Vec::new(),
             source_label: "claim_store_assert".into(),
             evidence_links,
-            created_at: chrono::Utc::now().to_rfc3339(),
+            created_at: Self::now_rfc3339(),
             updated_at: None,
+            audit_trail: vec![ClaimAuditEvent {
+                timestamp: Self::now_rfc3339(),
+                event: ClaimLifecycleEvent::Created,
+                reason: "claim asserted into store".into(),
+            }],
             superseded_by: None,
         };
 
@@ -222,8 +247,12 @@ impl ClaimStore {
             created.evidence_ids = vec![evidence.id.clone()];
             created.evidence_hashes = vec![evidence.content_hash.clone()];
             created.source_label = evidence.source.as_str().to_string();
-            created.updated_at = Some(evidence.timestamp.to_rfc3339());
             created.created_at = evidence.timestamp.to_rfc3339();
+            Self::append_event(
+                created,
+                ClaimLifecycleEvent::Created,
+                format!("created from structured evidence {}", evidence.id),
+            );
         }
 
         Ok(self.claims.get(&claim_id).unwrap())
@@ -249,6 +278,11 @@ impl ClaimStore {
         }
 
         claim.status = ClaimStatus::Active;
+        Self::append_event(
+            claim,
+            ClaimLifecycleEvent::Validated,
+            "claim validated to active",
+        );
         Ok(claim)
     }
 
@@ -290,8 +324,28 @@ impl ClaimStore {
         }
 
         // Apply transition
-        self.claims.get_mut(claim_a).unwrap().status = ClaimStatus::Contradicted;
-        self.claims.get_mut(claim_b).unwrap().status = ClaimStatus::Contradicted;
+        {
+            let a = self.claims.get_mut(claim_a).unwrap();
+            a.status = ClaimStatus::Contradicted;
+            Self::append_event(
+                a,
+                ClaimLifecycleEvent::ContradictedBy {
+                    other_claim_id: claim_b.to_string(),
+                },
+                "claim contradicted by another active claim",
+            );
+        }
+        {
+            let b = self.claims.get_mut(claim_b).unwrap();
+            b.status = ClaimStatus::Contradicted;
+            Self::append_event(
+                b,
+                ClaimLifecycleEvent::ContradictedBy {
+                    other_claim_id: claim_a.to_string(),
+                },
+                "claim contradicted by another active claim",
+            );
+        }
         Ok(())
     }
 
@@ -342,8 +396,13 @@ impl ClaimStore {
             evidence_hashes: Vec::new(),
             source_label: "claim_store_supersede".into(),
             evidence_links,
-            created_at: chrono::Utc::now().to_rfc3339(),
+            created_at: Self::now_rfc3339(),
             updated_at: None,
+            audit_trail: vec![ClaimAuditEvent {
+                timestamp: Self::now_rfc3339(),
+                event: ClaimLifecycleEvent::Created,
+                reason: "claim created as superseding replacement".into(),
+            }],
             superseded_by: None,
         };
 
@@ -352,6 +411,13 @@ impl ClaimStore {
             let old_mut = self.claims.get_mut(old_id).unwrap();
             old_mut.status = ClaimStatus::Superseded;
             old_mut.superseded_by = Some(new_claim.id.clone());
+            Self::append_event(
+                old_mut,
+                ClaimLifecycleEvent::SupersededBy {
+                    new_claim_id: new_claim.id.clone(),
+                },
+                "claim superseded by newer active claim",
+            );
         }
 
         let new_id = new_claim.id.clone();
@@ -365,9 +431,16 @@ impl ClaimStore {
     /// # Errors
     /// Returns `NotFound` if no claim with this ID exists.
     pub fn retract(&mut self, id: &str) -> Result<MemoryClaim, ClaimError> {
-        self.claims
+        let mut removed = self
+            .claims
             .remove(id)
-            .ok_or_else(|| ClaimError::NotFound(id.into()))
+            .ok_or_else(|| ClaimError::NotFound(id.into()))?;
+        Self::append_event(
+            &mut removed,
+            ClaimLifecycleEvent::Retracted,
+            "claim retracted from store",
+        );
+        Ok(removed)
     }
 
     /// Query claims by subject (exact match).
@@ -992,5 +1065,58 @@ mod tests {
             .unwrap();
         assert_eq!(store.get("c1").unwrap().evidence_links[0].evidence_id, "e1");
         assert_eq!(store.get("c2").unwrap().evidence_links[0].evidence_id, "e2");
+    }
+
+    #[test]
+    fn audit_trail_records_validate_contradict_and_supersede() {
+        let mut store = ClaimStore::new();
+        store
+            .assert("c1", "sky", "is blue", None, 0.7, vec![])
+            .unwrap();
+        store
+            .assert("c2", "sky", "is red", None, 0.6, vec![])
+            .unwrap();
+
+        store.validate("c1").unwrap();
+        store.validate("c2").unwrap();
+        store.contradict("c1", "c2").unwrap();
+
+        let c1 = store.get("c1").unwrap();
+        assert!(c1
+            .audit_trail
+            .iter()
+            .any(|e| matches!(e.event, ClaimLifecycleEvent::Validated)));
+        assert!(c1
+            .audit_trail
+            .iter()
+            .any(|e| matches!(e.event, ClaimLifecycleEvent::ContradictedBy { .. })));
+
+        // Create a fresh active claim and supersede it.
+        store
+            .assert("c3", "weather", "is sunny", None, 0.8, vec![])
+            .unwrap();
+        store.validate("c3").unwrap();
+        store
+            .supersede("c3", "c4", "weather", "is rainy", None, 0.9, vec![])
+            .unwrap();
+
+        let old = store.get("c3").unwrap();
+        assert!(old
+            .audit_trail
+            .iter()
+            .any(|e| matches!(e.event, ClaimLifecycleEvent::SupersededBy { .. })));
+    }
+
+    #[test]
+    fn retract_appends_retracted_event_on_returned_claim() {
+        let mut store = ClaimStore::new();
+        store
+            .assert("c9", "temp", "is set", None, 0.5, vec![])
+            .unwrap();
+        let removed = store.retract("c9").unwrap();
+        assert!(removed
+            .audit_trail
+            .iter()
+            .any(|e| matches!(e.event, ClaimLifecycleEvent::Retracted)));
     }
 }

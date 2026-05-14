@@ -28,6 +28,17 @@ pub struct ProviderCountersSnapshot {
     pub feature_enabled: bool,
 }
 
+/// Provenance marker for where an event was emitted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EventOrigin {
+    RuntimeLoop,
+    Evaluator,
+    ClaimStore,
+    ToolGate,
+    ProofHarness,
+}
+
 /// All events that can be appended to the event log.
 /// Variants are tagged in JSONL as `{"type": "...", "payload": {...}}`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -145,6 +156,13 @@ pub enum RuntimeEvent {
     ClaimValidated {
         cycle_id: u64,
         claim_id: String,
+    },
+    /// Lifecycle transition emitted with explicit origin metadata.
+    ClaimLifecycleRecorded {
+        cycle_id: u64,
+        claim_id: String,
+        lifecycle_event: String,
+        event_origin: EventOrigin,
     },
     /// A claim was retrieved for action scoring.
     ClaimRetrieved {
@@ -289,6 +307,14 @@ pub enum RuntimeEvent {
         cycle_id: u64,
         snapshot: ProviderCountersSnapshot,
     },
+    /// An answer envelope was built from claim-grounded context.
+    AnswerEnvelopeBuilt {
+        cycle_id: u64,
+        cited_claim_ids: Vec<String>,
+        warning_count: usize,
+        confidence: f64,
+        event_origin: EventOrigin,
+    },
 }
 
 impl RuntimeEvent {
@@ -314,6 +340,7 @@ impl RuntimeEvent {
             | Self::ContradictionResolved { cycle_id, .. }
             | Self::ClaimAsserted { cycle_id, .. }
             | Self::ClaimValidated { cycle_id, .. }
+            | Self::ClaimLifecycleRecorded { cycle_id, .. }
             | Self::ClaimRetrieved { cycle_id, .. }
             | Self::ClaimSuperseded { cycle_id, .. }
             | Self::ContradictionEscalated { cycle_id, .. }
@@ -332,7 +359,8 @@ impl RuntimeEvent {
             | Self::PrincipleExtracted { cycle_id, .. }
             | Self::SymbolicCompressionApplied { cycle_id, .. }
             | Self::ResonanceScoreComputed { cycle_id, .. }
-            | Self::ProviderCountersReported { cycle_id, .. } => Some(*cycle_id),
+            | Self::ProviderCountersReported { cycle_id, .. }
+            | Self::AnswerEnvelopeBuilt { cycle_id, .. } => Some(*cycle_id),
             Self::RuntimeModeChanged { .. } => None,
         }
     }

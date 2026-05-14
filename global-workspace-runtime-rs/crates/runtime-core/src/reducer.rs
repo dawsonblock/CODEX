@@ -179,6 +179,10 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.claims_validated = state.claims_validated.saturating_add(1);
         }
 
+        RuntimeEvent::ClaimLifecycleRecorded { cycle_id, .. } => {
+            state.cycle_id = *cycle_id;
+        }
+
         RuntimeEvent::ClaimRetrieved {
             cycle_id,
             evidence_id,
@@ -374,6 +378,10 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.provider_cloud_requests = snapshot.cloud_requests;
             state.provider_external_requests = snapshot.external_requests;
             state.provider_feature_enabled = snapshot.feature_enabled;
+        }
+
+        RuntimeEvent::AnswerEnvelopeBuilt { cycle_id, .. } => {
+            state.cycle_id = *cycle_id;
         }
     }
     state

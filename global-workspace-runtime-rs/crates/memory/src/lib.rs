@@ -7,7 +7,9 @@
 //! it does NOT write `.mv2` files and MUST NOT be used to claim Memvid
 //! compatibility.
 
+pub mod answer_builder;
 pub mod claim_store;
+pub mod durable_memory_provider;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -225,7 +227,29 @@ pub struct MemoryClaim {
     pub created_at: String,
     #[serde(default)]
     pub updated_at: Option<String>,
+    /// Ordered lifecycle events for this claim.
+    #[serde(default)]
+    pub audit_trail: Vec<ClaimAuditEvent>,
     pub superseded_by: Option<String>,
+}
+
+/// One lifecycle transition recorded for a claim.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClaimAuditEvent {
+    pub timestamp: String,
+    pub event: ClaimLifecycleEvent,
+    pub reason: String,
+}
+
+/// Bounded set of claim lifecycle events.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ClaimLifecycleEvent {
+    Created,
+    Validated,
+    ContradictedBy { other_claim_id: String },
+    SupersededBy { new_claim_id: String },
+    Retracted,
 }
 
 /// The status of a claim.
@@ -454,6 +478,7 @@ mod tests {
             evidence_links: vec![],
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: None,
+            audit_trail: vec![],
             superseded_by: None,
         };
         assert_ne!(claim.status, ClaimStatus::Active);
@@ -474,6 +499,7 @@ mod tests {
             evidence_links: vec![],
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: None,
+            audit_trail: vec![],
             superseded_by: Some("c2".into()),
         };
         assert_eq!(old.status, ClaimStatus::Superseded);

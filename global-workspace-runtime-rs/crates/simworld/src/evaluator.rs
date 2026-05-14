@@ -11,10 +11,11 @@ use governed_memory::codex_adapter::evidence_entry_to_candidate;
 use governed_memory::{
     MemoryAdmissionGate, RetrievalIntentCategory, RetrievalPlanner, RetrievalQuery, RetrievalRouter,
 };
+use memory::answer_builder::AnswerBuilder;
 use memory::claim_store::ClaimStore;
 use modulation::pressure::OperationalPressureState;
 use modulation::self_model::SelfModel;
-use runtime_core::event::WorldOutcome;
+use runtime_core::event::{EventOrigin, WorldOutcome};
 use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::{EventLog, KeywordMemoryProvider, RuntimeEvent, RuntimeLoop};
 use tools::{ToolGate, ToolPolicy};
@@ -64,6 +65,7 @@ impl EvaluatorRun {
         let mut self_model = SelfModel::new();
         let mut evidence_vault = evidence::EvidenceVault::new();
         let mut claim_store = ClaimStore::new();
+        let answer_builder = AnswerBuilder::new();
         let mut contradiction_engine = contradiction::ContradictionEngine::new();
         let mut pressure = OperationalPressureState::new();
         let admission_gate = MemoryAdmissionGate::default_policy();
@@ -271,10 +273,23 @@ impl EvaluatorRun {
                             subject: claim_subject,
                             predicate: claim_predicate,
                         });
+                        let _ = self.log.append(RuntimeEvent::ClaimLifecycleRecorded {
+                            cycle_id,
+                            claim_id: claim_id.clone(),
+                            lifecycle_event: "created".into(),
+                            event_origin: EventOrigin::ClaimStore,
+                        });
                         let _ = claim_store.validate(&claim_id);
-                        let _ = self
-                            .log
-                            .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                        let _ = self.log.append(RuntimeEvent::ClaimValidated {
+                            cycle_id,
+                            claim_id: claim_id.clone(),
+                        });
+                        let _ = self.log.append(RuntimeEvent::ClaimLifecycleRecorded {
+                            cycle_id,
+                            claim_id,
+                            lifecycle_event: "validated".into(),
+                            event_origin: EventOrigin::ClaimStore,
+                        });
                     }
                 }
             }
@@ -357,6 +372,15 @@ impl EvaluatorRun {
             });
 
             let retrieval_for_audit = claim_store.retrieve_for_observation(observation);
+            let claims_for_answer = claim_store.all_claims().cloned().collect::<Vec<_>>();
+            let answer_envelope = answer_builder.build(observation, &claims_for_answer);
+            let _ = self.log.append(RuntimeEvent::AnswerEnvelopeBuilt {
+                cycle_id,
+                cited_claim_ids: answer_envelope.cited_claim_ids.clone(),
+                warning_count: answer_envelope.warnings.len(),
+                confidence: answer_envelope.confidence,
+                event_origin: EventOrigin::Evaluator,
+            });
             let claim_ids_for_audit = retrieval_for_audit
                 .matched_claims
                 .iter()

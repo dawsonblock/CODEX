@@ -33,7 +33,7 @@ CONTRADICTION_JSON = CURRENT_DIR / "contradiction_integration_report.json"
 TOOL_POLICY_JSON = CURRENT_DIR / "tool_policy_report.json"
 REASONING_AUDIT_JSON = CURRENT_DIR / "reasoning_audit_report.json"
 PRESSURE_JSON = CURRENT_DIR / "pressure_replay_report.json"
-
+EVIDENCE_INTEGRITY_JSON = CURRENT_DIR / "evidence_integrity_report.json"
 # Known stale values that should never appear in current summary context.
 STALE_MARKERS = [
     "resource_survival: 0.922",
@@ -164,7 +164,7 @@ def main() -> int:
     except FileNotFoundError as err:
         print(err)
         return 1
-
+    evidence_integrity = load_json(EVIDENCE_INTEGRITY_JSON)
     failures: list[str] = []
 
     print("Checking simworld_summary.json vs proof_manifest.json ...")
@@ -282,6 +282,29 @@ def main() -> int:
             man_pressure.get(field),
             allow_missing=(field in {"contradiction_pressure_peak", "pressure_decay_events", "pressure_reset_events"}),
         )
+
+    print("\nChecking evidence_integrity_report.json vs proof_manifest.json ...")
+    man_ei = manifest.get("evidence_integrity", {})
+    
+    # Safety assertions: all_valid must be true (no tampering allowed)
+    if evidence_integrity.get("all_valid") is not True:
+        failures.append("SECURITY_VIOLATION: evidence_integrity all_valid must be true (no tampering).")
+    
+    # Semantic field checks for hash-chain integrity
+    for field in [
+        "total_entries",
+        "valid_entries",
+        "tampered_entries",
+        "all_valid",
+    ]:
+        actual = evidence_integrity.get(field)
+        expected = man_ei.get(field)
+        
+        # chain_broken_at can be null if no tampering
+        if field == "chain_broken_at":
+            print(f"  OK  evidence_integrity.{field}: {actual} (null allowed when all_valid)")
+        else:
+            field_check(failures, f"evidence_integrity.{field}", actual, expected)
 
     print("\nChecking evidence_claim_link_report.json vs proof_manifest.json ...")
     ecl_path = CURRENT_DIR / "evidence_claim_link_report.json"
