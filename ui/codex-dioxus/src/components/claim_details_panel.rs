@@ -82,9 +82,9 @@ pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
                                     span { class: "claim-label", "Object" }
                                     span { class: "claim-value object",
                                         if let Some(obj) = &item.object {
-                                            rsx! { "{obj}" }
+                                            "{obj}"
                                         } else {
-                                            rsx! { span { class: "muted", "(none)" } }
+                                            span { class: "muted", "(none)" }
                                         }
                                     }
                                 }
