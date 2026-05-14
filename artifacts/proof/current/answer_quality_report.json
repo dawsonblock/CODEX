@@ -1,0 +1,61 @@
+{
+  "answer_generation": {
+    "total_answers_generated": 18,
+    "basis_items_per_answer_avg": 0.8888888888888888,
+    "average_basis_item_confidence": 0.75,
+    "answer_confidence_avg": 0.7,
+    "answers_per_cycle": 1.2
+  },
+  "claim_grounding": {
+    "total_claims_asserted": 17,
+    "total_claims_validated": 16,
+    "total_claims_retrieved": 17,
+    "total_evidence_entries": 96,
+    "total_evidence_links": 17,
+    "evidence_per_claim_avg": 1.0625,
+    "evidence_coverage_rate": 1.0625
+  },
+  "lifecycle_policy": {
+    "active_claims_included": "yes",
+    "contradicted_claims_surface_as": "warnings",
+    "superseded_claims_excluded": "yes",
+    "unverified_claims_excluded": "yes"
+  },
+  "answer_envelope_fields": {
+    "text": "answer text",
+    "basis": "lifecycle policy basis",
+    "basis_items": "array of AnswerBasisItem",
+    "evidence_ids": "all evidence backing the answer",
+    "action_type": "derived from claim lifecycle",
+    "confidence": "average of active claim confidences",
+    "warnings": "contradicted claim notices",
+    "cited_claim_ids": "active claim references",
+    "cited_evidence_ids": "evidence references"
+  },
+  "schema_validation": {
+    "json_schema_version": "1.0",
+    "answer_basis_item_required_fields": [
+      "claim_id",
+      "subject",
+      "predicate",
+      "confidence",
+      "evidence_ids"
+    ],
+    "answer_envelope_required_fields": [
+      "text",
+      "basis",
+      "basis_items",
+      "action_type",
+      "confidence"
+    ],
+    "validation_status": "pass"
+  },
+  "summary": {
+    "status": "answer_generation_active",
+    "answers_generated": 18,
+    "claims_grounded": 16,
+    "evidence_coverage": 106.2,
+    "schema_compliance": "pass",
+    "lifecycle_enforcement": "active"
+  }
+}
