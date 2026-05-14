@@ -654,3 +654,68 @@ pub struct CommandApprovalRecord {
     pub timestamp: String,
     pub result: Option<String>,
 }
+
+// Phase 10: Live Event Bridge Types
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TimelineEvent {
+    pub cycle: usize,
+    pub event_type: String,  // "claim", "evidence", "query", "answer", "pressure", "contradiction", "complete"
+    pub timestamp: String,
+    pub claim_ids: Vec<String>,
+    pub evidence_ids: Vec<String>,
+    pub confidence: f64,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GroundingStatus {
+    Unverified,
+    Validated,
+    Failed,
+    Contradicted,
+}
+
+impl GroundingStatus {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Unverified => "Unverified",
+            Self::Validated => "Validated",
+            Self::Failed => "Failed",
+            Self::Contradicted => "Contradicted",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LiveClaimDisplay {
+    pub claim_id: String,
+    pub subject: String,
+    pub predicate: String,
+    pub object: Option<String>,
+    pub grounding_status: GroundingStatus,
+    pub evidence_count: usize,
+    pub contradiction_count: usize,
+    pub confidence_pct: u8,
+    pub evidence_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EvidenceDisplay {
+    pub entry_id: String,
+    pub source: String,
+    pub confidence_pct: u8,
+    pub content_hash: String,
+    pub provenance: String,  // "assertion", "query", "memory"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PressureMetrics {
+    pub cycle: usize,
+    pub pressure: f64,           // 0.0-1.0
+    pub regulation: f64,         // 0.0-1.0
+    pub peak_pressure: f64,
+    pub avg_pressure: f64,
+    pub avg_regulation: f64,
+    pub threshold_exceeded: bool,
+}

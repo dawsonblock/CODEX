@@ -36,7 +36,7 @@ pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
     rsx! {
         section { class: "card",
             h3 { "Claim Details" }
-            
+
             div { class: "claim-summary-row",
                 span { class: "claim-summary-item",
                     span { class: "summary-label", "Grounded Claims" }
@@ -53,7 +53,7 @@ pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
                     }
                 }
             }
-            
+
             div { class: "claims-list",
                 for (idx, item) in trace.answer_basis_items.iter().enumerate() {
                     div { class: "claim-card",
@@ -67,7 +67,7 @@ pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
                                 }
                             }
                         }
-                        
+
                         div { class: "claim-content",
                             div { class: "claim-triple",
                                 div { class: "claim-part",
@@ -90,7 +90,7 @@ pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
                                 }
                             }
                         }
-                        
+
                         if !item.evidence_ids.is_empty() {
                             div { class: "claim-evidence",
                                 span { class: "evidence-label", "Backing Evidence ({item.evidence_ids.len()})" }
@@ -104,7 +104,7 @@ pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
                     }
                 }
             }
-            
+
             if !trace.contradiction_ids.is_empty() {
                 div { class: "contradicted-claims",
                     h4 { "⚠️ Contradicted Claims" }
@@ -147,9 +147,7 @@ mod tests {
 
         let mut vdom = VirtualDom::new_with_props(
             ClaimDetailsPanel,
-            ClaimDetailsPanelProps {
-                trace: Some(trace),
-            },
+            ClaimDetailsPanelProps { trace: Some(trace) },
         );
         let html = format!("{:?}", vdom.render_immediate());
         assert!(html.contains("No basis items"));
@@ -157,16 +155,14 @@ mod tests {
 
     #[test]
     fn claim_details_shows_basis_items() {
-        let items = vec![
-            BasisItemSummary {
-                claim_id: "cl-001".to_string(),
-                subject: "Entity A".to_string(),
-                predicate: "has_property".to_string(),
-                object: Some("value_x".to_string()),
-                confidence_pct: 85,
-                evidence_ids: vec!["ev-001".to_string(), "ev-002".to_string()],
-            },
-        ];
+        let items = vec![BasisItemSummary {
+            claim_id: "cl-001".to_string(),
+            subject: "Entity A".to_string(),
+            predicate: "has_property".to_string(),
+            object: Some("value_x".to_string()),
+            confidence_pct: 85,
+            evidence_ids: vec!["ev-001".to_string(), "ev-002".to_string()],
+        }];
 
         let trace = RuntimeStepResult {
             selected_action: "answer".to_string(),
@@ -179,9 +175,7 @@ mod tests {
 
         let mut vdom = VirtualDom::new_with_props(
             ClaimDetailsPanel,
-            ClaimDetailsPanelProps {
-                trace: Some(trace),
-            },
+            ClaimDetailsPanelProps { trace: Some(trace) },
         );
         let html = format!("{:?}", vdom.render_immediate());
         assert!(html.contains("Entity A"));
