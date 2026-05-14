@@ -83,7 +83,7 @@ pub struct MemoryRecord {
     pub claim_id: Option<String>,
     pub subject: String,
     pub predicate: String,
-    pub object: String,
+    pub object: Option<String>,
     pub kind: MemoryKind,
     pub status: MemoryStatus,
     pub confidence: f32,
