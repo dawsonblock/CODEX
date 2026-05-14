@@ -1,0 +1,261 @@
+# Instincts generated from https://github.com/dawsonblock/CODEX
+# Generated: 2026-05-14T05:09:46.232Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: CODEX-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Commit Length
+
+## Action
+
+Keep commit messages concise (~45 characters)
+
+## Evidence
+
+- Average commit message length: 45 chars
+- Based on 3 commits
+
+---
+id: CODEX-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Naming Files
+
+## Action
+
+Use snake_case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: snake_case
+
+---
+id: CODEX-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: CODEX-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: CODEX-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/dawsonblock/CODEX
+---
+
+# CODEX Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: codex-instinct-naming-files
+trigger: "When creating or renaming a source file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Naming Files
+
+## Action
+
+Use snake_case for file names
+
+## Evidence
+
+- Pattern in namingConventions.files: snake_case
+
+---
+id: codex-instinct-naming-functions
+trigger: "When defining a function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Naming Functions
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: codex-instinct-naming-classes
+trigger: "When defining a class or struct"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Naming Classes
+
+## Action
+
+Use PascalCase for class/struct names
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: codex-instinct-naming-constants
+trigger: "When declaring a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Naming Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: codex-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Import Style
+
+## Action
+
+Use relative imports
+
+## Evidence
+
+- Pattern in importStyle: relative
+
+---
+id: codex-instinct-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: codex-instinct-test-location
+trigger: "When adding new tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Test Location
+
+## Action
+
+Place tests in a separate directory from source code
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation: separate
+
+---
+id: codex-instinct-commit-format
+trigger: "When writing a commit message"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: dawsonblock/CODEX
+---
+
+# Codex Instinct Commit Format
+
+## Action
+
+Write a short, imperative, freeform message without a prefix, averaging around 45 characters
+
+## Evidence
+
+- Pattern in commits.type: freeform
+- Pattern in commits.prefixes: []
+- Pattern in commits.averageLength: 45
+- Examples: 'harden hygiene checks and pin rust toolchain'
+
