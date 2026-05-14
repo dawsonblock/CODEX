@@ -96,6 +96,9 @@ mod tests {
             RuntimeEvent::ClaimRetrieved {
                 cycle_id: 7,
                 claim_id: "claim_1".into(),
+                subject: "claim_1_subject".into(),
+                predicate: "claim_1_predicate".into(),
+                object: None,
                 evidence_id: Some("ev_1".into()),
                 status: "active".into(),
                 confidence: 0.8,
@@ -231,5 +234,46 @@ mod tests {
             state.policy_bias_applications, 2,
             "policy_bias_applications must equal the number of PolicyBiasApplied events replayed"
         );
+    }
+
+    #[test]
+    fn claim_retrieved_event_content_fields_are_preserved() {
+        // ClaimRetrieved events must carry subject/predicate/object through round-trip
+        // serialization so the UI bridge can build real claim text.
+        let evt = RuntimeEvent::ClaimRetrieved {
+            cycle_id: 42,
+            claim_id: "c1".into(),
+            subject: "water".into(),
+            predicate: "boils at 100°C".into(),
+            object: Some("at sea level".to_string()),
+            evidence_id: Some("ev_42".into()),
+            status: "active".into(),
+            confidence: 0.95,
+        };
+        // Replay a single ClaimRetrieved — the reducer tracks claim_retrieval_pressure.
+        let state = runtime_core::replay(std::slice::from_ref(&evt));
+        assert!(
+            state.claims_retrieved > 0,
+            "claims_retrieved must be non-zero after ClaimRetrieved replay"
+        );
+        // Verify round-trip JSON fidelity for the new content fields.
+        let json = serde_json::to_string(&evt).expect("ClaimRetrieved must serialize");
+        let decoded: RuntimeEvent =
+            serde_json::from_str(&json).expect("ClaimRetrieved must deserialize");
+        match decoded {
+            RuntimeEvent::ClaimRetrieved {
+                subject,
+                predicate,
+                object,
+                confidence,
+                ..
+            } => {
+                assert_eq!(subject, "water");
+                assert_eq!(predicate, "boils at 100°C");
+                assert_eq!(object.as_deref(), Some("at sea level"));
+                assert!((confidence - 0.95).abs() < 1e-9);
+            }
+            other => panic!("Expected ClaimRetrieved, got {:?}", other),
+        }
     }
 }

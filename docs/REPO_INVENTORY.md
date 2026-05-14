@@ -285,7 +285,7 @@ Canonical NL benchmark tuple: (15 curated, 46 held-out, 2 adversarial)
 ### **Known Limitations**
 1. **Memory backend:** Keyword-based retrieval only (SQLite durable backend planned)
 2. **Claim lifecycle:** Basic scaffolding; contradiction handling not complete
-3. **Grounded answers:** `memory::answer_builder` is implemented and wired into the UI bridge via `build_with_context`, producing `AnswerEnvelope` with `basis`, `evidence_ids`, `action_type`, and `cited_claim_ids`; claim-content text is derived from runtime event data only — full claim-store lookup to surface subject/predicate/object content is not yet integrated
+3. **Grounded answers:** `memory::answer_builder` is implemented and wired into the UI bridge via `build_with_context`, producing `AnswerEnvelope` with `basis`, `evidence_ids`, `action_type`, and `cited_claim_ids`; `ClaimRetrieved` events now carry `subject`/`predicate`/`object` content from the claim store — the UI bridge uses real claim text in `MemoryClaim` objects and answer envelopes
 4. **SimWorld scenarios:** 7 templates (63 diagnostic benchmark scenarios); not real environment
 5. **Symbolic reasoning:** Internal routing only; not general inference engine
 6. **Memvid integration:** Stubbed; no real multi-modal reasoning

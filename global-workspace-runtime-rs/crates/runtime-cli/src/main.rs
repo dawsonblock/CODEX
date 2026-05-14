@@ -648,6 +648,9 @@ fn cmd_proof(args: &[String]) {
     let _ = run.log.append(RuntimeEvent::ClaimRetrieved {
         cycle_id: proof_cycle + 5,
         claim_id: "proof_claim_1".into(),
+        subject: "sky".into(),
+        predicate: "is blue during daytime".into(),
+        object: None,
         evidence_id: Some("proof_evidence_1".into()),
         status: "active".into(),
         confidence: 0.8,
@@ -655,6 +658,9 @@ fn cmd_proof(args: &[String]) {
     let _ = run.log.append(RuntimeEvent::ClaimRetrieved {
         cycle_id: proof_cycle + 5,
         claim_id: "proof_claim_2".into(),
+        subject: "sky".into(),
+        predicate: "is red at sunset".into(),
+        object: None,
         evidence_id: Some("proof_evidence_2".into()),
         status: "active".into(),
         confidence: 0.7,

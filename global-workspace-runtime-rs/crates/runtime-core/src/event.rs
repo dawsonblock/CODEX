@@ -204,6 +204,9 @@ pub enum RuntimeEvent {
     ClaimRetrieved {
         cycle_id: u64,
         claim_id: String,
+        subject: String,
+        predicate: String,
+        object: Option<String>,
         evidence_id: Option<String>,
         status: String,
         confidence: f64,

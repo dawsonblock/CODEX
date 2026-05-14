@@ -293,9 +293,7 @@ impl MemoryProvider for DurableMemoryProvider {
             }
 
             hits.push(MemoryHit {
-                claim_id: record
-                    .claim_id
-                    .unwrap_or_else(|| record.record_id.clone()),
+                claim_id: record.claim_id.unwrap_or_else(|| record.record_id.clone()),
                 subject: record.subject,
                 predicate: record.predicate,
                 object: if record.object.is_empty() {
@@ -492,17 +490,35 @@ mod tests {
         let db_path = dir.path().join("mp_test.sqlite");
         let p = DurableMemoryProvider::open(&db_path).unwrap();
         p.insert_record(make_record(
-            "r1", "codex", "has_feature", "logging",
-            MemoryKind::Factual, MemoryStatus::Active, 0.9,
-        )).unwrap();
+            "r1",
+            "codex",
+            "has_feature",
+            "logging",
+            MemoryKind::Factual,
+            MemoryStatus::Active,
+            0.9,
+        ))
+        .unwrap();
         p.insert_record(make_record(
-            "r2", "codex", "lacks_feature", "gui",
-            MemoryKind::Factual, MemoryStatus::Active, 0.7,
-        )).unwrap();
+            "r2",
+            "codex",
+            "lacks_feature",
+            "gui",
+            MemoryKind::Factual,
+            MemoryStatus::Active,
+            0.7,
+        ))
+        .unwrap();
         p.insert_record(make_record(
-            "r3", "runtime", "has_feature", "scheduling",
-            MemoryKind::Procedural, MemoryStatus::Active, 0.5,
-        )).unwrap();
+            "r3",
+            "runtime",
+            "has_feature",
+            "scheduling",
+            MemoryKind::Procedural,
+            MemoryStatus::Active,
+            0.5,
+        ))
+        .unwrap();
         (p, dir)
     }
 
@@ -511,7 +527,9 @@ mod tests {
         let (p, _dir) = durable_with_records();
         let hits = p.query(&MemoryQuery::new("").with_limit(10)).unwrap();
         assert_eq!(hits.len(), 3);
-        assert!(hits.iter().any(|h| h.subject == "codex" && h.predicate == "has_feature"));
+        assert!(hits
+            .iter()
+            .any(|h| h.subject == "codex" && h.predicate == "has_feature"));
         assert!(hits.iter().any(|h| h.object == Some("gui".into())));
     }
 
@@ -529,7 +547,11 @@ mod tests {
     fn durable_query_predicate_filter() {
         let (p, _dir) = durable_with_records();
         let hits = p
-            .query(&MemoryQuery::new("").with_limit(10).with_predicate("has_feature"))
+            .query(
+                &MemoryQuery::new("")
+                    .with_limit(10)
+                    .with_predicate("has_feature"),
+            )
             .unwrap();
         assert_eq!(hits.len(), 2);
         assert!(hits.iter().all(|h| h.predicate == "has_feature"));
@@ -564,7 +586,11 @@ mod tests {
     fn durable_query_kind_filter() {
         let (p, _dir) = durable_with_records();
         let hits = p
-            .query(&MemoryQuery::new("").with_limit(10).with_kind(MemoryKind::Procedural))
+            .query(
+                &MemoryQuery::new("")
+                    .with_limit(10)
+                    .with_kind(MemoryKind::Procedural),
+            )
             .unwrap();
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].subject, "runtime");
