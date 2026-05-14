@@ -276,4 +276,56 @@ mod tests {
             other => panic!("Expected ClaimRetrieved, got {:?}", other),
         }
     }
+
+    #[test]
+    fn retrieval_policy_enforcement_is_tracked_in_replay() {
+        // Verify that GovernedMemoryRetrievalPlanned events are properly tracked
+        // and that the governed_memory_retrieval_plans_generated counter increments.
+        let events = vec![
+            RuntimeEvent::GovernedMemoryRetrievalPlanned {
+                cycle_id: 5,
+                query_id: "q_5_a".into(),
+                intent_category: "memory_lookup".into(),
+                recommended_action: "retrieve_memory".into(),
+                reason_codes: vec!["RETRIEVAL_MEMORY_LOOKUP".into()],
+            },
+            RuntimeEvent::GovernedMemoryRetrievalPlanned {
+                cycle_id: 5,
+                query_id: "q_5_b".into(),
+                intent_category: "unsupported_factual".into(),
+                recommended_action: "defer_insufficient_evidence".into(),
+                reason_codes: vec!["RETRIEVAL_UNSUPPORTED_FACTUAL".into()],
+            },
+        ];
+
+        let state = runtime_core::replay(&events);
+        assert_eq!(
+            state.governed_memory_retrieval_plans_generated, 2,
+            "Should track 2 retrieval plans"
+        );
+    }
+
+    #[test]
+    fn retrieval_policy_enforcement_event_serialization() {
+        // Verify GovernedMemoryRetrievalPlanned events serialize/deserialize correctly
+        let evt = RuntimeEvent::GovernedMemoryRetrievalPlanned {
+            cycle_id: 3,
+            query_id: "q_3".into(),
+            intent_category: "high_stakes_low_evidence".into(),
+            recommended_action: "defer_insufficient_evidence".into(),
+            reason_codes: vec!["HIGH_STAKES".into(), "LOW_EVIDENCE".into()],
+        };
+
+        let json = serde_json::to_string(&evt).expect("Event must serialize");
+        let restored: RuntimeEvent = serde_json::from_str(&json).expect("Event must deserialize");
+        assert_eq!(restored, evt);
+
+        // Verify cycle_id is extractable
+        match restored {
+            RuntimeEvent::GovernedMemoryRetrievalPlanned { cycle_id, .. } => {
+                assert_eq!(cycle_id, 3);
+            }
+            other => panic!("Expected GovernedMemoryRetrievalPlanned, got {:?}", other),
+        }
+    }
 }

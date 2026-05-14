@@ -13,7 +13,7 @@ pub enum EventLogError {
 }
 
 /// Append-only JSONL event log.  Writes to a `.gwlog` file if a path is given.
-/// 
+///
 /// PRIMARY storage format is now [`EventEnvelope`], which includes provenance metadata
 /// (sequence, timestamp, origin). For backward compatibility, a secondary `events_bare`
 /// vector maintains bare `RuntimeEvent` references.
@@ -153,7 +153,8 @@ impl EventLog {
                 log.events_bare.push(event);
             } else if let Ok(ev) = serde_json::from_str::<RuntimeEvent>(line) {
                 // Backward compatibility: treat bare event as RuntimeLoop origin.
-                let envelope = EventEnvelope::new(log.sequence_counter, EventOrigin::RuntimeLoop, ev.clone());
+                let envelope =
+                    EventEnvelope::new(log.sequence_counter, EventOrigin::RuntimeLoop, ev.clone());
                 log.sequence_counter += 1;
                 log.envelopes.push(envelope);
                 log.events_bare.push(ev);

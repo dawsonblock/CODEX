@@ -11,9 +11,9 @@
 
 use governed_memory::{MemoryAdmissionGate, ProofAdmissionTracker, ProofCandidateFactory};
 use memory::claim_store::ClaimStore;
+use runtime_core::event::EventOrigin;
 use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::ActionType;
-use runtime_core::event::EventOrigin;
 use runtime_core::RuntimeEvent;
 use simworld::evaluator::EvaluatorRun;
 use std::collections::BTreeMap;
@@ -503,37 +503,46 @@ fn cmd_proof(args: &[String]) {
         .get(0)
         .map(|e| e.content_hash.clone())
         .unwrap_or_default();
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::EvidenceStored {
-        cycle_id: proof_cycle,
-        entry_id: "proof_evidence_1".into(),
-        source: "observation".into(),
-        confidence: 0.95,
-        content_hash: proof_hash_1,
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::EvidenceStored {
+            cycle_id: proof_cycle,
+            entry_id: "proof_evidence_1".into(),
+            source: "observation".into(),
+            confidence: 0.95,
+            content_hash: proof_hash_1,
+        },
+    );
     let _ = evidence_vault.append(
         "proof_evidence_2",
         evidence::EvidenceSource::InternalDiagnostic,
         serde_json::json!({"check": "integrity_test"}),
         0.80,
     );
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::EvidenceStored {
-        cycle_id: proof_cycle + 1,
-        entry_id: "proof_evidence_2".into(),
-        source: "internal_diagnostic".into(),
-        confidence: 0.80,
-        content_hash: evidence_vault
-            .get(1)
-            .map(|e| e.content_hash.clone())
-            .unwrap_or_default(),
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::EvidenceStored {
+            cycle_id: proof_cycle + 1,
+            entry_id: "proof_evidence_2".into(),
+            source: "internal_diagnostic".into(),
+            confidence: 0.80,
+            content_hash: evidence_vault
+                .get(1)
+                .map(|e| e.content_hash.clone())
+                .unwrap_or_default(),
+        },
+    );
     let integrity_report = evidence_vault.verify_integrity();
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::EvidenceIntegrityChecked {
-        cycle_id: proof_cycle + 2,
-        total: integrity_report.total_entries,
-        valid: integrity_report.valid_entries,
-        tampered: integrity_report.tampered_entries,
-        all_valid: integrity_report.all_valid,
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::EvidenceIntegrityChecked {
+            cycle_id: proof_cycle + 2,
+            total: integrity_report.total_entries,
+            valid: integrity_report.valid_entries,
+            tampered: integrity_report.tampered_entries,
+            all_valid: integrity_report.all_valid,
+        },
+    );
     let evidence_ok = integrity_report.all_valid;
     let _ = std::fs::write(
         format!("{out_dir}/evidence_integrity_report.json"),
@@ -555,9 +564,9 @@ fn cmd_proof(args: &[String]) {
     let proof_decision_1 = proof_gate.admit(&proof_candidate_1);
     let proof_claim_1_written =
         proof_decision_1.admitted && proof_decision_1.storage_location == "active_claim";
-    let _ = run
-        .log
-        .append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::GovernedMemoryAdmissionEvaluated {
             cycle_id: proof_cycle + 3,
             candidate_id: proof_candidate_1.id,
             decision_kind: proof_decision_1.storage_location,
@@ -573,7 +582,8 @@ fn cmd_proof(args: &[String]) {
             governed_memory_writer: false,
             claim_written: proof_claim_1_written,
             override_applied: false,
-        });
+        },
+    );
     if proof_claim_1_written {
         let _ = claim_store.assert(
             "proof_claim_1",
@@ -585,17 +595,23 @@ fn cmd_proof(args: &[String]) {
         );
     }
     if proof_claim_1_written {
-        let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ClaimAsserted {
-            cycle_id: proof_cycle + 3,
-            claim_id: "proof_claim_1".into(),
-            subject: "sky".into(),
-            predicate: "is blue during daytime".into(),
-        });
+        let _ = run.log.append_with_origin(
+            EventOrigin::ProofHarness,
+            RuntimeEvent::ClaimAsserted {
+                cycle_id: proof_cycle + 3,
+                claim_id: "proof_claim_1".into(),
+                subject: "sky".into(),
+                predicate: "is blue during daytime".into(),
+            },
+        );
         let _ = claim_store.validate("proof_claim_1");
-        let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ClaimValidated {
-            cycle_id: proof_cycle + 4,
-            claim_id: "proof_claim_1".into(),
-        });
+        let _ = run.log.append_with_origin(
+            EventOrigin::ProofHarness,
+            RuntimeEvent::ClaimValidated {
+                cycle_id: proof_cycle + 4,
+                claim_id: "proof_claim_1".into(),
+            },
+        );
     }
     let proof_candidate_2 = ProofCandidateFactory::from_claim_data(
         "proof_claim_2",
@@ -608,9 +624,9 @@ fn cmd_proof(args: &[String]) {
     let proof_decision_2 = proof_gate.admit(&proof_candidate_2);
     let proof_claim_2_written =
         proof_decision_2.admitted && proof_decision_2.storage_location == "active_claim";
-    let _ = run
-        .log
-        .append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::GovernedMemoryAdmissionEvaluated {
             cycle_id: proof_cycle + 5,
             candidate_id: proof_candidate_2.id,
             decision_kind: proof_decision_2.storage_location,
@@ -626,7 +642,8 @@ fn cmd_proof(args: &[String]) {
             governed_memory_writer: false,
             claim_written: proof_claim_2_written,
             override_applied: false,
-        });
+        },
+    );
     if proof_claim_2_written {
         let _ = claim_store.assert(
             "proof_claim_2",
@@ -638,34 +655,43 @@ fn cmd_proof(args: &[String]) {
         );
     }
     if proof_claim_2_written {
-        let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ClaimAsserted {
+        let _ = run.log.append_with_origin(
+            EventOrigin::ProofHarness,
+            RuntimeEvent::ClaimAsserted {
+                cycle_id: proof_cycle + 5,
+                claim_id: "proof_claim_2".into(),
+                subject: "sky".into(),
+                predicate: "is red at sunset".into(),
+            },
+        );
+        let _ = claim_store.validate("proof_claim_2");
+    }
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::ClaimRetrieved {
+            cycle_id: proof_cycle + 5,
+            claim_id: "proof_claim_1".into(),
+            subject: "sky".into(),
+            predicate: "is blue during daytime".into(),
+            object: None,
+            evidence_id: Some("proof_evidence_1".into()),
+            status: "active".into(),
+            confidence: 0.8,
+        },
+    );
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::ClaimRetrieved {
             cycle_id: proof_cycle + 5,
             claim_id: "proof_claim_2".into(),
             subject: "sky".into(),
             predicate: "is red at sunset".into(),
-        });
-        let _ = claim_store.validate("proof_claim_2");
-    }
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ClaimRetrieved {
-        cycle_id: proof_cycle + 5,
-        claim_id: "proof_claim_1".into(),
-        subject: "sky".into(),
-        predicate: "is blue during daytime".into(),
-        object: None,
-        evidence_id: Some("proof_evidence_1".into()),
-        status: "active".into(),
-        confidence: 0.8,
-    });
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ClaimRetrieved {
-        cycle_id: proof_cycle + 5,
-        claim_id: "proof_claim_2".into(),
-        subject: "sky".into(),
-        predicate: "is red at sunset".into(),
-        object: None,
-        evidence_id: Some("proof_evidence_2".into()),
-        status: "active".into(),
-        confidence: 0.7,
-    });
+            object: None,
+            evidence_id: Some("proof_evidence_2".into()),
+            status: "active".into(),
+            confidence: 0.7,
+        },
+    );
     let retrieved_claim_ids = vec!["proof_claim_1".to_string(), "proof_claim_2".to_string()];
     let audit_claim_ids = proof_audit_claim_ids(&retrieved_claim_ids);
 
@@ -674,51 +700,69 @@ fn cmd_proof(args: &[String]) {
     let contra_ids = contradiction_engine.detect(&claim_store);
     for cid in &contra_ids {
         if let Some(c) = contradiction_engine.get(cid) {
-            let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ContradictionDetected {
-                cycle_id: proof_cycle + 6,
-                claim_a: c.claim_a.clone(),
-                claim_b: c.claim_b.clone(),
-                subject: c.subject.clone(),
-            });
+            let _ = run.log.append_with_origin(
+                EventOrigin::ProofHarness,
+                RuntimeEvent::ContradictionDetected {
+                    cycle_id: proof_cycle + 6,
+                    claim_a: c.claim_a.clone(),
+                    claim_b: c.claim_b.clone(),
+                    subject: c.subject.clone(),
+                },
+            );
         }
     }
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ContradictionChecked {
-        cycle_id: proof_cycle + 6,
-        checked_claim_ids: vec!["proof_claim_1".into(), "proof_claim_2".into()],
-        contradiction_ids: contra_ids.clone(),
-        active_contradictions: contradiction_engine.active().len(),
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::ContradictionChecked {
+            cycle_id: proof_cycle + 6,
+            checked_claim_ids: vec!["proof_claim_1".into(), "proof_claim_2".into()],
+            contradiction_ids: contra_ids.clone(),
+            active_contradictions: contradiction_engine.active().len(),
+        },
+    );
     let claim_ok = claim_store.len() == 2;
 
     // ── Pressure modulation ─────────────────────────────────────────
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::PressureUpdated {
-        cycle_id: proof_cycle + 9,
-        field: "safety".into(),
-        old_value: 0.0,
-        new_value: 0.5,
-        source: "ManualTest".into(),
-        reason: "proof harness pressure injection".into(),
-    });
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::PolicyBiasApplied {
-        cycle_id: proof_cycle + 10,
-        dominant_pressures: vec!["safety".into()],
-        selected_action: "refuse_unsafe".into(),
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::PressureUpdated {
+            cycle_id: proof_cycle + 9,
+            field: "safety".into(),
+            old_value: 0.0,
+            new_value: 0.5,
+            source: "ManualTest".into(),
+            reason: "proof harness pressure injection".into(),
+        },
+    );
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::PolicyBiasApplied {
+            cycle_id: proof_cycle + 10,
+            dominant_pressures: vec!["safety".into()],
+            selected_action: "refuse_unsafe".into(),
+        },
+    );
 
     // ── Tool execution ──────────────────────────────────────────────
     // Permit one tool execution
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ToolExecuted {
-        cycle_id: proof_cycle + 7,
-        tool_id: "default_tool".into(),
-        permitted: true,
-        error: None,
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::ToolExecuted {
+            cycle_id: proof_cycle + 7,
+            tool_id: "default_tool".into(),
+            permitted: true,
+            error: None,
+        },
+    );
     // Block one (unregistered tool)
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ToolExecutionBlocked {
-        cycle_id: proof_cycle + 8,
-        tool_id: "unauthorized_tool".into(),
-        reason: "no policy registered".into(),
-    });
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::ToolExecutionBlocked {
+            cycle_id: proof_cycle + 8,
+            tool_id: "unauthorized_tool".into(),
+            reason: "no policy registered".into(),
+        },
+    );
 
     // ── Reasoning audit ──────────────────────────────────────────────
     for i in 0..3u64 {
@@ -728,16 +772,19 @@ fn cmd_proof(args: &[String]) {
             ActionType::Answer,
             format!("proof rationale for cycle {i}"),
         );
-        let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ReasoningAuditGenerated {
-            cycle_id: proof_cycle + 9 + i,
-            audit_id: audit.audit_id.clone(),
-            selected_action: ActionType::Answer.to_string(),
-            evidence_ids: vec![],
-            claim_ids: audit_claim_ids.clone(),
-            contradiction_ids: vec![],
-            dominant_pressures: vec!["safety".into()],
-            audit_text: audit.to_text(),
-        });
+        let _ = run.log.append_with_origin(
+            EventOrigin::ProofHarness,
+            RuntimeEvent::ReasoningAuditGenerated {
+                cycle_id: proof_cycle + 9 + i,
+                audit_id: audit.audit_id.clone(),
+                selected_action: ActionType::Answer.to_string(),
+                evidence_ids: vec![],
+                claim_ids: audit_claim_ids.clone(),
+                contradiction_ids: vec![],
+                dominant_pressures: vec!["safety".into()],
+                audit_text: audit.to_text(),
+            },
+        );
     }
 
     // Phase 1: Disabled provider proof attempt.
@@ -746,18 +793,21 @@ fn cmd_proof(args: &[String]) {
     // to be 1 blocked attempt.
     let proof_disabled_block = 1;
 
-    let _ = run.log.append_with_origin(EventOrigin::ProofHarness, RuntimeEvent::ProviderCountersReported {
-        cycle_id: proof_cycle + 10,
-        snapshot: runtime_core::event::ProviderCountersSnapshot {
-            local_requests: 0,
-            local_successes: 0,
-            local_failures: 0,
-            local_disabled_blocks: proof_disabled_block,
-            cloud_requests: 0,
-            external_requests: 0,
-            feature_enabled: false,
+    let _ = run.log.append_with_origin(
+        EventOrigin::ProofHarness,
+        RuntimeEvent::ProviderCountersReported {
+            cycle_id: proof_cycle + 10,
+            snapshot: runtime_core::event::ProviderCountersSnapshot {
+                local_requests: 0,
+                local_successes: 0,
+                local_failures: 0,
+                local_disabled_blocks: proof_disabled_block,
+                cloud_requests: 0,
+                external_requests: 0,
+                feature_enabled: false,
+            },
         },
-    });
+    );
 
     // 1b. Long-horizon eval (if requested)
     if long_horizon {
