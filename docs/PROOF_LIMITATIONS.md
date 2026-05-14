@@ -408,6 +408,207 @@ In any valid proof submission:
 
 ---
 
+## 16. EventEnvelope Integration Status (Partial)
+
+### **Current State**
+- `EventEnvelope` struct defined in `crates/runtime-core/src/event.rs`
+- `append_with_origin(origin, event)` method added to `EventLog`
+- `EventOrigin` enum defined with variants: Runtime, SimWorld, ProofHarness, etc.
+
+### **What IS Implemented**
+- ✅ EventEnvelope data structure
+- ✅ Serialization/deserialization tested
+- ✅ append_with_origin() method wired in test fixtures
+- ✅ Event origin tracking scaffolded
+
+### **What IS NOT Implemented**
+- ❌ Primary event log persistence: still uses RuntimeEvent (legacy format)
+- ❌ append_with_origin() not the primary call path in runtime loop
+- ❌ Event replay does not distinguish origins in output
+- ❌ Proof reports do not separate events by origin
+- ❌ Full migration to EventEnvelope format incomplete
+
+### **What This Means**
+- Event provenance tracking is **partially scaffolded**, not complete
+- Legacy RuntimeEvent format remains authoritative
+- Full EventEnvelope integration is deferred to future phases
+- Origin tracking cannot be guaranteed in replayed events
+
+---
+
+## 17. Evidence Report Split Status (Incomplete)
+
+### **Current State**
+- `evidence_integrity_report.json` includes proof-vault entries:
+  - `total_entries`: 2 (proof vault observations only)
+  - `valid_entries`: 2
+  - Integrity checking: ✅ SHA-256 hash chain valid
+- `replay_report.json` tracks runtime evidence:
+  - `evidence_entries`: 96 (runtime events with evidence linking)
+  - These count linkage events, not vault entries
+
+### **Semantic Confusion Risk**
+The current design risks confusing two distinct concepts:
+
+1. **Proof vault integrity** (2 entries in evidence_integrity_report)
+   - Historical observations committed to append-only vault
+   - Hash-chain verified
+   - Sparse set (may not cover full execution)
+
+2. **Runtime evidence events** (96 entries counted in replay_report)
+   - Events where claims were linked to evidence sources
+   - Every time a retrieval happened; not unique evidence
+   - Abundant (multiple links per source)
+
+These are **not interchangeable counts**:
+- 2 proof vault entries ≠ 96 evidence event linkages
+- Evidence vault is about persistence; event count is about usage frequency
+
+### **What This Proves**
+- ✅ Both proof vault and runtime evidence tracking are functional
+- ✅ Internal consistency within each system
+
+### **What This Does NOT Prove**
+- ❌ That evidence report has clear user-facing semantics
+- ❌ That developers won't misinterpret the two counts
+- ❌ That proof model matches intuitive "evidence" concepts
+
+### **Recommended Fix (Future Phase)**
+Split into:
+- `proof_vault_integrity_report.json` (2 entries, historical)
+- `runtime_evidence_event_report.json` (96 entries, linkage frequency)
+- Separately document both in PROOF_MODEL.md
+
+**Status for CODEX-main 34**: Documented as limitation; split deferred.
+
+---
+
+## 18. UI Test Coverage Status (Unverified)
+
+### **Current State**
+- UI crate (`ui/codex-dioxus`) compiles successfully
+- `cargo check` passes for all UI targets
+- `cargo fmt --all` applied (formatting clean)
+- Clippy checks pass
+
+### **What WAS Tested (CI Environment)**
+- ✅ Compilation
+- ✅ Format checking
+- ✅ Lint checking
+
+### **What WAS NOT Tested (CI Environment)**
+- ❌ `cargo test --all-targets` (no separate UI test log)
+- ❌ `cargo test --all-targets --features ui-local-providers` (provider feature tests not logged)
+- ❌ UI runtime behavior validation
+- ❌ Bridge integration tests
+- ❌ Dioxus component rendering tests
+
+### **Implication**
+- UI code is **syntax-valid but functionally unverified**
+- Bridge implementation (AnswerEnvelope → UI types) untested
+- Provider feature gating untested
+- Claims about UI functionality cannot be made
+
+### **What This Means**
+- ❌ Do NOT claim "UI tests passed"
+- ❌ Do NOT claim "UI provider features verified"
+- ✅ DO claim "UI code is syntactically correct and formatted"
+- ✅ DO claim "UI bridge types defined and match runtime"
+
+---
+
+## 19. MemoryQuery Policy Enforcement Status (Partial)
+
+### **Current State**
+- `MemoryQuery` struct includes 5 policy flags:
+  - `require_evidence_backed`
+  - `exclude_disputed`
+  - `exclude_stale`
+  - `require_governance_reason_code`
+  - `governance_only`
+
+### **What IS In Place**
+- ✅ Field definitions with documentation
+- ✅ Default implementations
+- ✅ Serialization support
+
+### **What IS NOT Verified**
+- ❌ All retrieval code paths apply policy flags
+- ❌ Tests proving flags affect results
+- ❌ Consistent application across MemoryProvider methods
+- ❌ Edge cases (e.g., empty result when strict policy applied)
+
+### **Implementation Gap**
+- Flags may be honored in some code paths but not others
+- No comprehensive audit of retrieval logic
+- Policy enforcement is **partially implemented, not systematic**
+
+### **What This Means**
+- Memory retrieval policy is **architected but incomplete**
+- Queries may not actually exclude disputed/stale claims as intended
+- Default memory behavior may differ from policy flags
+
+### **Status for CODEX-main 34**: Documented as scaffold; enforcement testing deferred.
+
+---
+
+## 20. AnswerBuilder Output Population Status (Partial)
+
+### **Current State**
+- `AnswerEnvelope` struct includes fields:
+  - `cited_claim_ids` (Vec<String>)
+  - `rejected_action_summary` (Option<String>)
+  - `confidence` (f64)
+  - `basis` and `evidence_ids` (populated)
+
+### **What IS Implemented**
+- ✅ Field definitions
+- ✅ Answer basis and evidence IDs populated in build_with_context()
+- ✅ Warnings populated
+
+### **What IS NOT Implemented**
+- ❌ `cited_claim_ids` consistently populated (may be empty in some paths)
+- ❌ `rejected_action_summary` generated (may be None in all paths)
+- ❌ `confidence` derived from basis quality (may not match evidence support)
+
+### **What This Means**
+- Answer envelopes **partially describe** answer grounding
+- UI cannot reliably show **which specific claims were cited**
+- UI cannot show **why unsafe/tool actions were rejected**
+- Answer confidence may not be exposed or calculated
+
+### **Status for CODEX-main 34**: Fields defined; population incomplete.
+
+---
+
+## 21. UI Bridge Metadata Exposure Status (Partial)
+
+### **Current State**
+- Bridge exposes via RuntimeStepResult:
+  - `answer_basis` ✅
+  - `answer_basis_items` ✅
+  - `answer_warnings` ✅
+  - `missing_evidence_reason` ✅
+
+### **Not Currently Exposed**
+- ❌ `answer_confidence` (not in bridge response)
+  - UI cannot show confidence/uncertainty
+- ❌ `cited_claim_ids` (not in bridge response)
+  - UI cannot show which claims were actually used
+- ❌ `cited_evidence_ids` (not in bridge response)
+  - UI cannot show evidence chain for trust transparency
+- ❌ `rejected_action_summary` (not in bridge response)
+  - UI cannot explain why unsafe/tool actions were rejected
+
+### **What This Means**
+- UI displays **partial answer metadata**
+- Users cannot see full evidence chain
+- Transparency about confidence and rejection reasons missing
+
+### **Status for CODEX-main 34**: Core metadata exposed; extended metadata deferred.
+
+---
+
 ## 16. Language to Use / Avoid
 
 ---
