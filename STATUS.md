@@ -1,10 +1,10 @@
 # STATUS.md
 
 Last updated: 2026-05-14 (live verified)
-Codename: CODEX-main 33
-Status: CODEX-main 33 Integration Proof Candidate — 10-hardening sprint complete
+Codename: CODEX-main 34
+Status: CODEX-main 34 hardening candidate — proof consistency and architecture scaffolding complete
 
-CODEX-main 33 is an integration proof candidate, not final freeze.
+CODEX-main 34 is a hardening candidate, not final freeze.
 
 10-hardening sprint completed: EventEnvelope struct + 5 tests; AnswerBasisItem/BasisItemSummary +
 UI bridge; DurableMemoryProvider schema with 82 SQL-backed tests; NL benchmark expanded to

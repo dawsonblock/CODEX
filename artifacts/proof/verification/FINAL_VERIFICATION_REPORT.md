@@ -59,8 +59,8 @@ UI:
 
 - cycles: 15
 - event_count: 589
-- held_out scenario count: 46
-- held_out action_match_rate: 1.0
+- held_out scenario count: 59
+- held_out action_match_rate: 0.8983050847457628 (6 failures: nl_h53, nl_h54, nl_h56, nl_h57, nl_h58, nl_h59)
 - claims_with_evidence_links: 17
 - audits_with_claim_refs: 18
 - real_external_executions: 0

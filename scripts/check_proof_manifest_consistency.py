@@ -734,6 +734,63 @@ def main() -> int:
     else:
         print("  WARN runtime_client.rs not found. Skipping stale provider code scan.")
 
+    # Phase I: Version identity and documentation consistency checks
+    print("\nChecking version identity and documentation consistency ...")
+    
+    # Expected current identity (source of truth from proof manifest)
+    current_identity = "CODEX-main 34"
+    stale_identities = ["CODEX-main 32", "CODEX-main 33"]
+    
+    # Check STATUS.md for current identity
+    if STATUS_MD.exists():
+        status_text = STATUS_MD.read_text()
+        found_current = current_identity in status_text
+        if not found_current:
+            failures.append(f"VERSION_MISMATCH: STATUS.md missing current identity '{current_identity}'")
+        else:
+            print(f"  OK  STATUS.md contains current identity '{current_identity}'")
+        
+        for stale_id in stale_identities:
+            if stale_id in status_text:
+                # Check if it's marked as historical/prior
+                para_start = max(0, status_text.find(stale_id) - 200)
+                context = status_text[para_start:status_text.find(stale_id) + len(stale_id) + 200]
+                if any(marker in context.lower() for marker in ["historical", "previous", "prior", "legacy", "superseded", "old"]):
+                    print(f"  OK  {stale_id} in STATUS.md is marked as historical")
+                else:
+                    failures.append(f"STALE_IDENTITY: STATUS.md contains current-looking reference to '{stale_id}'")
+    else:
+        failures.append("MISSING_FILE: STATUS.md not found")
+    
+    # Check FINAL_VERIFICATION_REPORT.md for current identity and stale proof values
+    final_report_path = REPO_ROOT / "artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md"
+    if final_report_path.exists():
+        final_report_text = final_report_path.read_text()
+        
+        # Check for current identity
+        found_current_final = current_identity in final_report_text
+        if not found_current_final:
+            failures.append(f"VERSION_MISMATCH: FINAL_VERIFICATION_REPORT.md missing current identity '{current_identity}'")
+        else:
+            print(f"  OK  FINAL_VERIFICATION_REPORT.md contains current identity '{current_identity}'")
+        
+        # Check for stale proof values (held_out: 46, action_match_rate: 1.0 for held_out without 0.898...)
+        if "held_out scenario count: 46" in final_report_text:
+            failures.append("STALE_PROOF: FINAL_VERIFICATION_REPORT.md contains stale held_out count of 46")
+        else:
+            print("  OK  FINAL_VERIFICATION_REPORT.md does not contain stale held_out count 46")
+        
+        if "held_out action_match_rate: 1.0" in final_report_text.replace("1.0000", "X"):  # Don't match 0.8983...
+            # Check if it specifically says 1.0 without the 0.898... part
+            if "held_out action_match_rate: 1.0" in final_report_text and "0.8983" not in final_report_text:
+                failures.append("STALE_PROOF: FINAL_VERIFICATION_REPORT.md contains stale held_out action_match_rate of 1.0")
+            else:
+                print("  OK  FINAL_VERIFICATION_REPORT.md has correct held_out action_match_rate (not 1.0 alone)")
+        else:
+            print("  OK  FINAL_VERIFICATION_REPORT.md does not contain stale held_out action_match_rate 1.0")
+    else:
+        failures.append("MISSING_FILE: FINAL_VERIFICATION_REPORT.md not found")
+
     # Phase H: reconciliation sprint evidence report checks
     print("\nChecking reconciliation sprint evidence reports ...")
     reconciliation_reports = [

@@ -793,7 +793,7 @@ fn cmd_proof(args: &[String]) {
         "report_type": "provider_policy",
         "pass": true,
         "policy_basis": "static_build_policy_with_disabled_attempt_check",
-        "codename": "CODEX-main 32",
+        "codename": "CODEX-main 34",
         "build_profile": "default",
         "ui_local_providers_feature_enabled": replay_report.final_state.provider_feature_enabled,
         "local_provider_modes_available": replay_report.final_state.provider_feature_enabled,

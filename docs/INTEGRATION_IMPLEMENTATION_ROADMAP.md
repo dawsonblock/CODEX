@@ -1,4 +1,7 @@
 # CODEX-main 32 Integration Implementation Roadmap
+
+> **Historical Note:** This document outlines the integration roadmap from CODEX-main 32. Current version is CODEX-main 34. This document remains available as a reference for the implementation sequence and completion status of phases 2–11.
+
 <!-- markdownlint-disable -->
 
 
