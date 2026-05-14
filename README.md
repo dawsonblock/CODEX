@@ -6,7 +6,7 @@ selection, evidence-aware state, and reproducible proof artifacts.
 CODEX is **Rust-authoritative**. It is not a sentient system, not AGI, and not
 an autonomous external executor.
 
-[![Rust](https://img.shields.io/badge/rust-stable%201.85%2B-orange)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.95.0-orange)](https://www.rust-lang.org)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![CI](https://github.com/dawsonblock/CODEX/actions/workflows/ci.yml/badge.svg)](https://github.com/dawsonblock/CODEX/actions/workflows/ci.yml)
@@ -40,8 +40,9 @@ cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifact
 ```bash
 python -m pip install -e ".[test]"
 python -m pytest -q
-python scripts/clean_python_artifacts.py
-python architecture_guard.py
+python3 scripts/clean_python_artifacts.py
+python3 scripts/check_no_generated_artifacts.py
+python3 scripts/architecture_guard.py
 ```
 
 ## Repository Structure
@@ -145,13 +146,14 @@ python -m global_workspace_runtime.scripts.check_action_types
 python -m global_workspace_runtime.scripts.check_sentience_claims
 python -m global_workspace_runtime.scripts.check_no_mv2 .
 python -m global_workspace_runtime.scripts.check_resource_recovery
-python architecture_guard.py
+python3 scripts/check_no_generated_artifacts.py
+python3 scripts/architecture_guard.py
 ```
 
 If Python tests generated caches, run:
 
 ```bash
-python scripts/clean_python_artifacts.py
+python3 scripts/clean_python_artifacts.py
 ```
 
 ## Proof Artifacts
