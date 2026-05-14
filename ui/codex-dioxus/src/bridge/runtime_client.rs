@@ -140,7 +140,8 @@ impl RuntimeClient {
             }
             #[cfg(feature = "ui-local-providers")]
             RuntimeBridgeMode::LocalTurboquantProvider => {
-                guarded_provider_response(input, "turboquant", self.provider_gate, Some(sender)).await
+                guarded_provider_response(input, "turboquant", self.provider_gate, Some(sender))
+                    .await
             }
             RuntimeBridgeMode::ExternalProviderDisabled => {
                 let msg = "External and local cloud provider execution is disabled. CODEX runtime remains authoritative.".to_string();
@@ -493,18 +494,18 @@ async fn guarded_provider_response(
             "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use {}.",
             if model_name == "turboquant" { "Turboquant" } else { "Ollama" }
         );
-        
+
         // If streaming, send error to sender
         if let Some(sender) = stream_sender {
             let _ = sender.send(err_msg.clone());
         }
-        
+
         return RuntimeStepResult::with_error(err_msg);
     }
-    
+
     // Gate is enabled — proceed with provider call
     PROVIDER_LOCAL_REQUESTS.fetch_add(1, Ordering::Relaxed);
-    
+
     let mut resp = if let Some(sender) = stream_sender {
         // Stream mode: call ollama_runtime_stream, which sends chunks via sender
         ollama_runtime_stream(input, model_name, sender).await
@@ -512,7 +513,7 @@ async fn guarded_provider_response(
         // Non-stream mode: call ollama_runtime_response normally
         ollama_runtime_response(input, model_name).await
     };
-    
+
     // Track execution and result quality
     resp.provider_executions_local += 1;
     if resp.metadata_quality == MetadataQuality::Unavailable {
@@ -520,7 +521,7 @@ async fn guarded_provider_response(
     } else {
         PROVIDER_LOCAL_SUCCESSES.fetch_add(1, Ordering::Relaxed);
     }
-    
+
     resp
 }
 
@@ -1199,28 +1200,28 @@ mod tests {
         // REGRESSION: send_user_message() must check provider_gate before calling Ollama.
         // In the old code, this path bypassed the gate check (bug).
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalOllamaProvider, false); // provider_gate disabled
+        let initial_requests = PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed);
         let initial_blocked = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         let out = client.send_user_message("test query").await;
-        
+
         // Gate was checked and blocked
         let final_blocked = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
         assert!(
             final_blocked > initial_blocked,
             "disabled_blocks counter must increment when gate denies provider"
         );
-        
+
         // No provider request should have been made
         assert_eq!(
-            PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed) - 0, // This is a rough check
-            0 + initial_blocked, // Only the blocked counter incremented
+            PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed),
+            initial_requests,
             "no provider request should occur when gate is disabled"
         );
-        
+
         // Response must be error (not successful provider output)
         assert!(
-            out.response_text.contains("Security Error") 
-            || out.response_text.contains("gated"),
+            out.response_text.contains("Security Error") || out.response_text.contains("gated"),
             "denied provider response must contain security error message"
         );
     }
@@ -1233,16 +1234,16 @@ mod tests {
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalOllamaProvider, false); // provider_gate disabled
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<String>();
         let initial_blocked = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         let out = client.send_user_message_stream("test query", tx).await;
-        
+
         // Gate was checked and blocked
         let final_blocked = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
         assert!(
             final_blocked > initial_blocked,
             "stream path: disabled_blocks counter must increment when gate denies provider"
         );
-        
+
         // Stream receiver should have received error message
         let msg = rx.recv().await;
         assert!(
@@ -1250,11 +1251,10 @@ mod tests {
                 .unwrap_or(false),
             "stream path: sender must receive security error when gate denies provider"
         );
-        
+
         // Response must be error
         assert!(
-            out.response_text.contains("Security Error") 
-            || out.response_text.contains("gated"),
+            out.response_text.contains("Security Error") || out.response_text.contains("gated"),
             "stream path: denied provider response must contain security error"
         );
     }
@@ -1264,20 +1264,20 @@ mod tests {
     async fn provider_gate_check_consistency_send_user_message_vs_stream() {
         // REGRESSION: Both paths must apply the same gate check,
         // otherwise one path could bypass the gate.
-        
+
         // Get baseline counters
         let baseline_disabled = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         // Test non-stream path with gate disabled
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalOllamaProvider, false);
         let _ = client.send_user_message("test").await;
         let after_nonstream = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         // Test stream path with gate disabled
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel::<String>();
         let _ = client.send_user_message_stream("test", tx).await;
         let after_stream = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         // Both paths must have incremented the disabled_blocks counter
         assert!(
             after_nonstream > baseline_disabled,
@@ -1287,15 +1287,15 @@ mod tests {
             after_stream > after_nonstream,
             "stream path must also increment disabled_blocks when gate is disabled"
         );
-        
-        // Counter increments should be equal (both paths deny once)
-        assert_eq!(
-            after_nonstream - baseline_disabled, 1,
-            "non-stream path must increment disabled_blocks by 1"
+
+        // Tests run in parallel; ensure each path contributes at least one denial.
+        assert!(
+            after_nonstream - baseline_disabled >= 1,
+            "non-stream path must increment disabled_blocks by at least 1"
         );
-        assert_eq!(
-            after_stream - after_nonstream, 1,
-            "stream path must increment disabled_blocks by 1"
+        assert!(
+            after_stream - after_nonstream >= 1,
+            "stream path must increment disabled_blocks by at least 1"
         );
     }
 
@@ -1304,42 +1304,42 @@ mod tests {
     async fn no_provider_execution_on_denial_via_both_paths() {
         // REGRESSION: When gate denies, both paths must NOT increment PROVIDER_LOCAL_REQUESTS.
         // The only counter that should increment is PROVIDER_LOCAL_DISABLED_BLOCKS.
-        
+
         let requests_baseline = PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed);
         let disabled_baseline = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         // Test non-stream with disabled gate
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalOllamaProvider, false);
         let _ = client.send_user_message("test").await;
-        
+
         let requests_after_nonstream = PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed);
         let disabled_after_nonstream = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         // Non-stream: requests should NOT increment, only disabled_blocks
         assert_eq!(
             requests_after_nonstream, requests_baseline,
             "non-stream: PROVIDER_LOCAL_REQUESTS must NOT increment when gate denies"
         );
-        assert_eq!(
-            disabled_after_nonstream - disabled_baseline, 1,
-            "non-stream: PROVIDER_LOCAL_DISABLED_BLOCKS must increment by 1"
+        assert!(
+            disabled_after_nonstream - disabled_baseline >= 1,
+            "non-stream: PROVIDER_LOCAL_DISABLED_BLOCKS must increment by at least 1"
         );
-        
+
         // Test stream with disabled gate
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel::<String>();
         let _ = client.send_user_message_stream("test", tx).await;
-        
+
         let requests_after_stream = PROVIDER_LOCAL_REQUESTS.load(Ordering::Relaxed);
         let disabled_after_stream = PROVIDER_LOCAL_DISABLED_BLOCKS.load(Ordering::Relaxed);
-        
+
         // Stream: requests should NOT increment, only disabled_blocks
         assert_eq!(
             requests_after_stream, requests_after_nonstream,
             "stream: PROVIDER_LOCAL_REQUESTS must NOT increment when gate denies"
         );
-        assert_eq!(
-            disabled_after_stream - disabled_after_nonstream, 1,
-            "stream: PROVIDER_LOCAL_DISABLED_BLOCKS must increment by 1"
+        assert!(
+            disabled_after_stream - disabled_after_nonstream >= 1,
+            "stream: PROVIDER_LOCAL_DISABLED_BLOCKS must increment by at least 1"
         );
     }
 
@@ -1348,8 +1348,8 @@ mod tests {
         // SAFETY: By default, provider_gate should be false (disabled).
         // This ensures safe defaults even if caller forgets to set it explicitly.
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
-        assert_eq!(
-            client.provider_gate, false,
+        assert!(
+            !client.provider_gate,
             "default provider_gate must be false (disabled)"
         );
     }
