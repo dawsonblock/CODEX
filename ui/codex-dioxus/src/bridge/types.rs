@@ -24,6 +24,10 @@ pub enum ChatRole {
 pub struct RuntimeStepResult {
     pub selected_action: String,
     pub response_text: String,
+    #[serde(default)]
+    pub answer_basis: Option<String>,
+    #[serde(default)]
+    pub answer_warnings: Vec<String>,
     pub audit_id: Option<String>,
     pub evidence_ids: Vec<String>,
     pub evidence_hashes: Vec<String>,

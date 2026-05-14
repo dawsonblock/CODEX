@@ -22,7 +22,7 @@
 | Proof of consciousness | ❌ **Not claimed** | Symbolic routing is deterministic machinery; no subjective markers verified |
 | Autonomous agent | ❌ **Not true** | Policy gates enforce safety; no real autonomous external execution enabled |
 | Production-ready | ❌ **Not true** | No security hardening, scalability testing, or reliability validation |
-| Generally intelligent | ❌ **Not shown** | SimWorld is synthetic; NL benchmark is diagnostic on 43 bounded scenarios |
+| Generally intelligent | ❌ **Not shown** | SimWorld is synthetic; NL benchmark is diagnostic on 63 bounded scenarios |
 | Fully validated | ❌ **Not true** | Proof harness is controlled; external data not ingested |
 | Safe for autonomous execution | ❌ **Not true** | Research scaffold only; no production safety analysis |
 | Real-world decision-ready | ❌ **Not true** | All execution and provider gates disabled by default |
@@ -51,7 +51,7 @@
 - ❌ Real resource management (scenarios are synthetic)
 
 ### **Action Match Rate Caveat**
-- Current NL benchmark: **1.0 match rate** on 43 diagnostic scenarios
+- Current NL benchmark: **1.0 match rate** on 63 diagnostic scenarios
 - Interpretation: ✅ Routing works correctly on test set
 - **Misinterpretation to avoid:** ❌ Does NOT prove broad NL reasoning
 - Reason: Benchmark is curated to match action vocabulary; high match rate is expected overfitting
@@ -61,10 +61,11 @@
 ## 3. NL Benchmark Diagnostic Limitation
 
 ### **Current State**
-- 43 scenarios total:
+- 63 scenarios total:
   - 15 curated (representative cases)
-  - 26 held-out (test cases)
+  - 46 held-out (test cases)
   - 2 adversarial (injection attempts)
+- Scenario tuple: (15 curated, 46 held-out, 2 adversarial)
 - Diagnostic only; no semantic understanding targeted
 
 ### **Scenario Categories** (Not General NL Reasoning)

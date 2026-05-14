@@ -35,3 +35,7 @@ jobs:
         run: cargo test --workspace --all-targets --all-features --verbose
       - name: Run proof
         run: cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
+      - name: Clean generated Python artifacts
+        run: python3 ../scripts/clean_python_artifacts.py
+      - name: Final generated artifact check
+        run: python3 ../scripts/check_no_generated_artifacts.py

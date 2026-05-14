@@ -1,7 +1,7 @@
 # CODEX-1 Repository Inventory
 
-**Last Updated:** May 13, 2026  
-**Status:** Integration Proof Candidate (CODEX-main 32)  
+**Last Updated:** May 14, 2026  
+**Status:** Integration Proof Candidate (codex-main-10-hardening)  
 **Rust Authority:** `global-workspace-runtime-rs/crates/runtime-core/`
 
 ---
@@ -45,7 +45,9 @@
   - `reasoning_audit_report.json` — Audit event generation
   - `claim_retrieval_report.json` — Claim retrieval verification
   - `pressure_replay_report.json` — Operational pressure state
-  - `nl_benchmark_report.json` — NL scenario routing (43 scenarios)
+  - `governed_memory_integration_report.json` — Governed-memory integration verification
+  - `provider_storage_boundary_report.json` — Provider storage boundary invariants (supplemental)
+  - `nl_benchmark_report.json` — NL scenario routing (63 scenarios)
   - `long_horizon_report.json` — Multi-episode determinism check
 
 - `artifacts/proof/verification/` — Verification logs and manifest
@@ -107,7 +109,7 @@ cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifact
 This command:
 - Runs all 11 crates through test suite
 - Executes 7 deterministic SimWorld scenarios (15 cycles total)
-- Generates 12 proof reports
+- Generates 14 proof reports
 - Verifies replay idempotence
 - Checks evidence integrity (hash chain)
 - Detects contradictions
@@ -125,7 +127,7 @@ This command:
 - `ui/codex-dioxus/src/main.rs` — Window initialization
 - `ui/codex-dioxus/src/bridge/runtime_client.rs` — LocalCodexRuntimeReadOnly mode
   - Input: user message
-  - Output: action type, confidence, warnings (no real external tool/provider execution)
+  - Output: action type + grounded answer metadata (basis, warnings, evidence links)
 
 ---
 
@@ -222,10 +224,12 @@ All runtime decisions use exactly 10 action types:
 7. **Resource Survival:** Resource pressure scoring keeps resources from collapse
 8. **Action Correctness:** Bounded action vocabulary strictly enforced
 
+Canonical NL benchmark tuple: (15 curated, 46 held-out, 2 adversarial)
+
 ### **What Proof Does NOT Verify**
 
 - ❌ Real-world correctness (SimWorld is synthetic)
-- ❌ Broad NL reasoning (benchmark is diagnostic on 43 scenarios)
+- ❌ Broad NL reasoning (benchmark is diagnostic on 63 scenarios)
 - ❌ General intelligence (action_match_rate is noise on closed set)
 - ❌ External truth (evidence links only prove proof-harness linkage)
 - ❌ Production readiness (no security/scalability/reliability hardening)
@@ -281,8 +285,8 @@ All runtime decisions use exactly 10 action types:
 ### **Known Limitations**
 1. **Memory backend:** Keyword-based retrieval only (SQLite durable backend planned)
 2. **Claim lifecycle:** Basic scaffolding; contradiction handling not complete
-3. **AnswerBuilder:** Not yet implemented; UI uses mocked responses
-4. **SimWorld scenarios:** 7 templates (43 diagnostic benchmark scenarios); not real environment
+3. **Grounded answers:** `memory::answer_builder` is implemented and wired into the UI bridge via `build_with_context`, producing `AnswerEnvelope` with `basis`, `evidence_ids`, `action_type`, and `cited_claim_ids`; claim-content text is derived from runtime event data only — full claim-store lookup to surface subject/predicate/object content is not yet integrated
+4. **SimWorld scenarios:** 7 templates (63 diagnostic benchmark scenarios); not real environment
 5. **Symbolic reasoning:** Internal routing only; not general inference engine
 6. **Memvid integration:** Stubbed; no real multi-modal reasoning
 7. **Evidence source:** Proof-harness-only; no external real-world data ingestion
