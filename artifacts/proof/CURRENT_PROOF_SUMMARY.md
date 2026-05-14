@@ -23,7 +23,7 @@ Toolchain: cargo 1.95.0, rustc 1.95.0
 - mean_total_score: 0.6433333333
 
 ### Replay
-- event_count: 557
+- event_count: 589
 - total_cycles: 15
 - is_idempotent: true
 - evidence_entries: 96
@@ -51,11 +51,19 @@ Toolchain: cargo 1.95.0, rustc 1.95.0
 
 ### Governed-memory integration
 - runtime_integrated: true
-- candidates_evaluated: 17
-- active_admission_recommendations: 17
-- evidence_backed_promotion_recommendations: 17
+- live_admission_hook_enabled: true
+- retroactive_evaluations: 17
+- live_admission_decisions: 17
+- candidates_evaluated: 34
+- active_admission_recommendations: 34
+- evidence_backed_promotion_recommendations: 34
+- claimstore_writes_approved_after_governed_memory: 17
+- claimstore_writes_blocked_by_governed_memory: 0
+- claimstore_writes_overrode_governed_memory: 0
 - claimstore_writes_performed_by_codex: 17
 - claimstore_writes_performed_by_governed_memory: 0
+- audits_with_governed_memory_reason_codes: 17
+- retrieval_plans_generated: 15
 
 ### Evidence integrity
 - total_entries: 2

@@ -64,7 +64,11 @@ pub fn ActionTracePanel(trace: Option<RuntimeStepResult>) -> Element {
     );
 
     let pc = &trace.provider_counters;
-    let boundary_status = if pc.boundary_ok() { "✓ OK" } else { "⛔ VIOLATION" };
+    let boundary_status = if pc.boundary_ok() {
+        "✓ OK"
+    } else {
+        "⛔ VIOLATION"
+    };
 
     rsx! {
         section { class: "card",

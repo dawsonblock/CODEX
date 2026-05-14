@@ -768,6 +768,7 @@ dependencies = [
  "chrono",
  "contradiction",
  "evidence",
+ "governed-memory",
  "insta",
  "memory",
  "modulation",

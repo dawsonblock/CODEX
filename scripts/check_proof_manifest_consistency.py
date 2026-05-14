@@ -549,11 +549,28 @@ def main() -> int:
         else:
             print("  OK  runtime_integrated: true")
 
+        if gm_counters.get("live_admission_hook_enabled") is not True:
+            failures.append("INTEGRATION_VIOLATION: live_admission_hook_enabled must be true")
+        else:
+            print("  OK  live_admission_hook_enabled: true")
+
+        if gm_counters.get("live_admission_decisions", 0) < 1:
+            failures.append("INTEGRATION_ERROR: live_admission_decisions must be >= 1")
+        else:
+            print(
+                f"  OK  live_admission_decisions: {gm_counters.get('live_admission_decisions')}"
+            )
+
         # Verify no governed-memory writes to ClaimStore
         if gm_counters.get("claimstore_writes_performed_by_governed_memory") != 0:
             failures.append("AUTHORITY_VIOLATION: governed-memory should not write to ClaimStore directly")
         else:
             print("  OK  claimstore_writes_performed_by_governed_memory: 0")
+
+        if gm_counters.get("claimstore_writes_overrode_governed_memory", 0) != 0:
+            failures.append("AUTHORITY_VIOLATION: claimstore_writes_overrode_governed_memory must be 0")
+        else:
+            print("  OK  claimstore_writes_overrode_governed_memory: 0")
 
         # Verify all safety invariants
         for safety_field in ["no_api_keys", "no_external_calls", "no_mv2_activation"]:
@@ -581,8 +598,11 @@ def main() -> int:
         # Cross-check key fields with manifest
         gm_fields_to_check = [
             "runtime_integrated",
+            "live_admission_hook_enabled",
             "admission_gate",
             "min_confidence_threshold",
+            "retroactive_evaluations",
+            "live_admission_decisions",
             "candidates_evaluated",
             "active_admission_recommendations",
             "evidence_backed_promotion_recommendations",
@@ -590,6 +610,9 @@ def main() -> int:
             "rejected_unverified",
             "deferred_pending_evidence",
             "disputed_recommendations",
+            "claimstore_writes_approved_after_governed_memory",
+            "claimstore_writes_blocked_by_governed_memory",
+            "claimstore_writes_overrode_governed_memory",
             "claimstore_writes_performed_by_codex",
             "claimstore_writes_performed_by_governed_memory",
             "audits_with_governed_memory_reason_codes",

@@ -1,13 +1,12 @@
 # STATUS.md
 
-Last updated: 2026-05-12 (live verified)
+Last updated: 2026-05-13 (live verified)
 Codename: CODEX-main 32
 Status: CODEX-main 32 Integration Proof Candidate
 
 CODEX-main 32 is an integration proof candidate, not final freeze.
 
 Reasons for Integration Proof Candidate status:
-- Rust/UI verification is receipt-backed unless rerun locally.
 - Local provider support exists only behind an experimental feature flag.
 - Provider counters are live, runtime-event-loop backed counters.
 - NL benchmark is diagnostic routing, not broad natural-language reasoning.
@@ -43,7 +42,7 @@ Rust verification:
 - unsafe_action_count: 0
 - mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
-- replay event_count: 557
+- replay event_count: 589
 - replay_passes: true
 - evidence_entries: 96
 - claims_asserted: 17
@@ -68,10 +67,18 @@ Rust verification:
 
 Governed-memory integration snapshot:
 - runtime_integrated: true
-- candidates_evaluated: 17
-- evidence_backed_promotion_recommendations: 17
+- live_admission_hook_enabled: true
+- retroactive_evaluations: 17
+- live_admission_decisions: 17
+- candidates_evaluated: 34
+- evidence_backed_promotion_recommendations: 34
+- claimstore_writes_approved_after_governed_memory: 17
+- claimstore_writes_blocked_by_governed_memory: 0
+- claimstore_writes_overrode_governed_memory: 0
 - claimstore_writes_performed_by_codex: 17
 - claimstore_writes_performed_by_governed_memory: 0
+- audits_with_governed_memory_reason_codes: 17
+- retrieval_plans_generated: 15
 - role: advisory
 
 NL benchmark snapshot:

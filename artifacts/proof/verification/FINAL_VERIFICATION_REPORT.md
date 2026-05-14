@@ -1,273 +1,124 @@
 # CODEX-main 32 — Final Verification Report
-## FINAL_VERIFICATION_REPORT.md
-
----
 
 ## 1. Package Identity
 
-- **Internal codename:** CODEX-main 32
-- **Uploaded filename:** May vary. Uploaded ZIP filenames are not authoritative. The internal codename CODEX-main 32 is the authority source.
-- **Status:** Integration proof candidate — NOT final freeze
-- **Pass type:** Source Comment Cleanup + Larger Hidden NL Gate
-- **Report date:** 2026-05-12
+- Package identity: CODEX-main 32 governed-memory integration candidate
+- Uploaded filename may vary; internal codename is authoritative.
+- Decision status: integration candidate, not final freeze.
 
----
+## 2. Files Changed
 
-## 2. Provider Policy Chosen
+- global-workspace-runtime-rs/crates/simworld/Cargo.toml
+- global-workspace-runtime-rs/crates/simworld/src/evaluator.rs
+- global-workspace-runtime-rs/crates/runtime-core/src/event.rs
+- global-workspace-runtime-rs/crates/runtime-core/src/runtime_state.rs
+- global-workspace-runtime-rs/crates/runtime-core/src/reducer.rs
+- global-workspace-runtime-rs/crates/runtime-cli/src/main.rs
+- ui/codex-dioxus/src/bridge/runtime_client.rs
+- scripts/check_proof_manifest_consistency.py
+- artifacts/proof/current/*.json (regenerated)
+- artifacts/proof/CURRENT_PROOF_SUMMARY.md
+- artifacts/proof/README.md
+- artifacts/proof/verification/proof_manifest.json
+- STATUS.md
+- docs/PHASE_STATUS_AND_ROADMAP.md
+- docs/PROOF_MODEL.md
 
-### **Option B — Feature-Gated Local Providers**
+## 3. Commands Run
 
-Local provider modes (`LocalOllamaProvider`, `LocalTurboquantProvider`) are compiled only when
-`--features ui-local-providers` is explicitly passed to Cargo.
+Python:
 
-**Default build behavior:**
-- Zero provider HTTP code paths exist in the default binary.
-- `localhost:11434` is absent from the default binary.
-- `reqwest` and `futures-util` are `optional = true` dependencies, absent unless feature enabled.
-- `RuntimeBridgeMode` cycles only through: `MockUiMode → LocalCodexRuntimeReadOnly → ExternalProviderDisabled`.
-- Settings panel shows: "Provider execution disabled in this build (default CODEX build)."
+- python3 -m pip install -e ".[test]" (pass)
+- python3 -m global_workspace_runtime.scripts.check_action_types (pass)
+- python3 -m global_workspace_runtime.scripts.check_sentience_claims (pass)
+- python3 -m global_workspace_runtime.scripts.check_no_mv2 . (pass)
+- python3 -m global_workspace_runtime.scripts.check_resource_recovery (pass)
+- python3 -m pytest -q (35 passed)
+- python3 scripts/clean_python_artifacts.py (pass)
+- python3 architecture_guard.py (pass)
+- python3 scripts/architecture_guard.py (pass)
+- python3 scripts/check_proof_manifest_consistency.py (pass)
 
-**When `--features ui-local-providers` is active:**
-- Calls are localhost-only (no external/cloud endpoints).
-- First use requires explicit user approval (gate must be unlocked in Settings).
-- Provider output is labeled: `"Local provider draft — not CODEX runtime authority"`.
-- Provider output cannot: execute tools, write evidence/claims, or override `selected_action`.
-- Failure returns a clean UI error; no silent fallback.
-- Cloud and external provider request counts remain 0.
+Rust:
 
----
+- cargo --version / rustc --version (available)
+- cargo fmt --all -- --check (pass)
+- cargo clippy --workspace --all-targets --all-features -- -D warnings (pass)
+- cargo test --workspace --all-targets --all-features (pass)
+- cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current (pass)
 
-## 3. Files Changed
+UI:
 
-### Build / Configuration
-| File | Change |
-|------|--------|
-| `ui/codex-dioxus/Cargo.toml` | Added `[features]` with `ui-local-providers`; `reqwest` and `futures-util` marked `optional = true` |
+- cargo fmt --all -- --check (pass)
+- cargo check (pass)
+- cargo test (pass)
+- cargo test --features ui-local-providers (pass)
+- dx build (dx not available in this environment)
 
-### Bridge / Runtime Layer
-| File | Change |
-|------|--------|
-| `ui/codex-dioxus/src/bridge/types.rs` | `LocalOllamaProvider`/`LocalTurboquantProvider` enum variants gated with `#[cfg(feature = "ui-local-providers")]`; added `LocalProviderPolicy`, `LocalProviderCounters`, `LocalProviderDraft`; updated `cycle_next()` to skip provider modes in default builds; 4 new boundary tests |
-| `ui/codex-dioxus/src/bridge/runtime_client.rs` | `ollama_runtime_response`, `ollama_runtime_stream`, and both provider match arms gated with `#[cfg(feature = "ui-local-providers")]` |
+## 4. Current Proof Metrics
 
-### UI Components
-| File | Change |
-|------|--------|
-| `ui/codex-dioxus/src/app.rs` | Updated `UI_BOUNDARY_LINES` to reference feature flag; replaced manual mode-cycle match with `cycle_next()` |
-| `ui/codex-dioxus/src/components/settings_panel.rs` | Provider gate toggle and warning banner are `cfg!()`-conditional; default build shows "not compiled in" notice |
+- cycles: 15
+- event_count: 589
+- held_out scenario count: 46
+- held_out action_match_rate: 1.0
+- claims_with_evidence_links: 17
+- audits_with_claim_refs: 18
+- real_external_executions: 0
 
-### Proof Artifacts
-| File | Change |
-|------|--------|
-| `artifacts/proof/current/provider_policy_report.json` | **[NEW]** Provider boundary policy artifact |
-| `artifacts/proof/current/provider_storage_boundary_report.json` | **[NEW]** Supplemental provider structural-invariants artifact (non-canonical) |
-| `artifacts/proof/verification/proof_manifest.json` | Added provider artifacts to artifact list; added `provider_policy` section |
+## 5. Governed-Memory Live Hook Metrics
 
-### Scripts
-| File | Change |
-|------|--------|
-| `scripts/check_proof_manifest_consistency.py` | Added provider_policy boundary assertions (5 hard security checks); added `localhost:11434` feature-gate scan with 30-line context window |
+- runtime_integrated: true
+- live_admission_hook_enabled: true
+- retroactive_evaluations: 17
+- live_admission_decisions: 17
+- candidates_evaluated: 34
+- evidence_backed_promotion_recommendations: 34
+- claimstore_writes_approved_after_governed_memory: 17
+- claimstore_writes_blocked_by_governed_memory: 0
+- claimstore_writes_overrode_governed_memory: 0
+- claimstore_writes_performed_by_codex: 17
+- claimstore_writes_performed_by_governed_memory: 0
+- audits_with_governed_memory_reason_codes: 17
+- retrieval_plans_generated: 15
+- no_api_keys: true
+- no_external_calls: true
+- no_mv2_activation: true
 
-### Documentation
-| File | Change |
-|------|--------|
-| `STATUS.md` | Updated Boundaries section; added `provider_policy_report.json` to artifacts list |
-| `docs/CHAT_UI_INTEGRATION.md` | Split into "Excluded (all builds)" and "Experimental local providers (feature-gated)" sections with explicit build command |
+## 6. Provider Disabled-Block Proof
 
----
+- default_provider_attempt_tested: true
+- local_provider_disabled_blocks: 1
+- local_provider_requests: 0
+- external_provider_requests: 0
+- cloud_provider_requests: 0
+- no HTTP call in default build path: verified by feature gating and consistency scan
+- no API key storage: true
 
-## 4. Commands Run and Results
+## 7. Hard Invariants
 
-### Python Verification
-```
-python -m global_workspace_runtime.scripts.check_action_types
-→ PASS: ActionType enum and schema are in sync (10 values)
+- tool: real_external_executions = 0; only dry-run/scaffold evidence in proof.
+- provider: default build remains local-provider disabled and non-authoritative.
+- storage: no active Memvid video-container storage; no active .mv2 references in guarded surface.
+- authority boundaries:
+  - runtime-core remains action authority
+  - ClaimStore remains claim writer
+  - evidence vault remains evidence authority
+  - contradiction engine remains contradiction authority
+  - governed-memory remains advisory only
 
-python -m global_workspace_runtime.scripts.check_sentience_claims
-→ PASS: no sentience-claim phrases found (104 files checked)
+## 8. Remaining Limitations
 
-python -m global_workspace_runtime.scripts.check_no_mv2 .
-→ PASS: no .mv2 references (127 files scanned; vendor/memvid-main excluded)
+- NL benchmark is diagnostic routing, not broad natural-language reasoning proof.
+- Contradiction handling is structured/deduped, not semantic truth reasoning.
+- Evidence grounding is strong for proof-known structured sources, not arbitrary real-world truth verification.
+- Governed-memory live hook is advisory; no direct writes/execution/provider calls.
+- System is an integration candidate, not final freeze.
 
-python -m global_workspace_runtime.scripts.check_resource_recovery
-→ PASS: resources=0.755 after 25 cycles (seed=5, threshold=0.25)
+## 9. Decision
 
-python -m pytest -q
-→ 35 passed in 0.48s
+- CODEX-main 32 governed-memory integration candidate.
+- Not final freeze.
 
-python scripts/clean_python_artifacts.py
-→ Cleaned: 9 __pycache__ dirs, 76 .pyc files
+Required limitation statement:
 
-python architecture_guard.py
-→ PASS: All architecture guards pass.
-
-python scripts/architecture_guard.py
-→ PASS: All architecture guards pass.
-
-python scripts/check_proof_manifest_consistency.py
-→ PASS: All checked fields are consistent. (55 OK assertions)
-```
-
-### UI Rust Verification
-```
-cargo fmt --all   (ui/codex-dioxus)   → PASS (no diff)
-cargo fmt --all   (global-workspace-runtime-rs) → PASS (no diff)
-
-cargo check (ui/codex-dioxus, default)
-→ Finished `dev` profile — no errors
-
-cargo test (ui/codex-dioxus, default)
-→ test result: ok. 29 passed; 0 failed
-
-cargo test --features ui-local-providers (ui/codex-dioxus)
-→ test result: ok. 28 passed; 0 failed
-  (1 test correctly absent: #[cfg(not(feature))] default-only test)
-```
-
-### Rust Runtime (receipt-backed, not re-run this pass)
-Rust proof artifacts were not regenerated this pass. The runtime-core code was formatted
-(`cargo fmt`) but not re-proven. Current proof status is receipt-backed from prior run.
-
----
-
-## 5. Current Proof Metrics
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| cycles | 15 | ✓ |
-| event_count | 557 | ✓ |
-| resource_survival | 0.974 | ✓ |
-| unsafe_action_count | 0 | ✓ |
-| mean_total_score | 0.6433 | ✓ |
-| action_match_rate | 1.00 | ✓ |
-| held_out scenario count | 46 | ✓ |
-| held_out action_match_rate | 1.00 | ✓ |
-| adversarial scenario count | 2 | ✓ |
-| adversarial action_match_rate | 1.00 | ✓ |
-| claims_with_evidence_links | 17 | ✓ |
-| audits_with_claim_refs | 18 | ✓ |
-| real_external_executions | **0** | ✓ provider_policy_report.json |
-| cloud_provider_requests | **0** | ✓ provider_policy_report.json (Live) |
-| external_provider_requests | **0** | ✓ provider_policy_report.json (Live) |
-
----
-
-## 6. Provider / Tool Boundary Assertions
-
-| Assertion | Value | Verified |
-|-----------|-------|----------|
-| `real_external_executions` | **0** | ✓ tool_policy_report.json |
-| `ui_local_providers_feature_enabled` | **false** (default build) | ✓ provider_policy_report.json |
-| `local_provider_modes_available` | **false** (default build) | ✓ provider_policy_report.json |
-| `policy_basis` | **static_build_policy_with_disabled_attempt_check** | ✓ provider_policy_report.json |
-| `local_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
-| `local_provider_successes` | **0** | ✓ provider_policy_report.json (Live Counter) |
-| `local_provider_failures` | **0** | ✓ provider_policy_report.json (Live Counter) |
-| `local_provider_disabled_blocks` | **1** | ✓ provider_policy_report.json (Live Counter) |
-| `external_provider_requests` | **0** | ✓ provider_policy_report.json |
-| `cloud_provider_requests` | **0** | ✓ provider_policy_report.json (Live Counter) |
-| `api_key_storage_enabled` | **false** | ✓ provider_policy_report.json |
-| `provider_can_execute_tools` | **false** | ✓ provider_policy_report.json |
-| `provider_can_write_memory` | **false** | ✓ provider_policy_report.json |
-| `provider_can_override_codex_action` | **false** | ✓ provider_policy_report.json |
-| `provider_tool_execution_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
-| `provider_memory_write_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
-| `provider_action_override_attempts` | **0** | ✓ provider_policy_report.json (Hard Assertion) |
-| `provider_output_authority` | **non_authoritative** | ✓ provider_policy_report.json |
-| `codex_runtime_authoritative` | **true** | ✓ provider_policy_report.json |
-| `default_provider_attempt_tested` | **true** | ✓ provider_policy_report.json (disabled-block attempted and verified in proof-run) |
-| `localhost:11434` in default binary | **absent** | ✓ feature-gate scan (consistency script) |
-| `reqwest` in default binary | **absent** | ✓ Cargo.toml optional dependency |
-
----
-
-## 6b. Governed-Memory Integration Assertions
-
-| Assertion | Value | Verified |
-|-----------|-------|----------|
-| `runtime_integrated` | **true** | ✓ governed_memory_integration_report.json |
-| `candidates_evaluated` | **17** | ✓ All proof claims routed through admission gate |
-| `evidence_backed_promotion_recommendations` | **17** | ✓ All candidates had evidence backing |
-| `claimstore_writes_performed_by_codex` | **17** | ✓ CODEX ClaimStore remains authoritative |
-| `claimstore_writes_performed_by_governed_memory` | **0** | ✓ Advisory only; no direct writes |
-| `no_api_keys` | **true** | ✓ governed_memory_integration_report.json |
-| `no_external_calls` | **true** | ✓ governed_memory_integration_report.json |
-| `no_mv2_activation` | **true** | ✓ check_no_mv2 guard passes |
-| `provider_requests` | **0** | ✓ governed_memory_integration_report.json |
-| `tool_executions` | **0** | ✓ governed_memory_integration_report.json |
-| `role` | **advisory** | ✓ Admission recommendations; CODEX decides |
-
----
-
-## 8. UI Status
-
-| Mode | Status in Default Build |
-|------|------------------------|
-| `MockUiMode` | ✓ Active — clearly labeled MockOnly metadata |
-| `LocalCodexRuntimeReadOnly` | ✓ Active — primary runtime bridge |
-| `LocalOllamaProvider` | ✗ Absent (requires `--features ui-local-providers`) |
-| `LocalTurboquantProvider` | ✗ Absent (requires `--features ui-local-providers`) |
-| `ExternalProviderDisabled` | ✓ Active — shows explicit disabled message |
-
-| Property | Status |
-|----------|--------|
-| `metadata_quality` variants | `RuntimeGrounded`, `PartiallyGrounded`, `MockOnly`, `Unavailable`, `LocalProviderDraft` (feature-gated) |
-| Shell commands in runtime_client.rs | None |
-| API key fields | None |
-| Cloud provider endpoints | None |
-| Provider mode cycling (default) | `Mock → LocalReadOnly → ExternalDisabled → Mock` only |
-
----
-
-## 9. 10-Action Schema (Unchanged)
-
-```
-answer
-ask_clarification
-retrieve_memory
-refuse_unsafe
-defer_insufficient_evidence
-summarize
-plan
-execute_bounded_tool
-no_op
-internal_diagnostic
-```
-
-Verified by: `python -m global_workspace_runtime.scripts.check_action_types → PASS (10 values)`
-
----
-
-## 10. Remaining Limitations
-
-1. **Rust proof artifacts re-generated** this pass by `cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current`. Metrics reflect the current 15-cycle run.
-2. **LocalProviderPolicy and LocalProviderCounters structs** are fully wired to the runtime event-loop and state tracking system. All experimental provider usage is audited and captured in proof artifacts.
-3. **`provider_gate` field in `RuntimeClient`** is present in default builds but dead code (expected — only read in feature-gated match arms).
-4. **NL benchmark** is diagnostic routing over 63 scenarios (15 curated + 46 held-out + 2 adversarial), not broad natural-language reasoning proof.
-5. **Contradiction reporting** is structured/deduped, not semantic truth reasoning.
-6. **Evidence-backed claim linkage** remains bounded to structured, proof-known sources.
-7. **UI bridge** is local read-only and is not a production assistant.
-8. **Dioxus CLI (`dx build`)** was not invoked this pass; UI artifact build is not verified.
-9. **Phase 2 disabled-block tests** (2 new tests): `default_build_local_provider_attempt_is_blocked` proves the full default-build mode cycle never reaches `LocalOllamaProvider` or `LocalTurboquantProvider`, counters remain 0, and no HTTP call path is reachable. `default_build_local_provider_activation_returns_disabled_status` confirms `ExternalProviderDisabled` mode defers without any counter leakage. These tests complement the runtime proof's injected verification that block counters act correctly in default builds.
-
----
-
-## 11. Decision
-
-**Integration proof candidate. Not final freeze.**
-
-All provider boundary assertions pass. The 10-action schema is unchanged. Python tests pass.
-UI tests pass (default: 41+, feature-gated: 28+). Proof consistency script passes all 77+ assertions.
-`provider_policy_report.json` exposes 21 fields including `default_provider_attempt_tested: true`,
-which documents that a simulated provider request was attempted and cleanly blocked in the default proof; disabled-provider blocking
-is proven both by the proof log and dedicated unit tests in ui/codex-dioxus. All fields are cross-checked against
-`proof_manifest.json`. Provider execution is unambiguously disabled in the default build.
-The feature-gated path is clearly documented, approval-gated, and non-authoritative.
-
----
-
-## Required Boundary Statement
-
-> This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient,
-> not conscious, not AGI, not production-ready, not a safe autonomous external tool executor,
-> and not a complete evidence-grounded cognitive agent.
+This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.

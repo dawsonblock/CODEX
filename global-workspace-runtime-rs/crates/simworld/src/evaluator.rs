@@ -7,6 +7,10 @@
 //! The scenario's `expected_action` is used ONLY for scoring `action_match_rate`.
 
 use evidence::EvidenceSource;
+use governed_memory::codex_adapter::evidence_entry_to_candidate;
+use governed_memory::{
+    MemoryAdmissionGate, RetrievalIntentCategory, RetrievalPlanner, RetrievalQuery, RetrievalRouter,
+};
 use memory::claim_store::ClaimStore;
 use modulation::pressure::OperationalPressureState;
 use modulation::self_model::SelfModel;
@@ -14,6 +18,8 @@ use runtime_core::event::WorldOutcome;
 use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::{EventLog, KeywordMemoryProvider, RuntimeEvent, RuntimeLoop};
 use tools::{ToolGate, ToolPolicy};
+
+use chrono::Utc;
 
 use crate::environment::CooperativeSupportWorld;
 use crate::evaluator_trace::EvaluatorTrace;
@@ -60,6 +66,7 @@ impl EvaluatorRun {
         let mut claim_store = ClaimStore::new();
         let mut contradiction_engine = contradiction::ContradictionEngine::new();
         let mut pressure = OperationalPressureState::new();
+        let admission_gate = MemoryAdmissionGate::default_policy();
 
         for cycle_id in 0..cycles {
             let scenario = self.world.next_scenario();
@@ -71,6 +78,31 @@ impl EvaluatorRun {
             // ── RuntimeLoop pipeline ──────────────────────────────────
             // Retrieve bounded claims for this observation before scoring.
             let retrieval = claim_store.retrieve_for_observation(observation);
+            let retrieval_query = RetrievalQuery {
+                query_id: format!("retrieve_{cycle_id}"),
+                query_text: observation.to_string(),
+                context: Some("simworld_live_runtime".to_string()),
+                intent_category: RetrievalIntentCategory::MemoryLookup,
+                requires_verification: true,
+                max_candidates: 10,
+                confidence_threshold: 0.6,
+                created_at: Utc::now(),
+            };
+            let retrieval_decision = RetrievalRouter::route(&retrieval_query);
+            let _retrieval_plan = RetrievalPlanner::plan(&retrieval_query);
+            let _ = self
+                .log
+                .append(RuntimeEvent::GovernedMemoryRetrievalPlanned {
+                    cycle_id,
+                    query_id: retrieval_query.query_id.clone(),
+                    intent_category: format!("{:?}", retrieval_decision.intent),
+                    recommended_action: retrieval_decision.recommended_action.clone(),
+                    reason_codes: retrieval_decision
+                        .reason_codes
+                        .iter()
+                        .map(|c| c.code.clone())
+                        .collect(),
+                });
             rt.has_evidence_backed_claims = retrieval
                 .matched_claims
                 .iter()
@@ -199,20 +231,51 @@ impl EvaluatorRun {
                     }),
                     ..entry
                 };
-                if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
-                    let claim_id = claim.id.clone();
-                    let claim_subject = claim.subject.clone();
-                    let claim_predicate = claim.predicate.clone();
-                    let _ = self.log.append(RuntimeEvent::ClaimAsserted {
+                let candidate = evidence_entry_to_candidate(
+                    &structured_entry.id,
+                    observation,
+                    &format!("cycle_{cycle_id}_completed"),
+                    None,
+                    &structured_entry.content_hash,
+                );
+                let admission = admission_gate.admit(&candidate);
+                let claim_written =
+                    admission.admitted && admission.storage_location == "active_claim";
+                let _ = self
+                    .log
+                    .append(RuntimeEvent::GovernedMemoryAdmissionEvaluated {
                         cycle_id,
-                        claim_id: claim_id.clone(),
-                        subject: claim_subject,
-                        predicate: claim_predicate,
+                        candidate_id: candidate.id.clone(),
+                        decision_kind: admission.storage_location.clone(),
+                        reason_codes: admission
+                            .reason_codes
+                            .iter()
+                            .map(|c| c.code.clone())
+                            .collect(),
+                        confidence: admission.confidence,
+                        source_trust_score: candidate.confidence,
+                        live_hook: true,
+                        claimstore_writer: "codex".to_string(),
+                        governed_memory_writer: false,
+                        claim_written,
+                        override_applied: false,
                     });
-                    let _ = claim_store.validate(&claim_id);
-                    let _ = self
-                        .log
-                        .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                if claim_written {
+                    if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
+                        let claim_id = claim.id.clone();
+                        let claim_subject = claim.subject.clone();
+                        let claim_predicate = claim.predicate.clone();
+                        let _ = self.log.append(RuntimeEvent::ClaimAsserted {
+                            cycle_id,
+                            claim_id: claim_id.clone(),
+                            subject: claim_subject,
+                            predicate: claim_predicate,
+                        });
+                        let _ = claim_store.validate(&claim_id);
+                        let _ = self
+                            .log
+                            .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                    }
                 }
             }
 
@@ -459,6 +522,7 @@ impl EvaluatorRun {
         let mut claim_store = ClaimStore::new();
         let mut contradiction_engine = contradiction::ContradictionEngine::new();
         let mut pressure = OperationalPressureState::new();
+        let admission_gate = MemoryAdmissionGate::default_policy();
 
         for cycle_id in 0..cycles {
             let idx = (cycle_id as usize) % scenarios.len();
@@ -469,6 +533,31 @@ impl EvaluatorRun {
 
             // Retrieve bounded claims for this observation before scoring.
             let retrieval = claim_store.retrieve_for_observation(observation);
+            let retrieval_query = RetrievalQuery {
+                query_id: format!("nl_retrieve_{cycle_id}"),
+                query_text: observation.to_string(),
+                context: Some("simworld_nl_runtime".to_string()),
+                intent_category: RetrievalIntentCategory::MemoryLookup,
+                requires_verification: true,
+                max_candidates: 10,
+                confidence_threshold: 0.6,
+                created_at: Utc::now(),
+            };
+            let retrieval_decision = RetrievalRouter::route(&retrieval_query);
+            let _retrieval_plan = RetrievalPlanner::plan(&retrieval_query);
+            let _ = self
+                .log
+                .append(RuntimeEvent::GovernedMemoryRetrievalPlanned {
+                    cycle_id,
+                    query_id: retrieval_query.query_id.clone(),
+                    intent_category: format!("{:?}", retrieval_decision.intent),
+                    recommended_action: retrieval_decision.recommended_action.clone(),
+                    reason_codes: retrieval_decision
+                        .reason_codes
+                        .iter()
+                        .map(|c| c.code.clone())
+                        .collect(),
+                });
             rt.has_evidence_backed_claims = retrieval
                 .matched_claims
                 .iter()
@@ -596,20 +685,51 @@ impl EvaluatorRun {
                     }),
                     ..entry
                 };
-                if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
-                    let claim_id = claim.id.clone();
-                    let claim_subject = claim.subject.clone();
-                    let claim_predicate = claim.predicate.clone();
-                    let _ = self.log.append(RuntimeEvent::ClaimAsserted {
+                let candidate = evidence_entry_to_candidate(
+                    &structured_entry.id,
+                    observation,
+                    &format!("cycle_{cycle_id}"),
+                    None,
+                    &structured_entry.content_hash,
+                );
+                let admission = admission_gate.admit(&candidate);
+                let claim_written =
+                    admission.admitted && admission.storage_location == "active_claim";
+                let _ = self
+                    .log
+                    .append(RuntimeEvent::GovernedMemoryAdmissionEvaluated {
                         cycle_id,
-                        claim_id: claim_id.clone(),
-                        subject: claim_subject,
-                        predicate: claim_predicate,
+                        candidate_id: candidate.id.clone(),
+                        decision_kind: admission.storage_location.clone(),
+                        reason_codes: admission
+                            .reason_codes
+                            .iter()
+                            .map(|c| c.code.clone())
+                            .collect(),
+                        confidence: admission.confidence,
+                        source_trust_score: candidate.confidence,
+                        live_hook: true,
+                        claimstore_writer: "codex".to_string(),
+                        governed_memory_writer: false,
+                        claim_written,
+                        override_applied: false,
                     });
-                    let _ = claim_store.validate(&claim_id);
-                    let _ = self
-                        .log
-                        .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                if claim_written {
+                    if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
+                        let claim_id = claim.id.clone();
+                        let claim_subject = claim.subject.clone();
+                        let claim_predicate = claim.predicate.clone();
+                        let _ = self.log.append(RuntimeEvent::ClaimAsserted {
+                            cycle_id,
+                            claim_id: claim_id.clone(),
+                            subject: claim_subject,
+                            predicate: claim_predicate,
+                        });
+                        let _ = claim_store.validate(&claim_id);
+                        let _ = self
+                            .log
+                            .append(RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                    }
                 }
             }
 

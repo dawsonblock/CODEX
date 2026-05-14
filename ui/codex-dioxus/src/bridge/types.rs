@@ -36,7 +36,7 @@ pub struct RuntimeStepResult {
     pub provider_policy_decision: Option<String>,
     pub metadata_quality: MetadataQuality,
     pub bridge_mode: String,
-    
+
     // Kept from previous structure to maintain UI compatibility
     pub pressure_updates: usize,
     pub policy_bias_applications: usize,

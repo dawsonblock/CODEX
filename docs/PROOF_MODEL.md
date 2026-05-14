@@ -85,5 +85,6 @@ All 20 fields are cross-checked against `proof_manifest.json` by `check_proof_ma
 - Reasoning audit reports are structured metadata, not hidden chain-of-thought.
 - Tool policy reports do not imply autonomous external execution safety.
 - Provider policy reports reflect bounded observability over a non-production, non-authoritative local provider scaffold. Local provider support is experimental, feature-gated, and disabled by default.
+- Governed-memory participates as a live advisory gate in claim admission before ClaimStore writes. CODEX ClaimStore remains the sole writer and runtime-core remains action authority.
 
 This integration creates a bounded evidence/claim/audit path. It does not make the runtime sentient, conscious, AGI, production-ready, semantically omniscient, or fully evidence-grounded across arbitrary real-world data.

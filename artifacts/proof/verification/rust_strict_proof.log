@@ -1,5 +1,3 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
-     Running `target/debug/runtime-cli proof --strict --long-horizon --nl --out ../artifacts/proof/current`
 {
   "checks": {
     "action_schema": {
@@ -54,7 +52,7 @@
             "passed": true
           }
         ],
-        "event_count": 557,
+        "event_count": 589,
         "final_state": {
           "archive_commits": 15,
           "audits_with_claim_refs": 18,
@@ -80,6 +78,13 @@
           "evidence_integrity_all_valid": true,
           "evidence_tampered": 0,
           "false_confidence_count": 0,
+          "governed_memory_audits_with_reason_codes": 17,
+          "governed_memory_claimstore_writes_approved_after": 17,
+          "governed_memory_claimstore_writes_blocked": 0,
+          "governed_memory_claimstore_writes_overrode": 0,
+          "governed_memory_live_admission_decisions": 17,
+          "governed_memory_live_admission_hook_enabled": true,
+          "governed_memory_retrieval_plans_generated": 15,
           "harm_score_sum": 0.3,
           "kindness_score_sum": 7.200000000000003,
           "last_action_type": "defer_insufficient_evidence",

@@ -13,6 +13,7 @@
 | Self-model | ✓ ring buffer | ✓ per-cycle | — | — | No persistence | Persistent snapshots |
 | NL SimWorld | ✓ 63 diagnostic (15 curated, 46 held-out, 2 adversarial) | ✓ --nl flag | ✓ nl report | — | Diagnostic routing only; not broad natural-language reasoning proof | Expand stress sets without overclaiming capability |
 | Reasoning audit | ✓ trace | ✓ per-cycle | ✓ harness events | — | No persistence | Persistent log |
+| Governed-memory admission | ✓ advisory gate + reason codes | ✓ live pre-ClaimStore hook | ✓ governed_memory report | — | Advisory only (no claim/evidence/tool/provider write authority) | Expand block/defer coverage scenarios |
 | Tool scaffold | ✓ enforced | ✓ critic gate | ✓ harness events | — | No real execution | — |
 | Long-horizon eval | ✓ full traces | ✓ --long-horizon | ✓ lh report | — | Not learning | — |
 

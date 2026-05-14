@@ -97,6 +97,15 @@ pub struct RuntimeState {
     pub claims_superseded: u64,
     pub contradictions_checked: u64,
 
+    // Governed-memory live advisory hook tracking
+    pub governed_memory_live_admission_hook_enabled: bool,
+    pub governed_memory_live_admission_decisions: u64,
+    pub governed_memory_claimstore_writes_approved_after: u64,
+    pub governed_memory_claimstore_writes_blocked: u64,
+    pub governed_memory_claimstore_writes_overrode: u64,
+    pub governed_memory_audits_with_reason_codes: u64,
+    pub governed_memory_retrieval_plans_generated: u64,
+
     // Reasoning audit tracking
     pub reasoning_audits: u64,
     pub audits_with_evidence_refs: u64,
@@ -198,6 +207,13 @@ impl Default for RuntimeState {
             claims_validated: 0,
             claims_superseded: 0,
             contradictions_checked: 0,
+            governed_memory_live_admission_hook_enabled: false,
+            governed_memory_live_admission_decisions: 0,
+            governed_memory_claimstore_writes_approved_after: 0,
+            governed_memory_claimstore_writes_blocked: 0,
+            governed_memory_claimstore_writes_overrode: 0,
+            governed_memory_audits_with_reason_codes: 0,
+            governed_memory_retrieval_plans_generated: 0,
             reasoning_audits: 0,
             audits_with_evidence_refs: 0,
             audits_with_claim_refs: 0,

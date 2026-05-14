@@ -32,7 +32,7 @@ Provider artifacts:
 
 Governance artifacts:
 
-- `governed_memory_integration_report.json` provides advisory admission gate metrics proving governed-memory is wired into claim promotion.
+- `governed_memory_integration_report.json` provides advisory admission gate metrics split by live admission-hook decisions and retroactive comparison evaluations.
 
 ## Current Snapshot (CODEX-main 32)
 
@@ -42,7 +42,7 @@ Governance artifacts:
 - resource_survival: 0.9740
 - mean_total_score: 0.6433333333
 - action_match_rate: 1.0 (informational)
-- replay event_count: 557
+- replay event_count: 589
 - held_out scenario_count: 46
 - held_out action_match_rate: 1.0
 - raw_contradictions_detected: 1

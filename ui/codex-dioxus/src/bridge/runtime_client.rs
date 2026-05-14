@@ -1,7 +1,6 @@
 use super::types::{
-    ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary,
-    RuntimeBridgeMode, RuntimeCommand, RuntimeCommandResult,
-    RuntimeCommandStatus, RuntimeStepResult,
+    ChatRole, CommandApprovalState, MetadataQuality, ProviderCountersSummary, RuntimeBridgeMode,
+    RuntimeCommand, RuntimeCommandResult, RuntimeCommandStatus, RuntimeStepResult,
 };
 use runtime_core::{ActionType, RuntimeEvent, RuntimeLoop};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -156,7 +155,7 @@ impl RuntimeClient {
                 PROVIDER_LOCAL_REQUESTS.fetch_add(1, Ordering::Relaxed);
                 let mut resp = ollama_runtime_stream(input, "turboquant", sender).await;
                 resp.provider_executions_local += 1;
-                if resp.trace.metadata_quality == MetadataQuality::Unavailable {
+                if resp.metadata_quality == MetadataQuality::Unavailable {
                     PROVIDER_LOCAL_FAILURES.fetch_add(1, Ordering::Relaxed);
                 } else {
                     PROVIDER_LOCAL_SUCCESSES.fetch_add(1, Ordering::Relaxed);
@@ -172,13 +171,10 @@ impl RuntimeClient {
                     bridge_mode: RuntimeBridgeMode::ExternalProviderDisabled
                         .label()
                         .to_string(),
-                    dominant_pressures: vec![
-                        "tool_risk".to_string(),
-                        "evidence_gap".to_string(),
-                    ],
+                    dominant_pressures: vec!["tool_risk".to_string(), "evidence_gap".to_string()],
                     replay_safe: true,
                     tool_policy_decision: Some("provider_disabled".to_string()),
-        provider_policy_decision: None,
+                    provider_policy_decision: None,
                     metadata_quality: MetadataQuality::Unavailable,
                     provider_executions_local: 0,
                     provider_counters: live_provider_counters(),
@@ -777,18 +773,17 @@ mod tests {
             .send_user_message("what is the current status of deployment x right now?")
             .await;
         assert_eq!(out.selected_action, "defer_insufficient_evidence");
-        assert!(out.trace.replay_safe);
+        assert!(out.replay_safe);
         // Audit ID is now wired from the cycle: must be present and cycle-derived.
         assert!(
-            out.trace
-                .audit_id
+            out.audit_id
                 .as_deref()
                 .map_or(false, |id| id.starts_with("audit_")),
             "audit_id should be wired from cycle_id"
         );
         // contradiction_ids remains empty per single-cycle runtime (honest boundary).
         assert!(
-            out.trace.contradiction_ids.is_empty(),
+            out.contradiction_ids.is_empty(),
             "contradiction_ids should be empty in single-cycle mode"
         );
     }
@@ -819,7 +814,7 @@ mod tests {
             .send_user_message("What is a bounded runtime bridge?")
             .await;
         assert_eq!(out.selected_action, "answer");
-        assert_eq!(out.trace.metadata_quality, MetadataQuality::MockOnly);
+        assert_eq!(out.metadata_quality, MetadataQuality::MockOnly);
     }
 
     #[tokio::test]
@@ -827,8 +822,8 @@ mod tests {
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
         let out = client.send_user_message("what is safe_action?").await;
         assert!(
-            out.trace.metadata_quality == MetadataQuality::RuntimeGrounded
-                || out.trace.metadata_quality == MetadataQuality::PartiallyGrounded
+            out.metadata_quality == MetadataQuality::RuntimeGrounded
+                || out.metadata_quality == MetadataQuality::PartiallyGrounded
         );
     }
     #[tokio::test]
@@ -837,7 +832,7 @@ mod tests {
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
         let out = client.send_user_message("what is safe_action?").await;
         // If there were evidence entries, each hash must be a 64-char lowercase hex string.
-        for hash in &out.trace.evidence_hashes {
+        for hash in &out.evidence_hashes {
             assert_eq!(
                 hash.len(),
                 64,
@@ -850,23 +845,22 @@ mod tests {
         }
         // audit_id must come from the ReasoningAuditGenerated event.
         assert!(
-            out.trace
-                .audit_id
+            out.audit_id
                 .as_deref()
                 .map_or(false, |id| id.starts_with("audit_")),
             "audit_id should be event-derived"
         );
         // evidence_ids and evidence_hashes must be the same length.
         assert_eq!(
-            out.trace.evidence_ids.len(),
-            out.trace.evidence_hashes.len(),
+            out.evidence_ids.len(),
+            out.evidence_hashes.len(),
             "evidence_ids and evidence_hashes must be paired"
         );
     }
 
     #[test]
     fn fresh_provider_counters_start_zero_before_attempt() {
-        // A fresh in-process provider counter snapshot before any proof attempt 
+        // A fresh in-process provider counter snapshot before any proof attempt
         // may have disabled_blocks = 0. The official proof report however
         // intentionally exercises the block and reports disabled_blocks = 1.
         // These are different contexts and not contradictory.
@@ -1048,11 +1042,11 @@ mod tests {
         );
         // No counter leakage.
         assert_eq!(
-            out.trace.provider_counters.cloud_requests, 0,
+            out.provider_counters.cloud_requests, 0,
             "cloud_requests must remain 0 on blocked attempt"
         );
         assert_eq!(
-            out.trace.provider_counters.external_requests, 0,
+            out.provider_counters.external_requests, 0,
             "external_requests must remain 0 on blocked attempt"
         );
         // selected_action must not be tool execution.
@@ -1085,7 +1079,9 @@ mod tests {
         // LocalCodexRuntimeReadOnly must never return execute_bounded_tool for tool requests.
         // Tool execution requires policy gate and explicit approval, which is not granted here.
         let client = RuntimeClient::new(RuntimeBridgeMode::LocalCodexRuntimeReadOnly, false);
-        let out = client.send_user_message("run an external shell command now").await;
+        let out = client
+            .send_user_message("run an external shell command now")
+            .await;
         // The runtime should gate this — refuse_unsafe, defer, or ask_clarification are all safe.
         assert_ne!(
             out.selected_action, "execute_bounded_tool",
@@ -1102,11 +1098,11 @@ mod tests {
             "ExternalProviderDisabled must always return defer_insufficient_evidence"
         );
         assert_eq!(
-            out.trace.provider_counters.cloud_requests, 0,
+            out.provider_counters.cloud_requests, 0,
             "ExternalProviderDisabled must not increment cloud_requests"
         );
         assert_eq!(
-            out.trace.provider_counters.external_requests, 0,
+            out.provider_counters.external_requests, 0,
             "ExternalProviderDisabled must not increment external_requests"
         );
     }
@@ -1116,7 +1112,9 @@ mod tests {
         // In ExternalProviderDisabled mode, selected_action is always defer_insufficient_evidence.
         // Provider output (if any) cannot change this to another action.
         let client = RuntimeClient::new(RuntimeBridgeMode::ExternalProviderDisabled, false);
-        let out = client.send_user_message("execute the plan immediately").await;
+        let out = client
+            .send_user_message("execute the plan immediately")
+            .await;
         // Provider is disabled; CODEX runtime authority holds.
         assert_eq!(
             out.selected_action, "defer_insufficient_evidence",
@@ -1130,9 +1128,15 @@ mod tests {
         let client = RuntimeClient::new(RuntimeBridgeMode::MockUiMode, false);
         let out = client.send_user_message("hello").await;
         let bridge = out.bridge_mode.to_lowercase();
-        assert!(!bridge.contains("sentient"), "bridge_mode must not claim sentience");
+        assert!(
+            !bridge.contains("sentient"),
+            "bridge_mode must not claim sentience"
+        );
         assert!(!bridge.contains("agi"), "bridge_mode must not claim AGI");
-        assert!(!bridge.contains("production"), "bridge_mode must not claim production-ready");
+        assert!(
+            !bridge.contains("production"),
+            "bridge_mode must not claim production-ready"
+        );
     }
 
     #[tokio::test]

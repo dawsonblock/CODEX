@@ -173,6 +173,28 @@ pub enum RuntimeEvent {
         contradiction_ids: Vec<String>,
         active_contradictions: usize,
     },
+    /// Governed-memory live admission advisory decision for a candidate.
+    GovernedMemoryAdmissionEvaluated {
+        cycle_id: u64,
+        candidate_id: String,
+        decision_kind: String,
+        reason_codes: Vec<String>,
+        confidence: f64,
+        source_trust_score: f64,
+        live_hook: bool,
+        claimstore_writer: String,
+        governed_memory_writer: bool,
+        claim_written: bool,
+        override_applied: bool,
+    },
+    /// Governed-memory retrieval intent routing/planning advisory event.
+    GovernedMemoryRetrievalPlanned {
+        cycle_id: u64,
+        query_id: String,
+        intent_category: String,
+        recommended_action: String,
+        reason_codes: Vec<String>,
+    },
     /// A reasoning audit was generated for a cycle.
     ReasoningAuditGenerated {
         cycle_id: u64,
@@ -296,6 +318,8 @@ impl RuntimeEvent {
             | Self::ClaimSuperseded { cycle_id, .. }
             | Self::ContradictionEscalated { cycle_id, .. }
             | Self::ContradictionChecked { cycle_id, .. }
+            | Self::GovernedMemoryAdmissionEvaluated { cycle_id, .. }
+            | Self::GovernedMemoryRetrievalPlanned { cycle_id, .. }
             | Self::ReasoningAuditGenerated { cycle_id, .. }
             | Self::ToolExecuted { cycle_id, .. }
             | Self::ToolExecutionBlocked { cycle_id, .. }

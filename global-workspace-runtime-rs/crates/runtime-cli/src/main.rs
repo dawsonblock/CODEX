@@ -9,7 +9,7 @@
 //!   proof [--strict] [--nl] [--long-horizon] [--out <dir>]  Run all checks
 //!     Official: proof --strict --long-horizon --nl --out ../artifacts/proof/current
 
-use governed_memory::{ProofAdmissionTracker, ProofCandidateFactory};
+use governed_memory::{MemoryAdmissionGate, ProofAdmissionTracker, ProofCandidateFactory};
 use memory::claim_store::ClaimStore;
 use runtime_core::reasoning_audit::ReasoningAudit;
 use runtime_core::ActionType;
@@ -530,40 +530,110 @@ fn cmd_proof(args: &[String]) {
 
     // ── Claim store ──────────────────────────────────────────────────
     let mut claim_store = ClaimStore::new();
-    let _ = claim_store.assert(
+    let proof_gate = MemoryAdmissionGate::default_policy();
+
+    let proof_candidate_1 = ProofCandidateFactory::from_claim_data(
         "proof_claim_1",
         "sky",
         "is blue during daytime",
         None,
+        Some("proof_evidence_1"),
         0.8,
-        vec![],
     );
-    let _ = run.log.append(RuntimeEvent::ClaimAsserted {
-        cycle_id: proof_cycle + 3,
-        claim_id: "proof_claim_1".into(),
-        subject: "sky".into(),
-        predicate: "is blue during daytime".into(),
-    });
-    let _ = claim_store.validate("proof_claim_1");
-    let _ = run.log.append(RuntimeEvent::ClaimValidated {
-        cycle_id: proof_cycle + 4,
-        claim_id: "proof_claim_1".into(),
-    });
-    let _ = claim_store.assert(
+    let proof_decision_1 = proof_gate.admit(&proof_candidate_1);
+    let proof_claim_1_written =
+        proof_decision_1.admitted && proof_decision_1.storage_location == "active_claim";
+    let _ = run
+        .log
+        .append(RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+            cycle_id: proof_cycle + 3,
+            candidate_id: proof_candidate_1.id,
+            decision_kind: proof_decision_1.storage_location,
+            reason_codes: proof_decision_1
+                .reason_codes
+                .into_iter()
+                .map(|c| c.code)
+                .collect(),
+            confidence: proof_decision_1.confidence,
+            source_trust_score: 0.8,
+            live_hook: true,
+            claimstore_writer: "codex".into(),
+            governed_memory_writer: false,
+            claim_written: proof_claim_1_written,
+            override_applied: false,
+        });
+    if proof_claim_1_written {
+        let _ = claim_store.assert(
+            "proof_claim_1",
+            "sky",
+            "is blue during daytime",
+            None,
+            0.8,
+            vec![],
+        );
+    }
+    if proof_claim_1_written {
+        let _ = run.log.append(RuntimeEvent::ClaimAsserted {
+            cycle_id: proof_cycle + 3,
+            claim_id: "proof_claim_1".into(),
+            subject: "sky".into(),
+            predicate: "is blue during daytime".into(),
+        });
+        let _ = claim_store.validate("proof_claim_1");
+        let _ = run.log.append(RuntimeEvent::ClaimValidated {
+            cycle_id: proof_cycle + 4,
+            claim_id: "proof_claim_1".into(),
+        });
+    }
+    let proof_candidate_2 = ProofCandidateFactory::from_claim_data(
         "proof_claim_2",
         "sky",
         "is red at sunset",
         None,
+        Some("proof_evidence_2"),
         0.7,
-        vec![],
     );
-    let _ = run.log.append(RuntimeEvent::ClaimAsserted {
-        cycle_id: proof_cycle + 5,
-        claim_id: "proof_claim_2".into(),
-        subject: "sky".into(),
-        predicate: "is red at sunset".into(),
-    });
-    let _ = claim_store.validate("proof_claim_2");
+    let proof_decision_2 = proof_gate.admit(&proof_candidate_2);
+    let proof_claim_2_written =
+        proof_decision_2.admitted && proof_decision_2.storage_location == "active_claim";
+    let _ = run
+        .log
+        .append(RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+            cycle_id: proof_cycle + 5,
+            candidate_id: proof_candidate_2.id,
+            decision_kind: proof_decision_2.storage_location,
+            reason_codes: proof_decision_2
+                .reason_codes
+                .into_iter()
+                .map(|c| c.code)
+                .collect(),
+            confidence: proof_decision_2.confidence,
+            source_trust_score: 0.7,
+            live_hook: true,
+            claimstore_writer: "codex".into(),
+            governed_memory_writer: false,
+            claim_written: proof_claim_2_written,
+            override_applied: false,
+        });
+    if proof_claim_2_written {
+        let _ = claim_store.assert(
+            "proof_claim_2",
+            "sky",
+            "is red at sunset",
+            None,
+            0.7,
+            vec![],
+        );
+    }
+    if proof_claim_2_written {
+        let _ = run.log.append(RuntimeEvent::ClaimAsserted {
+            cycle_id: proof_cycle + 5,
+            claim_id: "proof_claim_2".into(),
+            subject: "sky".into(),
+            predicate: "is red at sunset".into(),
+        });
+        let _ = claim_store.validate("proof_claim_2");
+    }
     let _ = run.log.append(RuntimeEvent::ClaimRetrieved {
         cycle_id: proof_cycle + 5,
         claim_id: "proof_claim_1".into(),
@@ -970,9 +1040,8 @@ fn cmd_proof(args: &[String]) {
 
     let mut admission_tracker = ProofAdmissionTracker::new();
 
-    // Evaluate each claim asserted in replay against admission policy.
-    // In this proof run, all claims were promoted, so we retroactively
-    // categorize them through the admission gate.
+    // Evaluate each claim asserted in replay against admission policy for
+    // retroactive comparison metrics.
     let total_claimed = replay_report.final_state.claims_asserted as usize;
     let evidence_backed_claimed = replay_report.final_state.claims_with_evidence_links as usize;
 
@@ -1011,15 +1080,35 @@ fn cmd_proof(args: &[String]) {
         admission_tracker.record_claim_written_by_codex();
     }
 
-    // Record runtime-observed audit and retrieval activity.
-    // These counters are advisory instrumentation only and do not alter authority boundaries.
+    // Record retroactive audit and retrieval activity for side-by-side comparison.
     admission_tracker
         .record_audits_with_reason_codes(replay_report.final_state.reasoning_audits as usize);
     admission_tracker
         .record_retrieval_plans_generated(replay_report.final_state.memory_query_count as usize);
 
-    // All evaluated claims were written by CODEX (authority), none by governed-memory.
+    // All retroactively evaluated claims were written by CODEX (authority), none by governed-memory.
     let gm_stats = admission_tracker.into_stats();
+    let live_decisions = replay_report
+        .final_state
+        .governed_memory_live_admission_decisions as usize;
+    let live_approved = replay_report
+        .final_state
+        .governed_memory_claimstore_writes_approved_after as usize;
+    let live_blocked = replay_report
+        .final_state
+        .governed_memory_claimstore_writes_blocked as usize;
+    let live_overrode = replay_report
+        .final_state
+        .governed_memory_claimstore_writes_overrode as usize;
+    let live_audits = replay_report
+        .final_state
+        .governed_memory_audits_with_reason_codes as usize;
+    let live_retrieval_plans = replay_report
+        .final_state
+        .governed_memory_retrieval_plans_generated as usize;
+
+    let retroactive_evaluations = gm_stats.candidates_evaluated;
+    let total_candidates_evaluated = live_decisions + retroactive_evaluations;
 
     write_integration_report(
         &out_dir,
@@ -1030,17 +1119,23 @@ fn cmd_proof(args: &[String]) {
             "admission_gate": "MemoryAdmissionGate",
             "min_confidence_threshold": 0.6,
             "runtime_integrated": true,
-            "candidates_evaluated": gm_stats.candidates_evaluated,
-            "active_admission_recommendations": gm_stats.active_admission_recommendations,
-            "evidence_backed_promotion_recommendations": gm_stats.evidence_backed_promotion_recommendations,
+            "live_admission_hook_enabled": replay_report.final_state.governed_memory_live_admission_hook_enabled,
+            "retroactive_evaluations": retroactive_evaluations,
+            "live_admission_decisions": live_decisions,
+            "candidates_evaluated": total_candidates_evaluated,
+            "active_admission_recommendations": live_approved + gm_stats.active_admission_recommendations,
+            "evidence_backed_promotion_recommendations": live_approved + gm_stats.evidence_backed_promotion_recommendations,
             "evidence_only_recommendations": gm_stats.evidence_only_recommendations,
             "rejected_unverified": gm_stats.rejected_unverified,
             "deferred_pending_evidence": gm_stats.deferred_pending_evidence,
             "disputed_recommendations": gm_stats.disputed_recommendations,
-            "claimstore_writes_performed_by_codex": gm_stats.claimstore_writes_performed_by_codex,
+            "claimstore_writes_approved_after_governed_memory": live_approved,
+            "claimstore_writes_blocked_by_governed_memory": live_blocked,
+            "claimstore_writes_overrode_governed_memory": live_overrode,
+            "claimstore_writes_performed_by_codex": replay_report.final_state.claims_asserted,
             "claimstore_writes_performed_by_governed_memory": gm_stats.claimstore_writes_performed_by_governed_memory,
-            "audits_with_governed_memory_reason_codes": gm_stats.audits_with_governed_memory_reason_codes,
-            "retrieval_plans_generated": gm_stats.retrieval_plans_generated,
+            "audits_with_governed_memory_reason_codes": live_audits,
+            "retrieval_plans_generated": live_retrieval_plans,
             "no_api_keys": true,
             "no_external_calls": true,
             "no_mv2_activation": true,
@@ -1049,11 +1144,11 @@ fn cmd_proof(args: &[String]) {
             "role": "advisory",
         }),
         vec![
-            "Governed-memory admission gate evaluated all proof-run claims retroactively.",
-            "Gate recommendations fed into audit framework; CODEX ClaimStore retains write authority.",
-            "All claims written by CODEX runtime; governed-memory did not mutate or override.",
-            "Evidence-backed claims promoted; unverified claims deferred per policy.",
-            "Audit/retrieval counters are populated from runtime replay metrics while authority remains with CODEX.",
+            "Governed-memory now participates in the live claim-admission path before ClaimStore writes.",
+            "Live admission decisions are replay-counted; retroactive evaluations are retained separately for comparison.",
+            "CODEX ClaimStore remains the only claim writer; governed-memory never mutates claims directly.",
+            "Evidence-backed claims are promoted via CODEX after governed-memory advisory approval.",
+            "Audit/retrieval counters are populated from live runtime events while action authority remains with CODEX.",
             "No API keys, no external calls, no legacy video-container activation.",
         ],
         proof_cmd,

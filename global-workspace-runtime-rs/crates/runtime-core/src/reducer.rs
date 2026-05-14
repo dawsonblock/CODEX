@@ -212,6 +212,51 @@ pub fn reduce(mut state: RuntimeState, event: &RuntimeEvent) -> RuntimeState {
             state.unresolved_contradictions = *active_contradictions as u64;
         }
 
+        RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+            cycle_id,
+            live_hook,
+            governed_memory_writer,
+            claim_written,
+            override_applied,
+            reason_codes,
+            ..
+        } => {
+            state.cycle_id = *cycle_id;
+            state.governed_memory_live_admission_hook_enabled |= *live_hook;
+            state.governed_memory_live_admission_decisions = state
+                .governed_memory_live_admission_decisions
+                .saturating_add(1);
+            if *claim_written {
+                state.governed_memory_claimstore_writes_approved_after = state
+                    .governed_memory_claimstore_writes_approved_after
+                    .saturating_add(1);
+            } else {
+                state.governed_memory_claimstore_writes_blocked = state
+                    .governed_memory_claimstore_writes_blocked
+                    .saturating_add(1);
+            }
+            if *override_applied {
+                state.governed_memory_claimstore_writes_overrode = state
+                    .governed_memory_claimstore_writes_overrode
+                    .saturating_add(1);
+            }
+            if *governed_memory_writer {
+                // Keep explicit no-op branch for forward safety; writes must remain 0 by policy.
+            }
+            if !reason_codes.is_empty() {
+                state.governed_memory_audits_with_reason_codes = state
+                    .governed_memory_audits_with_reason_codes
+                    .saturating_add(1);
+            }
+        }
+
+        RuntimeEvent::GovernedMemoryRetrievalPlanned { cycle_id, .. } => {
+            state.cycle_id = *cycle_id;
+            state.governed_memory_retrieval_plans_generated = state
+                .governed_memory_retrieval_plans_generated
+                .saturating_add(1);
+        }
+
         RuntimeEvent::ReasoningAuditGenerated {
             cycle_id,
             evidence_ids,

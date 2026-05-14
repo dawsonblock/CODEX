@@ -1,5 +1,5 @@
 {
-  "event_count": 557,
+  "event_count": 589,
   "replay_passes": true,
   "is_idempotent": true,
   "final_state": {
@@ -68,6 +68,13 @@
     "claims_validated": 16,
     "claims_superseded": 0,
     "contradictions_checked": 3,
+    "governed_memory_live_admission_hook_enabled": true,
+    "governed_memory_live_admission_decisions": 17,
+    "governed_memory_claimstore_writes_approved_after": 17,
+    "governed_memory_claimstore_writes_blocked": 0,
+    "governed_memory_claimstore_writes_overrode": 0,
+    "governed_memory_audits_with_reason_codes": 17,
+    "governed_memory_retrieval_plans_generated": 15,
     "reasoning_audits": 33,
     "audits_with_evidence_refs": 30,
     "audits_with_claim_refs": 18,

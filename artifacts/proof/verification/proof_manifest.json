@@ -31,7 +31,7 @@
     "action_match_rate": 1.0
   },
   "replay_report": {
-    "event_count": 557,
+    "event_count": 589,
     "replay_passes": true,
     "is_idempotent": true,
     "total_cycles": 15,
@@ -385,18 +385,24 @@
   "governed_memory": {
     "pass": true,
     "runtime_integrated": true,
+    "live_admission_hook_enabled": true,
     "admission_gate": "MemoryAdmissionGate",
     "min_confidence_threshold": 0.6,
-    "candidates_evaluated": 17,
-    "active_admission_recommendations": 17,
-    "evidence_backed_promotion_recommendations": 17,
+    "retroactive_evaluations": 17,
+    "live_admission_decisions": 17,
+    "candidates_evaluated": 34,
+    "active_admission_recommendations": 34,
+    "evidence_backed_promotion_recommendations": 34,
     "evidence_only_recommendations": 0,
     "rejected_unverified": 0,
     "deferred_pending_evidence": 0,
     "disputed_recommendations": 0,
+    "claimstore_writes_approved_after_governed_memory": 17,
+    "claimstore_writes_blocked_by_governed_memory": 0,
+    "claimstore_writes_overrode_governed_memory": 0,
     "claimstore_writes_performed_by_codex": 17,
     "claimstore_writes_performed_by_governed_memory": 0,
-    "audits_with_governed_memory_reason_codes": 33,
+    "audits_with_governed_memory_reason_codes": 17,
     "retrieval_plans_generated": 15,
     "no_api_keys": true,
     "no_external_calls": true,
@@ -404,7 +410,7 @@
     "provider_requests": 0,
     "tool_executions": 0,
     "role": "advisory",
-    "interpretation": "Governed-memory admission gate evaluated all proof-run claims retroactively. Gate recommendations fed into audit and retrieval metrics from runtime replay state while CODEX ClaimStore retained write authority. All claims written by CODEX runtime; governed-memory did not mutate or override."
+    "interpretation": "Governed-memory advisory policy now participates in live claim-admission before ClaimStore writes, with retroactive evaluation retained for comparison. CODEX ClaimStore remains the sole writer and override count remains zero."
   },
   "limitations": [
     "NL benchmark is diagnostic routing over a bounded set, not broad natural-language reasoning proof",
