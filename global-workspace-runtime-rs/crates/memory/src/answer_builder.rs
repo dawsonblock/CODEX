@@ -76,7 +76,7 @@ impl AnswerBuilder {
                 })
                 .collect::<Vec<_>>()
                 .join("; ");
-            format!("{}", snippets)
+            snippets
         };
 
         AnswerEnvelope {
