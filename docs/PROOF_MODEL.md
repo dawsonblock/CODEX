@@ -81,7 +81,7 @@ All 20 fields are cross-checked against `proof_manifest.json` by `check_proof_ma
 
 ## Bounded claims
 
-- NL benchmark demonstrates bounded routing behavior over this diagnostic set (15 curated, 46 held-out, 2 adversarial).
+- NL benchmark demonstrates bounded routing behavior over this diagnostic set (15 curated, 59 held-out, 2 adversarial).
 - Contradiction integration demonstrates structured contradiction handling only.
 - Pressure reports represent deterministic control signals only; contradiction pressure may decay/reset while unresolved contradiction counters are tracked separately.
 - Reasoning audit reports are structured metadata, not hidden chain-of-thought.

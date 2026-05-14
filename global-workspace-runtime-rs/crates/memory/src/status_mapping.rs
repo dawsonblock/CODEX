@@ -112,6 +112,31 @@ pub fn memory_to_durable(status: MemoryClaimStatus) -> DurableClaimStatus {
     }
 }
 
+/// Non-deprecated alias for [`durable_to_memory`] for callers that intentionally use the
+/// lossy path and want to opt out of the deprecation warning.
+pub fn durable_to_memory_lossy(status: DurableClaimStatus) -> MemoryClaimStatus {
+    match status {
+        DurableClaimStatus::Asserted => MemoryClaimStatus::Unverified,
+        DurableClaimStatus::Validated => MemoryClaimStatus::Active,
+        DurableClaimStatus::Rejected | DurableClaimStatus::Disputed => {
+            MemoryClaimStatus::Contradicted
+        }
+        DurableClaimStatus::Stale | DurableClaimStatus::Superseded => MemoryClaimStatus::Superseded,
+        DurableClaimStatus::Unknown => MemoryClaimStatus::Unverified,
+    }
+}
+
+/// Non-deprecated alias for [`memory_to_durable`] for callers that intentionally use the
+/// lossy path and want to opt out of the deprecation warning.
+pub fn memory_to_durable_lossy(status: MemoryClaimStatus) -> DurableClaimStatus {
+    match status {
+        MemoryClaimStatus::Unverified => DurableClaimStatus::Asserted,
+        MemoryClaimStatus::Active => DurableClaimStatus::Validated,
+        MemoryClaimStatus::Contradicted => DurableClaimStatus::Disputed,
+        MemoryClaimStatus::Superseded => DurableClaimStatus::Superseded,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

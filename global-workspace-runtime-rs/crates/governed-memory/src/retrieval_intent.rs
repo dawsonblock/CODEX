@@ -1,7 +1,7 @@
 //! Retrieval intent analysis and routing.
 //!
 //! Analyzes memory queries and routes them to appropriate action types:
-//! retrieve_memory, defer_insufficient_evidence, ask_clarification, refuse_unsafe.
+//! retrieve_memory, defer_insufficient_evidence, ask_clarification, defer_provider_unavailable.
 
 use crate::enums::RetrievalIntentCategory;
 use crate::reason_codes::ReasonCode;
@@ -15,7 +15,7 @@ pub struct RetrievalDecision {
     pub intent: RetrievalIntentCategory,
 
     /// Recommended action from runtime-core
-    pub recommended_action: String, // "retrieve_memory", "defer_insufficient_evidence", "ask_clarification", "refuse_unsafe"
+    pub recommended_action: String, // "retrieve_memory", "defer_insufficient_evidence", "ask_clarification", "defer_provider_unavailable"
 
     /// Confidence in this routing (0.0-1.0)
     pub confidence_in_route: f64,
@@ -65,7 +65,7 @@ impl RetrievalRouter {
                 reason_codes.push(ReasonCode::retrieval_provider_gated());
                 (
                     RetrievalIntentCategory::ProviderGated,
-                    "refuse_unsafe",
+                    "defer_provider_unavailable",
                     0.95,
                 )
             }
@@ -133,7 +133,7 @@ mod tests {
         };
 
         let decision = RetrievalRouter::route(&query);
-        assert_eq!(decision.recommended_action, "refuse_unsafe");
+        assert_eq!(decision.recommended_action, "defer_provider_unavailable");
         assert_eq!(decision.confidence_in_route, 0.95);
     }
 }

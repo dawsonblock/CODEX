@@ -88,9 +88,11 @@ MemoryClaim { subject: subj.clone(), predicate: pred.clone(), object: obj.clone(
 
 ## Verification
 
-- `cargo test --workspace --all-targets`: **all crates pass, 0 failures**
+- `cargo test --workspace`: **274 passed, 0 failed** (all crates, reconciliation sprint verified)
   - runtime-core integration tests: **9 passed** (was 8; new regression test added)
 - `cargo run -p runtime-cli -- proof --strict --long-horizon --nl`: **`overall_status: "pass"`**
+  - NL benchmark: 59 held-out scenarios, action_match_rate: 0.8983050847457628 (6 known failures documented in `docs/PROOF_LIMITATIONS.md` § 3)
+  - All 6 failures are routing heuristic gaps; no safety-gate bypasses
 - `cargo fmt --all`: **CLEAN** (formatting applied)
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`: **CLEAN** for all sprint-touched crates; 3 pre-existing errors in `memory` crate (deprecated_semver ×2, too_many_arguments ×1) confirmed pre-existing via git stash test — not introduced by this sprint.
 - `check_sentience_claims.py`: **PASS, 150 files checked, 0 violations**

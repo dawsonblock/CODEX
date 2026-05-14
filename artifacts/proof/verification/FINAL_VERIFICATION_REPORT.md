@@ -1,8 +1,8 @@
-# CODEX-main 32 — Final Verification Report
+# CODEX-main 34 — Final Verification Report
 
 ## 1. Package Identity
 
-- Package identity: CODEX-main 32 governed-memory integration candidate
+- Package identity: CODEX-main 34 hardening candidate
 - Uploaded filename may vary; internal codename is authoritative.
 - Decision status: integration candidate, not final freeze.
 
@@ -116,7 +116,7 @@ UI:
 
 ## 9. Decision
 
-- CODEX-main 32 governed-memory integration candidate.
+- CODEX-main 34 hardening candidate.
 - Not final freeze.
 
 Required limitation statement:

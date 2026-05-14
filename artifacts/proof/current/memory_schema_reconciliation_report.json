@@ -1,0 +1,43 @@
+{
+  "counters": {
+    "memory_record_field_count": 18,
+    "memory_record_new_fields": [
+      "retrieval_score",
+      "recency_score",
+      "contradiction_ids",
+      "governance_reason_code",
+      "is_stale",
+      "is_disputed"
+    ],
+    "sql_table_columns_added": 6,
+    "sql_schema_migration_safe": true,
+    "all_insert_sites_updated": true,
+    "map_record_indices_verified": true,
+    "all_select_queries_updated": true,
+    "select_queries_updated_count": 4,
+    "lossy_status_mapping_added": true,
+    "lossy_functions": [
+      "durable_to_memory_lossy",
+      "memory_to_durable_lossy"
+    ],
+    "answer_envelope_field_count": 11,
+    "answer_envelope_new_fields": [
+      "cited_evidence_ids",
+      "rejected_action_summary"
+    ],
+    "construction_sites_updated": 2,
+    "test_helpers_updated": true
+  },
+  "generated_timestamp": 1778793146,
+  "limitations": [
+    "retrieval_score and recency_score default to 0.0 — populated by evaluator logic, not automatically computed.",
+    "contradiction_ids defaults to '[]' (JSON array string); deduplication relies on DurableMemoryProvider logic.",
+    "governance_reason_code is nullable; absence means no governed-memory reason code was assigned.",
+    "is_stale and is_disputed are stored as INTEGER (0/1) in SQLite and cast on read.",
+    "durable_to_memory_lossy and memory_to_durable_lossy duplicate deprecated function logic — callers opt in explicitly.",
+    "cited_evidence_ids and rejected_action_summary default to empty/None in build_with_context; population requires callers to extend AnswerEnvelopeBuilder."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

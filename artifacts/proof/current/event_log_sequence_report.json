@@ -1,0 +1,29 @@
+{
+  "counters": {
+    "event_log_new_fields": [
+      "sequence_counter"
+    ],
+    "sequence_counter_type": "u64",
+    "sequence_counter_default": 0,
+    "append_with_origin_added": true,
+    "append_backward_compatible": true,
+    "original_append_sites_unchanged": true,
+    "original_append_callsites": 44,
+    "event_origin_import_added": true,
+    "with_path_constructor_updated": true,
+    "sequence_auto_increments": true,
+    "sequence_persisted_in_envelope": true,
+    "jsonl_serialization_preserved": true
+  },
+  "generated_timestamp": 1778793146,
+  "limitations": [
+    "sequence_counter is per-EventLog-instance; it resets to 0 on process restart — no global monotonic guarantee.",
+    "append() remains the primary call site (44 callers); append_with_origin() is additive for callers that need EventOrigin attribution.",
+    "EventEnvelope is serialized to JSONL only when a path is set; in-memory-only EventLog instances do not persist envelopes.",
+    "sequence is caller-assigned by append_with_origin's internal counter; callers cannot override or query the current value.",
+    "No sequence gap detection or replay validation is performed."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

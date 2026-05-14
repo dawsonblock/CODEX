@@ -1,6 +1,6 @@
 # Phase Status & Roadmap
 
-> **CODEX-main 33** — 10-hardening sprint complete. EventEnvelope + AnswerBasisItem/BasisItemSummary structs, DurableMemoryProvider SQL backend, NL benchmark expanded (12 categories, 76 scenarios), policy regression tests, 16 proof artifacts. All workspace checks CLEAN.
+> **CODEX-main 34** — hardening reconciliation sprint complete. EventEnvelope + AnswerBasisItem/BasisItemSummary structs, DurableMemoryProvider SQL backend, NL benchmark expanded (12 categories, 76 scenarios), policy regression tests, 16 proof artifacts, ClaimRetrieved content fields. All workspace checks CLEAN.
 > Next phase: Evidence Coverage + UI Grounding Pass.
 
 ## Subsystem status

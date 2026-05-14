@@ -26,6 +26,8 @@ pub struct AnswerEnvelope {
     pub warnings: Vec<String>,
     pub missing_evidence_reason: Option<String>,
     pub cited_claim_ids: Vec<String>,
+    pub cited_evidence_ids: Vec<String>,
+    pub rejected_action_summary: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -155,6 +157,8 @@ impl AnswerBuilder {
             warnings,
             missing_evidence_reason,
             cited_claim_ids,
+            cited_evidence_ids: vec![],
+            rejected_action_summary: None,
         }
     }
 }
