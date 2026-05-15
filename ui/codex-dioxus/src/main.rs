@@ -6,6 +6,9 @@ mod app;
 mod bridge;
 mod components;
 
+#[cfg(test)]
+mod tests;
+
 pub const MAIN_CSS: Asset = asset!("/assets/main.css");
 pub const LOGO_SVG: Asset = asset!("/assets/logo.svg");
 
