@@ -74,7 +74,13 @@ jobs:
           flags: rust
           fail_ci_if_error: false
       - name: Run proof
-        run: cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
+        run: |
+          cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
+          cd ..
+          python3 scripts/generate_retrieval_policy_report.py artifacts/proof/current
+          python3 scripts/generate_answer_quality_report.py artifacts/proof/current
+          python3 scripts/generate_ui_integration_report.py artifacts/proof/current
+          cd global-workspace-runtime-rs
       - name: Oracle guard
         run: cargo test --workspace -- oracle
       - name: Clean generated artifacts
