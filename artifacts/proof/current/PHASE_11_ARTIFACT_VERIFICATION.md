@@ -119,6 +119,6 @@
 
 ## Conclusion
 
-**Phase 11 Complete:** All proof artifacts are current, verified, and semantically consistent with CODEX-main 36 hardening implementation. No stale metadata detected. Ready for production deployment.
+**Phase 11 Complete:** All proof artifacts are current, verified, and semantically consistent with CODEX-main 36 hardening implementation. No stale metadata detected. Ready for controlled validation; operational deployment is out of scope and requires independent review.
 
 **Next Phase:** Phase 12 (Evidence count semantics validation)

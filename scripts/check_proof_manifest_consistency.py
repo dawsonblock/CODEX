@@ -203,7 +203,7 @@ def check_active_codename_identity(failures: list[str], manifest_codename: str) 
         (REPO_ROOT / "artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md", "FINAL_VERIFICATION_REPORT.md"),
         (REPO_ROOT / "artifacts/proof/current/provider_policy_report.json", "provider_policy_report.json"),
         (REPO_ROOT / "artifacts/proof/verification/proof_manifest.json", "proof_manifest.json"),
-        (REPO_ROOT / "DEPLOYMENT_READY.md", "DEPLOYMENT_READY.md"),
+        (REPO_ROOT / "VALIDATION_READINESS.md", "VALIDATION_READINESS.md"),
         (REPO_ROOT / "PHASE_15_IMPLEMENTATION_COMPLETE.md", "PHASE_15_IMPLEMENTATION_COMPLETE.md"),
     ]
     

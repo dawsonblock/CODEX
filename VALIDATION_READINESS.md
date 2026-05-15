@@ -1,4 +1,6 @@
-# CODEX-main 36 Hardening: Deployment Ready ✅
+# CODEX-main 36 Hardening: Validation Readiness Checklist
+
+> **Notice:** This document describes readiness for controlled validation only. It does not claim production readiness or deployment safety. Operational deployment requires independent engineering, security, legal, and safety review.
 
 **Status**: All 14 phases complete and validated
 **Date**: May 14, 2026 (Session 2 completion)

@@ -307,7 +307,7 @@ App
 - answer_grounding_metrics (16/18 answers)
 - claims_and_evidence (17 claims, 96 evidence)
 - retrieval_performance (15 queries, 100% accuracy)
-- ui_readiness (production_ready: true)
+- ui_readiness (production_ready: false)
 ```
 
 **Updated Official Proof Command:**
@@ -385,9 +385,9 @@ python3 scripts/generate_ui_integration_report.py artifacts/proof/current
 
 ---
 
-## Production Readiness Assessment
+## Phase 9 Readiness Assessment
 
-**UI Integration Status:** ✅ **PRODUCTION READY FOR PHASE 9**
+**UI Integration Status:** ✅ **HARDENING CANDIDATE — PHASE 9 COMPLETE** (not production-ready; ready for controlled validation)
 
 **Key Indicators:**
 - ✅ All Phase 5-8 features integrated into UI

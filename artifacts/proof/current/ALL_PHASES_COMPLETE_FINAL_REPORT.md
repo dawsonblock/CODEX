@@ -251,8 +251,8 @@ Package CODEX-main 36 is a hardening candidate; operational deployment requires 
 
 ## Delivery Status
 
-### Ready for Immediate Deployment
-✅ **CODEX-main 36 is APPROVED for production**
+### Validation Readiness
+✅ **CODEX-main 36 is a hardening candidate prepared for controlled validation**
 
 **Rationale:**
 - 100% of phases complete (14/14)
@@ -262,7 +262,9 @@ Package CODEX-main 36 is a hardening candidate; operational deployment requires 
 - Known limitations transparently documented
 - Reproducibility & auditability verified
 
-**Recommendation:** Deploy to production with known limitations disclosure (link to NL_FAILURES_ANALYSIS.md)
+> **Note:** This is not a production readiness certification. Operational deployment requires independent engineering, security, legal, and safety review.
+
+**Recommendation:** Proceed with controlled validation; consult NL_FAILURES_ANALYSIS.md for known limitations disclosure.
 
 ---
 
@@ -286,11 +288,11 @@ Package CODEX-main 36 is a hardening candidate; operational deployment requires 
 All 14 phases successfully implemented:
 - Core hardening (Phases 1-8): Code implementation complete
 - Failure documentation (Phase 10): Technical analysis complete
-- Infrastructure & verification (Phases 9, 11-14): Design & deployment ready
+- Infrastructure & verification (Phases 9, 11-14): Design & validation candidate ready
 
-**Status:** ✅ **READY FOR PRODUCTION DEPLOYMENT**
+**Status:** ✅ **READY FOR CONTROLLED VALIDATION** (not production-ready; deployment requires independent review)
 
-**Next Step:** Run `./scripts/validate_codex_36.sh` to confirm deployment readiness, then proceed with integration.
+**Next Step:** Run `./scripts/validate_codex_36.sh` to confirm validation readiness.
 
 ---
 
@@ -298,4 +300,4 @@ All 14 phases successfully implemented:
 **Package:** CODEX-main 36 hardening candidate  
 **Phases:** 14/14 complete (100%)  
 **Tests:** 248/248 passing (100%)  
-**Approval:** Ready for immediate deployment
+**Approval:** Ready for review and bounded test integration

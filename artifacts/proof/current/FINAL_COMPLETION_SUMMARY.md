@@ -196,7 +196,7 @@ cargo run -p runtime-cli -- proof --strict --long-horizon --nl
 
 ```
 Package: CODEX-main 36 (Hardening Candidate)
-Status: ✅ PRODUCTION READY
+Status: ✅ HARDENING CANDIDATE (not production-ready; ready for controlled validation)
 
 Code:
   - Lines modified: ~500 (across 12 files)
