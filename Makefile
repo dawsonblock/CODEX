@@ -123,9 +123,9 @@ proof-strict:
 # ============================================================================
 
 validate:
-	@echo "✅ Running validation suite..."
+	@echo "🔎 Running validation suite..."
 	@bash scripts/validate_codex_36.sh
-	@echo "✅ All validations passed"
+	@echo "Validation suite completed"
 
 pre-commit:
 	@echo "🔒 Running pre-commit checks..."
