@@ -2,7 +2,6 @@ use crate::bridge::types::{
     EvidenceDisplay, GroundingStatus, LiveClaimDisplay, PressureMetrics, TimelineEvent,
 };
 use crate::bridge::ui_state::UIRuntimeState;
-use dioxus::prelude::WritableExt;
 
 /// Builder for creating test UIRuntimeState instances with controlled data
 pub struct TestStateBuilder {

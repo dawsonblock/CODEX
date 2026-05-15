@@ -214,7 +214,11 @@ impl MemoryProvider for ClaimStore {
                 let policy_ok = {
                     let evidence_policy = !query.require_evidence || has_evidence;
                     let denial_policy = !query.exclude_denied || !is_denied;
-                    let governance_policy = !query.governance_only || true;
+                    // NOTE: governance_only is currently advisory/inspection-only, not enforced.
+                    // This is intentional — full governance filtering would require definition of
+                    // what counts as "governed" memory. For now, all records pass this check.
+                    // TODO: Implement full governance filtering if needed.
+                    let governance_policy = true; // !query.governance_only would enforce; not yet implemented
                     evidence_policy && denial_policy && governance_policy
                 };
 

@@ -28,7 +28,7 @@ impl TimelineEventBridge {
             RuntimeEvent::CandidateSelected {
                 action_type,
                 score,
-                reasoning,
+                reasoning: _,
                 ..
             } => Some(TimelineEvent {
                 cycle,

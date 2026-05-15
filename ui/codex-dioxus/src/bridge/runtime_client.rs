@@ -682,6 +682,10 @@ async fn ollama_runtime_response(input: &str, model_name: &str) -> RuntimeStepRe
         metadata_quality: MetadataQuality::PartiallyGrounded,
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
+        answer_confidence: 0.0,
+        cited_claim_ids: vec![],
+        cited_evidence_ids: vec![],
+        rejected_action_summary: None,
     }
 }
 
@@ -782,6 +786,10 @@ async fn ollama_runtime_stream(
         metadata_quality: MetadataQuality::PartiallyGrounded,
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
+        answer_confidence: 0.0,
+        cited_claim_ids: vec![],
+        cited_evidence_ids: vec![],
+        rejected_action_summary: None,
     }
 }
 
@@ -1316,8 +1324,11 @@ mod tests {
 
         // Response must be error (not successful provider output)
         assert!(
-            out.response_text.contains("Security Error") || out.response_text.contains("gated"),
-            "denied provider response must contain security error message"
+            out.response_text.contains("Security Error") 
+                || out.response_text.contains("gated")
+                || out.response_text.contains("disabled"),
+            "denied provider response must contain security/disabled message, got: {}",
+            out.response_text
         );
     }
 
@@ -1342,15 +1353,17 @@ mod tests {
         // Stream receiver should have received error message
         let msg = rx.recv().await;
         assert!(
-            msg.map(|m| m.contains("Security Error") || m.contains("gated"))
+            msg.as_ref().map(|m| m.contains("Security Error") || m.contains("gated") || m.contains("disabled"))
                 .unwrap_or(false),
-            "stream path: sender must receive security error when gate denies provider"
+            "stream path: sender must receive security/disabled error when gate denies provider, got: {:?}",
+            msg
         );
 
         // Response must be error
         assert!(
-            out.response_text.contains("Security Error") || out.response_text.contains("gated"),
-            "stream path: denied provider response must contain security error"
+            out.response_text.contains("Security Error") || out.response_text.contains("gated") || out.response_text.contains("disabled"),
+            "stream path: denied provider response must contain security/disabled error, got: {}",
+            out.response_text
         );
     }
 

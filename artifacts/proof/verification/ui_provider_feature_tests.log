@@ -1,0 +1,419 @@
+   Compiling codex-dioxus v0.1.0 (/Users/dawsonblock/CODEX-1/ui/codex-dioxus)
+warning: unexpected `cfg` condition value: `verbose_metrics`
+  --> src/bridge/metrics.rs:54:15
+   |
+54 |         #[cfg(feature = "verbose_metrics")]
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: expected values for `feature` are: `ui-local-providers`
+   = help: consider adding `verbose_metrics` as a feature in `Cargo.toml`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: unexpected `cfg` condition value: `verbose_metrics`
+  --> src/bridge/metrics.rs:73:15
+   |
+73 |         #[cfg(feature = "verbose_metrics")]
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: expected values for `feature` are: `ui-local-providers`
+   = help: consider adding `verbose_metrics` as a feature in `Cargo.toml`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unexpected `cfg` condition value: `verbose_metrics`
+   --> src/bridge/metrics.rs:106:15
+    |
+106 |         #[cfg(feature = "verbose_metrics")]
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: expected values for `feature` are: `ui-local-providers`
+    = help: consider adding `verbose_metrics` as a feature in `Cargo.toml`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+
+warning: unused import: `governed_memory::codex_adapter::evidence_entry_to_candidate`
+ --> src/bridge/runtime_client.rs:8:5
+  |
+8 | use governed_memory::codex_adapter::evidence_entry_to_candidate;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `MemoryAdmissionGate`, `RetrievalIntentCategory`, `RetrievalPlanner`, `RetrievalQuery`, and `RetrievalRouter`
+  --> src/bridge/runtime_client.rs:10:5
+   |
+10 |     MemoryAdmissionGate, RetrievalIntentCategory, RetrievalPlanner, RetrievalQuery, RetrievalRouter,
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+
+warning: unused imports: `GroundingStatus` and `LiveClaimDisplay`
+ --> src/bridge/trace_cycle_bridge.rs:2:28
+  |
+2 | use crate::bridge::types::{LiveClaimDisplay, GroundingStatus};
+  |                            ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+
+warning: unused imports: `Level` and `span`
+ --> src/bridge/tracing_setup.rs:3:21
+  |
+3 | use tracing::{info, span, warn, Level};
+  |                     ^^^^        ^^^^^
+
+warning: unused import: `trace_signal_read`
+ --> src/bridge/ui_state.rs:2:36
+  |
+2 | use crate::bridge::tracing_setup::{trace_signal_read, trace_signal_write};
+  |                                    ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `BasisItemSummary`
+ --> src/components/claim_details_panel.rs:3:28
+  |
+3 | use crate::bridge::types::{BasisItemSummary, RuntimeStepResult};
+  |                            ^^^^^^^^^^^^^^^^
+
+warning: unused imports: `EvidenceDisplay`, `GroundingStatus`, `LiveClaimDisplay`, `PressureMetrics`, and `TimelineEvent`
+  --> src/tests/e2e_component_integration.rs:15:9
+   |
+15 | ...   EvidenceDisplay, GroundingStatus, LiveClaimDisplay, PressureMetrics, TimelineEvent,
+   |       ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+warning: unused import: `dioxus::prelude::ReadableExt`
+  --> src/tests/e2e_component_integration.rs:18:9
+   |
+18 |     use dioxus::prelude::ReadableExt;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `failed`, `contradicted`, `avg_confidence`, `total_evidence`, and `total_contradictions` are never read
+   --> src/bridge/live_claim_store_bridge.rs:203:9
+    |
+199 | pub struct ClaimStatistics {
+    |            --------------- fields in this struct
+...
+203 |     pub failed: usize,
+    |         ^^^^^^
+204 |     pub contradicted: usize,
+    |         ^^^^^^^^^^^^
+205 |     pub avg_confidence: f64,
+    |         ^^^^^^^^^^^^^^
+206 |     pub total_evidence: usize,
+    |         ^^^^^^^^^^^^^^
+207 |     pub total_contradictions: usize,
+    |         ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `ClaimStatistics` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: associated function `build_timeline` is never used
+   --> src/bridge/live_event_bridge.rs:211:12
+    |
+  8 | impl TimelineEventBridge {
+    | ------------------------ associated function in this implementation
+...
+211 |     pub fn build_timeline(envelopes: &[EventEnvelope]) -> Vec<TimelineE...
+    |            ^^^^^^^^^^^^^^
+
+warning: methods `get_evidence`, `get_evidence_by_confidence`, `resolve_evidence_for_claim`, and `verify_integrity` are never used
+   --> src/bridge/live_evidence_vault_bridge.rs:76:12
+    |
+ 10 | impl LiveEvidenceVaultBridge {
+    | ---------------------------- methods in this implementation
+...
+ 76 |     pub fn get_evidence(&self, entry_id: &str) -> Option<EvidenceDispla...
+    |            ^^^^^^^^^^^^
+...
+ 90 |     pub fn get_evidence_by_confidence(&self, min_confidence: u8) -> Vec...
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+102 |     pub fn resolve_evidence_for_claim(&self, evidence_ids: &[String]) -...
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+149 |     pub fn verify_integrity(&self, entry_id: &str, expected_hash: &str)...
+    |            ^^^^^^^^^^^^^^^^
+
+warning: fields `avg_confidence` and `provenance_distribution` are never read
+   --> src/bridge/live_evidence_vault_bridge.rs:161:9
+    |
+159 | pub struct EvidenceStatistics {
+    |            ------------------ fields in this struct
+160 |     pub total: usize,
+161 |     pub avg_confidence: f64,
+    |         ^^^^^^^^^^^^^^
+...
+164 |     pub provenance_distribution: std::collections::HashMap<String, usize>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `EvidenceStatistics` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `export_json` is never used
+   --> src/bridge/metrics.rs:184:12
+    |
+ 30 | impl MetricsCollector {
+    | --------------------- method in this implementation
+...
+184 |     pub fn export_json(&self) -> String {
+    |            ^^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> src/bridge/pressure_metrics_bridge.rs:96:12
+    |
+ 17 | impl PressureMetricsBridge {
+    | -------------------------- methods in this implementation
+...
+ 96 |     pub fn get_current(&self) -> Option<PressureMetrics> {
+    |            ^^^^^^^^^^^
+...
+101 |     pub fn get_average_pressure(&self) -> f64 {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+110 |     pub fn get_average_regulation(&self) -> f64 {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+119 |     pub fn get_peak_pressure(&self) -> f64 {
+    |            ^^^^^^^^^^^^^^^^^
+...
+124 |     pub fn get_pressure_range(&self) -> (f64, f64) {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+141 |     pub fn get_high_pressure_cycles(&self) -> Vec<PressureMetrics> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+150 |     pub fn get_statistics(&self) -> PressureStatistics {
+    |            ^^^^^^^^^^^^^^
+
+warning: struct `PressureStatistics` is never constructed
+   --> src/bridge/pressure_metrics_bridge.rs:174:12
+    |
+174 | pub struct PressureStatistics {
+    |            ^^^^^^^^^^^^^^^^^^
+
+warning: function `provide_ui_state` is never used
+ --> src/bridge/state_provider.rs:6:8
+  |
+6 | pub fn provide_ui_state() -> Signal<UIRuntimeState> {
+  |        ^^^^^^^^^^^^^^^^
+
+warning: methods `get_all_cycles`, `get_cycles_with_claim`, `get_cycles_with_evidence`, and `get_action_timeline` are never used
+   --> src/bridge/trace_cycle_bridge.rs:101:12
+    |
+ 21 | impl TraceCycleBridge {
+    | --------------------- methods in this implementation
+...
+101 |     pub fn get_all_cycles(&self) -> Vec<CycleTrace> {
+    |            ^^^^^^^^^^^^^^
+...
+108 |     pub fn get_cycles_with_claim(&self, claim_id: &str) -> Vec<CycleTra...
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+117 |     pub fn get_cycles_with_evidence(&self, evidence_id: &str) -> Vec<Cy...
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+126 |     pub fn get_action_timeline(&self) -> Vec<(usize, String, f64)> {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: fields `cycles_with_actions`, `total_claims`, `total_evidence`, and `avg_confidence` are never read
+   --> src/bridge/trace_cycle_bridge.rs:177:9
+    |
+175 | pub struct TraceStatistics {
+    |            --------------- fields in this struct
+176 |     pub total_cycles: usize,
+177 |     pub cycles_with_actions: usize,
+    |         ^^^^^^^^^^^^^^^^^^^
+178 |     pub total_claims: usize,
+    |         ^^^^^^^^^^^^
+179 |     pub total_evidence: usize,
+    |         ^^^^^^^^^^^^^^
+180 |     pub avg_confidence: f64,
+    |         ^^^^^^^^^^^^^^
+    |
+    = note: `TraceStatistics` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: associated function `with_error` is never used
+   --> src/bridge/types.rs:112:12
+    |
+111 | impl RuntimeStepResult {
+    | ---------------------- associated function in this implementation
+112 |     pub fn with_error(err: String) -> Self {
+    |            ^^^^^^^^^^
+
+warning: method `is_authoritative` is never used
+   --> src/bridge/types.rs:159:12
+    |
+136 | impl RuntimeBridgeMode {
+    | ---------------------- method in this implementation
+...
+159 |     pub fn is_authoritative(self) -> bool {
+    |            ^^^^^^^^^^^^^^^^
+
+warning: variant `ExecuteTool` is never constructed
+   --> src/bridge/types.rs:637:5
+    |
+633 | pub enum RuntimeCommand {
+    |          -------------- variant in this enum
+...
+637 |     ExecuteTool { tool: String, args: String },
+    |     ^^^^^^^^^^^
+    |
+    = note: `RuntimeCommand` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `label` is never used
+   --> src/bridge/types.rs:694:12
+    |
+693 | impl GroundingStatus {
+    | -------------------- method in this implementation
+694 |     pub fn label(self) -> &'static str {
+    |            ^^^^^
+
+warning: methods `set_timeline_events`, `add_timeline_event`, `set_evidence`, `get_evidence`, `set_pressure_metrics`, and `add_pressure_metric` are never used
+   --> src/bridge/ui_state.rs:53:12
+    |
+ 34 | impl UIRuntimeState {
+    | ------------------- methods in this implementation
+...
+ 53 |     pub fn set_timeline_events(&mut self, events: Vec<TimelineEvent>) {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+ 61 |     pub fn add_timeline_event(&mut self, event: TimelineEvent) {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+ 96 |     pub fn set_evidence(&mut self, evidence: Vec<EvidenceDisplay>) {
+    |            ^^^^^^^^^^^^
+...
+112 |     pub fn get_evidence(&self, entry_id: &str) -> Option<EvidenceDispla...
+    |            ^^^^^^^^^^^^
+...
+120 |     pub fn set_pressure_metrics(&mut self, metrics: Vec<PressureMetrics...
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+131 |     pub fn add_pressure_metric(&mut self, metric: PressureMetrics) {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: function `confidence_class` is never used
+   --> src/components/claim_details_panel.rs:184:4
+    |
+184 | fn confidence_class(conf: u8) -> &'static str {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: field `state` is never read
+ --> src/tests/test_utils.rs:8:5
+  |
+7 | pub struct TestStateBuilder {
+  |            ---------------- field in this struct
+8 |     state: UIRuntimeState,
+  |     ^^^^^
+
+warning: multiple methods are never used
+   --> src/tests/test_utils.rs:20:12
+    |
+ 11 | impl TestStateBuilder {
+    | --------------------- methods in this implementation
+...
+ 20 |     pub fn with_timeline_events(mut self, count: usize) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+ 37 |     pub fn with_claims(mut self, count: usize) -> Self {
+    |            ^^^^^^^^^^^
+...
+ 60 |     pub fn with_evidence(mut self, count: usize) -> Self {
+    |            ^^^^^^^^^^^^^
+...
+ 79 |     pub fn with_pressure_metrics(mut self, count: usize) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+...
+ 96 |     pub fn with_cycle(mut self, cycle: usize) -> Self {
+    |            ^^^^^^^^^^
+...
+102 |     pub fn loading(mut self, is_loading: bool) -> Self {
+    |            ^^^^^^^
+...
+108 |     pub fn with_error(mut self, message: String) -> Self {
+    |            ^^^^^^^^^^
+...
+114 |     pub fn build(self) -> UIRuntimeState {
+    |            ^^^^^
+
+warning: `codex-dioxus` (bin "codex-dioxus" test) generated 29 warnings (run `cargo fix --bin "codex-dioxus" -p codex-dioxus --tests` to apply 8 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.24s
+     Running unittests src/main.rs (target/debug/deps/codex_dioxus-886cf33ed3d700cd)
+
+running 81 tests
+test bridge::instrumentation::tests::test_timer_basic ... ok
+test app::tests::warning_snapshot_none ... ok
+test app::tests::warning_snapshot_joins_messages ... ok
+test bridge::live_event_bridge::tests::test_timeline_event_from_claim_asserted ... ok
+test bridge::live_event_bridge::tests::test_timeline_skip_archive_events ... ok
+test bridge::live_claim_store_bridge::tests::test_claim_validated ... ok
+test bridge::instrumentation::tests::test_record_render_time ... ok
+test bridge::live_evidence_vault_bridge::tests::test_statistics ... ok
+test bridge::live_claim_store_bridge::tests::test_claim_asserted ... ok
+test bridge::live_evidence_vault_bridge::tests::test_evidence_stored ... ok
+test bridge::live_evidence_vault_bridge::tests::test_evidence_provenance_classification ... ok
+test bridge::live_claim_store_bridge::tests::test_statistics ... ok
+test bridge::metrics::tests::test_memory_usage_update ... ok
+test bridge::metrics::tests::test_component_render_stats ... ok
+test bridge::metrics::tests::test_metrics_creation ... ok
+test bridge::metrics::tests::test_signal_read_recording ... ok
+test bridge::metrics::tests::test_reset ... ok
+test bridge::metrics::tests::test_signal_write_recording ... ok
+test bridge::pressure_metrics_bridge::tests::test_history_tracking ... ok
+test bridge::pressure_metrics_bridge::tests::test_pressure_calculation ... ok
+test bridge::pressure_metrics_bridge::tests::test_threshold_detection ... ok
+test bridge::proof_reader::tests::cutoff_applies_to_last_24h ... ok
+test bridge::proof_reader::tests::parse_epoch_from_trace_name ... ok
+test bridge::proof_reader::tests::schema_action_list_is_exactly_ten ... ok
+test bridge::proof_reader::tests::ui_text_avoids_forbidden_claims ... ok
+test bridge::runtime_client::tests::action_schema_is_exactly_ten ... ok
+test bridge::runtime_client::tests::approval_flow_transitions ... ok
+test bridge::runtime_client::tests::command_blocks_without_approval ... ok
+test bridge::runtime_client::tests::default_runtime_client_provider_gate_is_disabled ... ok
+test bridge::runtime_client::tests::fresh_provider_counters_start_zero_before_attempt ... ok
+test bridge::proof_reader::tests::missing_file_returns_error_not_panic ... ok
+test bridge::runtime_client::tests::live_provider_counters_boundary_ok ... ok
+test bridge::runtime_client::tests::external_provider_disabled_mode_returns_defer ... ok
+test bridge::proof_reader::tests::malformed_json_returns_error ... ok
+test bridge::runtime_client::tests::empty_input_does_not_panic ... ok
+test bridge::runtime_client::tests::ambiguous_maps_to_ask_clarification ... ok
+test bridge::runtime_client::tests::local_runtime_evidence_hashes_are_real_sha256_hex ... ok
+test bridge::runtime_client::tests::local_runtime_mode_has_explicit_metadata_quality ... ok
+test bridge::runtime_client::tests::no_api_key_storage_in_provider_counters ... ok
+test bridge::runtime_client::tests::mock_mode_does_not_claim_agientience_or_production ... ok
+test bridge::runtime_client::tests::normal_question_maps_to_answer ... ok
+test bridge::runtime_client::tests::local_codex_runtime_cannot_execute_external_tools ... ok
+test bridge::runtime_client::tests::provider_gate_check_consistency_send_user_message_vs_stream ... ok
+test bridge::runtime_client::tests::no_provider_execution_on_denial_via_both_paths ... ok
+test bridge::runtime_client::tests::provider_output_cannot_override_selected_action ... ok
+test bridge::runtime_client::tests::send_user_message_stream_denies_ollama_when_gate_disabled ... ok
+test bridge::runtime_client::tests::local_read_only_mode_uses_runtime_core ... ok
+test bridge::runtime_client::tests::tool_request_without_approval_does_not_execute ... ok
+test bridge::state_provider::tests::state_creation_works ... ignored
+test bridge::runtime_client::tests::unsafe_maps_to_refuse_unsafe ... ok
+test bridge::runtime_client::tests::send_user_message_denies_ollama_when_gate_disabled ... ok
+test bridge::runtime_client::tests::unsupported_factual_maps_to_defer_or_retrieve ... ok
+test bridge::trace_cycle_bridge::tests::test_cycle_trace_building ... ok
+test bridge::trace_cycle_bridge::tests::test_statistics ... ok
+test bridge::tracing_setup::tests::init_tracing_completes ... ok
+test bridge::tracing_setup::tests::trace_component_render_completes_without_panic ... ok
+test bridge::tracing_setup::tests::trace_signal_read_completes_without_panic ... ok
+test bridge::tracing_setup::tests::trace_signal_write_completes_without_panic ... ok
+test bridge::types::tests::action_schema_is_fixed_to_ten ... ok
+test bridge::types::tests::basis_item_summary_confidence_pct_clamped_at_max ... ok
+test bridge::types::tests::basis_item_summary_confidence_pct_from_float ... ok
+test bridge::types::tests::local_provider_counters_cloud_always_zero ... ok
+test bridge::types::tests::local_provider_policy_default_has_all_capabilities_false ... ok
+test bridge::types::tests::provider_counters_summary_boundary_violation ... ok
+test bridge::types::tests::provider_counters_summary_default_is_boundary_ok ... ok
+test bridge::types::tests::provider_counters_summary_status_labels ... ok
+test bridge::types::tests::provider_modes_are_experimental_when_feature_enabled ... ok
+test bridge::types::tests::runtime_bridge_mode_labels_include_read_only_mode ... ok
+test bridge::types::tests::runtime_step_result_answer_basis_items_default_empty ... ok
+test bridge::ui_state::tests::test_claim_indexing ... ignored
+test bridge::types::tests::runtime_trace_summary_default_has_boundary_ok_counters ... ok
+test bridge::ui_state::tests::test_error_handling ... ignored
+test bridge::ui_state::tests::test_reset ... ignored
+test bridge::ui_state::tests::test_state_initialization ... ignored
+test components::evidence_panel::tests::evidence_snapshot_matches_expected ... ok
+test components::proof_dashboard::tests::proof_dashboard_snapshot_matches_expected ... ok
+test components::runtime_status::tests::runtime_status_snapshot_verified ... ok
+test tests::e2e_component_integration::tests::test_components_compile ... ok
+test tests::test_utils::tests::test_builder_construction ... ignored
+test bridge::proof_reader::tests::summarize_history_filters_by_range ... ok
+test tests::e2e_component_integration::tests::test_state_requires_runtime - should panic ... ok
+
+test result: ok. 75 passed; 0 failed; 6 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
