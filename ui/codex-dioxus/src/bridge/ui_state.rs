@@ -1,6 +1,8 @@
+use crate::bridge::metrics::global_metrics;
 use crate::bridge::types::{EvidenceDisplay, LiveClaimDisplay, PressureMetrics, TimelineEvent};
 use dioxus::prelude::*;
 use std::collections::HashMap;
+use std::time::Instant;
 
 /// Global state for bridging runtime events to Dioxus UI components.
 /// Uses Signal to enable reactive updates across the entire UI.
@@ -47,20 +49,25 @@ impl UIRuntimeState {
 
     /// Update timeline events.
     pub fn set_timeline_events(&mut self, events: Vec<TimelineEvent>) {
+        let start = Instant::now();
         self.timeline_events.set(events);
         self.update_timestamp();
+        global_metrics().record_signal_write("timeline_events", start.elapsed().as_micros() as u64);
     }
 
     /// Add a single timeline event.
     pub fn add_timeline_event(&mut self, event: TimelineEvent) {
+        let start = Instant::now();
         let mut events = self.timeline_events.read().clone();
         events.push(event);
         self.timeline_events.set(events);
         self.update_timestamp();
+        global_metrics().record_signal_write("timeline_events_add", start.elapsed().as_micros() as u64);
     }
 
     /// Update claims and index by ID.
     pub fn set_claims(&mut self, claims: Vec<LiveClaimDisplay>) {
+        let start = Instant::now();
         let mut index = HashMap::new();
         for claim in &claims {
             index.insert(claim.claim_id.clone(), claim.clone());
@@ -68,15 +75,20 @@ impl UIRuntimeState {
         self.claims.set(claims);
         self.claims_by_id.set(index);
         self.update_timestamp();
+        global_metrics().record_signal_write("claims", start.elapsed().as_micros() as u64);
     }
 
     /// Get a specific claim by ID.
     pub fn get_claim(&self, claim_id: &str) -> Option<LiveClaimDisplay> {
-        self.claims_by_id.read().get(claim_id).cloned()
+        let start = Instant::now();
+        let result = self.claims_by_id.read().get(claim_id).cloned();
+        global_metrics().record_signal_read("claims_by_id", start.elapsed().as_micros() as u64);
+        result
     }
 
     /// Update evidence and index by ID.
     pub fn set_evidence(&mut self, evidence: Vec<EvidenceDisplay>) {
+        let start = Instant::now();
         let mut index = HashMap::new();
         for ev in &evidence {
             index.insert(ev.entry_id.clone(), ev.clone());
@@ -84,44 +96,58 @@ impl UIRuntimeState {
         self.evidence.set(evidence);
         self.evidence_by_id.set(index);
         self.update_timestamp();
+        global_metrics().record_signal_write("evidence", start.elapsed().as_micros() as u64);
     }
 
     /// Get a specific evidence by ID.
     pub fn get_evidence(&self, entry_id: &str) -> Option<EvidenceDisplay> {
-        self.evidence_by_id.read().get(entry_id).cloned()
+        let start = Instant::now();
+        let result = self.evidence_by_id.read().get(entry_id).cloned();
+        global_metrics().record_signal_read("evidence_by_id", start.elapsed().as_micros() as u64);
+        result
     }
 
     /// Update pressure metrics.
     pub fn set_pressure_metrics(&mut self, metrics: Vec<PressureMetrics>) {
+        let start = Instant::now();
         let current = metrics.last().cloned();
         self.pressure_metrics.set(metrics);
         self.current_pressure.set(current);
         self.update_timestamp();
+        global_metrics().record_signal_write("pressure_metrics", start.elapsed().as_micros() as u64);
     }
 
     /// Add a single pressure metric.
     pub fn add_pressure_metric(&mut self, metric: PressureMetrics) {
+        let start = Instant::now();
         let mut metrics = self.pressure_metrics.read().clone();
         metrics.push(metric.clone());
         self.pressure_metrics.set(metrics);
         self.current_pressure.set(Some(metric));
         self.update_timestamp();
+        global_metrics().record_signal_write("pressure_metrics_add", start.elapsed().as_micros() as u64);
     }
 
     /// Set current cycle.
     pub fn set_current_cycle(&mut self, cycle: usize) {
+        let start = Instant::now();
         self.current_cycle.set(cycle);
         self.update_timestamp();
+        global_metrics().record_signal_write("current_cycle", start.elapsed().as_micros() as u64);
     }
 
     /// Set loading state.
     pub fn set_loading(&mut self, loading: bool) {
+        let start = Instant::now();
         self.is_loading.set(loading);
+        global_metrics().record_signal_write("is_loading", start.elapsed().as_micros() as u64);
     }
 
     /// Set error message.
     pub fn set_error(&mut self, error: Option<String>) {
+        let start = Instant::now();
         self.error_message.set(error);
+        global_metrics().record_signal_write("error_message", start.elapsed().as_micros() as u64);
     }
 
     /// Update timestamp to current time.
@@ -135,6 +161,7 @@ impl UIRuntimeState {
 
     /// Clear all data.
     pub fn reset(&mut self) {
+        let start = Instant::now();
         self.timeline_events.set(Vec::new());
         self.claims.set(Vec::new());
         self.claims_by_id.set(HashMap::new());
@@ -145,11 +172,13 @@ impl UIRuntimeState {
         self.current_cycle.set(0);
         self.error_message.set(None);
         self.last_update.set("Reset".to_string());
+        global_metrics().record_signal_write("reset_all", start.elapsed().as_micros() as u64);
     }
 
     /// Get summary statistics.
     pub fn get_summary(&self) -> StateSummary {
-        StateSummary {
+        let start = Instant::now();
+        let summary = StateSummary {
             timeline_event_count: self.timeline_events.read().len(),
             claim_count: self.claims.read().len(),
             evidence_count: self.evidence.read().len(),
@@ -157,7 +186,9 @@ impl UIRuntimeState {
             current_cycle: *self.current_cycle.read(),
             is_loading: *self.is_loading.read(),
             has_error: self.error_message.read().is_some(),
-        }
+        };
+        global_metrics().record_signal_read("get_summary", start.elapsed().as_micros() as u64);
+        summary
     }
 }
 
