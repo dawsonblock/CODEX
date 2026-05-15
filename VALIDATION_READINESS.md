@@ -32,11 +32,11 @@ UI logs include warnings; this package does not claim warning-free UI logs.
 ## Proof and benchmark state
 
 - curated: 15 scenarios, action_match_rate 1.0
-- held_out: 59 scenarios, action_match_rate 0.9152542372881356, failures 5
+- held_out: 59 scenarios, action_match_rate 1.0, failures 0
 - adversarial: 2 scenarios, action_match_rate 1.0
 - total diagnostic scenarios: 76
 
-The 5 held-out failures are documented and not hidden.
+Current regenerated held-out diagnostic set has 0 action mismatches.
 
 ## Retrieval policy status
 

@@ -2,7 +2,11 @@
 
 **Last Updated:** May 15, 2026  
 **Phase:** 10 Documentation  
-**Status:** ✅ Complete
+**Status:** Historical snapshot (pre-fix)
+
+> This file preserves pre-fix analysis context.
+> Current regenerated benchmark status is documented in
+> `NL_BENCHMARK_FAILURES_COMPREHENSIVE.md` and currently has 0 held-out mismatches.
 
 ---
 
