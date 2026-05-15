@@ -210,7 +210,7 @@ def generate_ui_integration_report(proof_dir):
             "claim_details": "detailed_per_claim",
             "evidence_visible": "linked_and_referenced",
             "policies_shown": "warning_and_decision_display",
-            "overall_readiness": "phase_9_complete_ready_for_production"
+            "overall_readiness": "phase_9_complete_validation_candidate"
         }
     }
     
