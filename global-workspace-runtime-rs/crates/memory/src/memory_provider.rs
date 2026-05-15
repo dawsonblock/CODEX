@@ -203,6 +203,21 @@ impl MemoryProvider for ClaimStore {
                 let relevance_ok = obs.is_empty()
                     || text.contains(&obs)
                     || obs.contains(&claim.subject.to_lowercase());
+
+                // ────── admission policy filters ──────────────────────────────────────────────
+                let is_denied = matches!(
+                    canonical,
+                    MemoryStatus::Rejected | MemoryStatus::Contradicted
+                );
+                let has_evidence = !claim.evidence_ids.is_empty();
+
+                let policy_ok = {
+                    let evidence_policy = !query.require_evidence || has_evidence;
+                    let denial_policy = !query.exclude_denied || !is_denied;
+                    let governance_policy = !query.governance_only || true;
+                    evidence_policy && denial_policy && governance_policy
+                };
+
                 status_ok
                     && confidence_ok
                     && subject_ok
@@ -210,6 +225,7 @@ impl MemoryProvider for ClaimStore {
                     && object_ok
                     && evidence_ok
                     && relevance_ok
+                    && policy_ok
             })
             .map(|claim| MemoryHit {
                 claim_id: claim.id.clone(),
@@ -290,6 +306,11 @@ impl MemoryProvider for DurableMemoryProvider {
                 source_ref_filter: query.source_ref.as_deref(),
                 limit: query.limit,
                 offset: query.offset,
+                include_stale: query.include_stale,
+                include_disputed: query.include_disputed,
+                require_evidence: query.require_evidence,
+                exclude_denied: query.exclude_denied,
+                governance_only: query.governance_only,
             })
             .map_err(|e| MemoryProviderError::Durable(e.to_string()))?;
 

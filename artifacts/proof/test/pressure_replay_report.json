@@ -1,0 +1,33 @@
+{
+  "counters": {
+    "active_contradictions_final": 1,
+    "contradiction_pressure_final": 0.0,
+    "contradiction_pressure_peak": null,
+    "final_pressure_state": {
+      "coherence": 0.0,
+      "contradiction": 0.0,
+      "evidence_gap": 0.0,
+      "resource": 0.016000000000000014,
+      "safety": 0.5,
+      "social_risk": 0.0,
+      "tool_risk": 0.0,
+      "uncertainty": 1.0,
+      "urgency": 0.0
+    },
+    "interpretation": "contradiction pressure is a transient control signal that may decay/reset after handling; active_contradictions_final reports unresolved structured contradictions separately; both are deterministic control signals, not emotional states",
+    "policy_bias_applications": 16,
+    "pressure_decay_events": null,
+    "pressure_reset_events": null,
+    "pressure_updates": 39
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "Pressure fields are deterministic control signals.",
+    "No emotional or sentience interpretation.",
+    "Contradiction pressure is transient and may decay/reset after handling; unresolved contradictions are reported separately.",
+    "contradiction_pressure_peak / pressure_decay_events / pressure_reset_events are reserved fields and remain null until explicit replay counters are added."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

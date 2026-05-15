@@ -1,0 +1,23 @@
+{
+  "counters": {
+    "approval_missing_blocked_count": 1,
+    "approval_required_count": 1,
+    "interpretation": "tool_scaffold_executed counts policy-gated dry-run scaffold events; real_external_executions is always 0 — no real tool execution is enabled",
+    "real_external_executions": 0,
+    "tool_dry_runs": 1,
+    "tool_requests": 2,
+    "tool_risk_pressure": 0.0,
+    "tool_scaffold_executed": 1,
+    "tools_blocked": 1
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "Tool lifecycle is policy-gated and bounded.",
+    "No real autonomous external tool execution is enabled.",
+    "tool_scaffold_executed and tool_dry_runs reflect scaffold/dry-run only, not real side effects.",
+    "real_external_executions: 0 is a hard invariant."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

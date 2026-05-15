@@ -1,0 +1,42 @@
+{
+  "counters": {
+    "active_admission_recommendations": 34,
+    "admission_gate": "MemoryAdmissionGate",
+    "audits_with_governed_memory_reason_codes": 17,
+    "candidates_evaluated": 34,
+    "claimstore_writes_approved_after_governed_memory": 17,
+    "claimstore_writes_blocked_by_governed_memory": 0,
+    "claimstore_writes_overrode_governed_memory": 0,
+    "claimstore_writes_performed_by_codex": 17,
+    "claimstore_writes_performed_by_governed_memory": 0,
+    "deferred_pending_evidence": 0,
+    "disputed_recommendations": 0,
+    "evidence_backed_promotion_recommendations": 34,
+    "evidence_only_recommendations": 0,
+    "live_admission_decisions": 17,
+    "live_admission_hook_enabled": true,
+    "min_confidence_threshold": 0.6,
+    "no_api_keys": true,
+    "no_external_calls": true,
+    "no_mv2_activation": true,
+    "provider_requests": 0,
+    "rejected_unverified": 0,
+    "retrieval_plans_generated": 15,
+    "retroactive_evaluations": 17,
+    "role": "advisory",
+    "runtime_integrated": true,
+    "tool_executions": 0
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "Governed-memory now participates in the live claim-admission path before ClaimStore writes.",
+    "Live admission decisions are replay-counted; retroactive evaluations are retained separately for comparison.",
+    "CODEX ClaimStore remains the only claim writer; governed-memory never mutates claims directly.",
+    "Evidence-backed claims are promoted via CODEX after governed-memory advisory approval.",
+    "Audit/retrieval counters are populated from live runtime events while action authority remains with CODEX.",
+    "No API keys, no external calls, no legacy video-container activation."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

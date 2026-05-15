@@ -382,6 +382,8 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
         cited_evidence_ids: answer.cited_evidence_ids,
+        cited_claim_ids: answer.cited_claim_ids,
+        answer_confidence: answer.confidence,
         rejected_action_summary: answer.rejected_action_summary,
     }
 }
@@ -541,6 +543,8 @@ fn mock_runtime_response(input: &str) -> RuntimeStepResult {
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
         cited_evidence_ids: vec![],
+        cited_claim_ids: vec![],
+        answer_confidence: 0.0,
         rejected_action_summary: None,
     }
 }

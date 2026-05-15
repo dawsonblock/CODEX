@@ -186,6 +186,7 @@ See:
 - `artifacts/proof/README.md`
 - `artifacts/proof/CURRENT_PROOF_SUMMARY.md`
 - `artifacts/proof/verification/proof_manifest.json`
+- `RETRIEVAL_POLICY_SPEC.md` (retrieval intent routing and advisory flags clarification)
 
 ## UI Boundary Notes
 
@@ -197,6 +198,8 @@ The Dioxus UI in `ui/codex-dioxus/` is a bounded shell for:
 
 Default builds keep provider execution disabled. Experimental local provider
 paths are feature-gated and non-authoritative.
+
+**Test Coverage**: See [UI_TEST_REPORT.md](UI_TEST_REPORT.md) for comprehensive UI test results (76 PASSED | 6 IGNORED | 0 FAILED) including local-providers feature gate validation and provider policy boundary enforcement.
 
 ## Current Limits
 

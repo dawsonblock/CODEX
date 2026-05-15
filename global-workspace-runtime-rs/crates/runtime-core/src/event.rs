@@ -40,14 +40,22 @@ pub enum EventOrigin {
     MemoryStore,   // Claim store operations (ClaimAsserted, ClaimValidated, etc.)
     EvidenceVault, // Evidence storage/retrieval (EvidenceStored, EvidenceIntegrityChecked)
 
+    // Answer composition
+    AnswerBuilder, // Answer envelope construction (AnswerComposed, AnswerBasisLinked, etc.)
+
     // Reasoning & Policy
     RetrievalRouter, // Memory retrieval planning (GovernedMemoryRetrievalPlanned)
     PolicyEngine,    // Policy evaluation (GovernedMemoryAdmissionEvaluated, PolicyBiasApplied)
+    ProviderGate,    // Provider policy enforcement (ProviderRequestEvaluated, ProviderBlocked)
 
     // Support subsystems
     Evaluator,    // SimWorld evaluation (WorldStateUpdated, ActionApplied outcomes)
     ToolGate,     // Tool execution governance (ToolExecuted, ToolExecutionBlocked)
     ProofHarness, // Proof/test infrastructure (Symbolic, Replay validation)
+
+    // UI & Testing infrastructure
+    Ui,          // UI bridge events (RuntimeConnected, UserQuerySubmitted, etc.)
+    TestFixture, // Unit/integration test harness (TestSetup, TestAssertion, etc.)
 
     // Future: Infrastructure
     Instrumentation,     // Metrics, logging, tracing

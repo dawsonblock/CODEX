@@ -31,7 +31,7 @@ pub struct BasisItemSummary {
     pub evidence_ids: Vec<String>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeStepResult {
     pub selected_action: String,
     pub response_text: String,
@@ -56,6 +56,12 @@ pub struct RuntimeStepResult {
     /// Evidence IDs cited/referenced in the answer answer_basis_items
     #[serde(default)]
     pub cited_evidence_ids: Vec<String>,
+    /// Claim IDs cited in the answer (from Active claims only)
+    #[serde(default)]
+    pub cited_claim_ids: Vec<String>,
+    /// Overall confidence of the answer (0.0-1.0), aggregated from active claims
+    #[serde(default)]
+    pub answer_confidence: f64,
     /// Summary of actions considered but rejected (from policy decisions)
     #[serde(default)]
     pub rejected_action_summary: Option<String>,
@@ -93,7 +99,7 @@ impl MetadataQuality {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ChatMessage {
     pub id: String,
     pub role: ChatRole,

@@ -1,0 +1,26 @@
+{
+  "counters": {
+    "answer_basis_item_defined": true,
+    "answer_basis_items_in_runtime_step_result": true,
+    "basis_item_fields": [
+      "claim_id",
+      "subject",
+      "predicate",
+      "object",
+      "confidence",
+      "evidence_ids"
+    ],
+    "basis_items_in_answer_envelope": true,
+    "bridge_wiring_complete": true,
+    "confidence_is_f64": true,
+    "ui_summary_type": "BasisItemSummary"
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "AnswerBasisItem is a compile-time struct; runtime population depends on evaluator logic.",
+    "BasisItemSummary mirrors AnswerBasisItem for the UI bridge layer with no external calls."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

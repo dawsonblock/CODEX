@@ -1,0 +1,22 @@
+{
+  "counters": {
+    "active_contradictions": 1,
+    "contradiction_pairs_evaluated": 3,
+    "contradictions_checked": 3,
+    "duplicate_contradictions_suppressed": 0,
+    "interpretation": "raw_contradictions_detected includes pairwise cross-product events across cycles as claims accumulate; unique_contradictions_detected is the cardinality of distinct contradiction pairs",
+    "raw_contradictions_detected": 1,
+    "resolved_contradictions": 0,
+    "unique_contradictions_detected": 1
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "Contradictions are structured checks, not semantic truth reasoning.",
+    "Mutual-exclusion patterns are bounded.",
+    "Raw count includes pairwise pair growth as new claims are added across cycles.",
+    "Unique count reflects distinct contradiction pairs, not raw event volume."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

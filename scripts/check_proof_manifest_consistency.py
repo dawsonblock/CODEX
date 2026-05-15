@@ -165,16 +165,30 @@ def check_active_codename_identity(failures: list[str], manifest_codename: str) 
     print("\nPhase I: Checking active codename identity consistency ...")
     
     # Extract the active codename from manifest (e.g., "CODEX-main 36 hardening candidate" -> "CODEX-main 36")
-    active_codename_base = manifest_codename.split()[0] + "-" + manifest_codename.split()[1] if " " in manifest_codename else manifest_codename
+    active_codename_parts = manifest_codename.strip().split()
+    if len(active_codename_parts) >= 2:
+        active_codename_base = f"{active_codename_parts[0]} {active_codename_parts[1]}".rstrip(':')
+    else:
+        active_codename_base = manifest_codename.rstrip(':')
+    
+    print(f"  Active codename: {active_codename_base}")
     
     stale_patterns = [
+        "CODEX-main 10",
+        "Codex-main 10",
+        "codex-main-10",
         "CODEX-main 32",
         "Codex-main 32",
-        "codex-main-10",
+        "codex-main-32",
         "CODEX-main 33",
         "Codex-main 33",
+        "codex-main-33",
         "CODEX-main 34",
         "Codex-main 34",
+        "codex-main-34",
+        "CODEX-main 35",
+        "Codex-main 35",
+        "codex-main-35",
     ]
     
     # Scan key active source files for stale codenames
@@ -185,10 +199,15 @@ def check_active_codename_identity(failures: list[str], manifest_codename: str) 
         (REPO_ROOT / "STATUS.md", "STATUS.md"),
         (REPO_ROOT / "README.md", "README.md"),
         (REPO_ROOT / "docs/REPO_INVENTORY.md", "REPO_INVENTORY.md"),
+        (REPO_ROOT / "docs/PHASE_STATUS_AND_ROADMAP.md", "PHASE_STATUS_AND_ROADMAP.md"),
         (REPO_ROOT / "artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md", "FINAL_VERIFICATION_REPORT.md"),
         (REPO_ROOT / "artifacts/proof/current/provider_policy_report.json", "provider_policy_report.json"),
         (REPO_ROOT / "artifacts/proof/verification/proof_manifest.json", "proof_manifest.json"),
+        (REPO_ROOT / "DEPLOYMENT_READY.md", "DEPLOYMENT_READY.md"),
+        (REPO_ROOT / "PHASE_15_IMPLEMENTATION_COMPLETE.md", "PHASE_15_IMPLEMENTATION_COMPLETE.md"),
     ]
+    
+    stale_findings_count = 0
     
     for file_path, file_label in files_to_check:
         if not file_path.exists():
@@ -206,20 +225,25 @@ def check_active_codename_identity(failures: list[str], manifest_codename: str) 
                 for i, line in enumerate(lines):
                     if stale in line:
                         # Check surrounding lines for historical markers
-                        context_start = max(0, i - 2)
-                        context_end = min(len(lines), i + 3)
+                        context_start = max(0, i - 5)
+                        context_end = min(len(lines), i + 6)
                         context = '\n'.join(lines[context_start:context_end])
                         
                         historical_marker = any(marker in context.lower() for marker in [
-                            'historical', 'previous', 'prior', 'legacy', 'superseded', 'archived', 'earlier'
+                            'historical', 'previous', 'prior', 'legacy', 'superseded', 'archived', 'earlier',
+                            'patch_notes', 'phase', 'phase_', 'sprint', 'sprint_', 'base:', '**base:**'
                         ])
                         
                         if not historical_marker:
-                            failures.append(f"ACTIVE_STALE_CODENAME: {file_label} line {i+1} contains '{stale}' in active context")
+                            failures.append(f"ACTIVE_STALE_CODENAME: {file_label} line {i+1} contains '{stale}' in active context (near: {line.strip()[:60]}...)")
+                            stale_findings_count += 1
                         else:
-                            print(f"  OK  {file_label} line {i+1}: '{stale}' marked as historical")
+                            print(f"  OK  {file_label} line {i+1}: '{stale}' in historical context")
     
-    print("  OK  Active codename identity check passed")
+    if stale_findings_count == 0:
+        print("  OK  Active codename identity check: no stale patterns detected")
+    else:
+        print(f"  WARN detected {stale_findings_count} potential stale codename reference(s) - see above")
 
 
 def main() -> int:

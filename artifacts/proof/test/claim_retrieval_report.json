@@ -1,0 +1,17 @@
+{
+  "counters": {
+    "audits_with_claim_refs": 18,
+    "claims_retrieved": 17,
+    "claims_retrieved_without_evidence": 0,
+    "claims_with_evidence_links": 17,
+    "evidence_backed_claims_retrieved": 17
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "Retrieval is bounded lexical/structured lookup.",
+    "Does not prove broad natural-language reasoning."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

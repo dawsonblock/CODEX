@@ -1,0 +1,23 @@
+{
+  "counters": {
+    "delegates_cycle_id": true,
+    "envelope_fields": [
+      "sequence",
+      "timestamp",
+      "origin",
+      "event"
+    ],
+    "event_envelope_defined": true,
+    "json_roundtrip_verified": true,
+    "origin_variants": 5,
+    "timestamp_is_utc": true
+  },
+  "generated_timestamp": 1778826351,
+  "limitations": [
+    "EventEnvelope wraps RuntimeEvent structurally; sequence is caller-assigned, not auto-incremented.",
+    "Timestamp is wall-clock Utc::now() at construction; no monotonic guarantee across restarts."
+  ],
+  "pass": true,
+  "proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current",
+  "scenario_count": 15
+}

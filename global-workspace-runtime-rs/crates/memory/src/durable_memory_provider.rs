@@ -114,6 +114,12 @@ pub struct MemoryRecordQuery<'a> {
     pub source_ref_filter: Option<&'a str>,
     pub limit: usize,
     pub offset: usize,
+    // ── admission policy filters ───────────────────────────────────────
+    pub include_stale: bool,
+    pub include_disputed: bool,
+    pub require_evidence: bool,
+    pub exclude_denied: bool,
+    pub governance_only: bool,
 }
 
 /// A link between a claim and a piece of supporting or refuting evidence.
@@ -578,6 +584,27 @@ impl DurableMemoryProvider {
         if let Some(sr) = query.source_ref_filter {
             conditions.push("source_ref LIKE ?".into());
             param_values.push(Value::Text(format!("%{sr}%")));
+        }
+
+        // ── admission policy filters ────────────────────────────────────────
+        if !query.include_stale {
+            conditions.push("is_stale = 0".into());
+        }
+        if !query.include_disputed {
+            conditions.push("is_disputed = 0".into());
+        }
+        if query.require_evidence {
+            // Only return records that have governance reason (evidence backed)
+            conditions.push("governance_reason_code IS NOT NULL".into());
+        }
+        if query.exclude_denied {
+            // Exclude records rejected/contradicted by governance
+            // NULL values are allowed (no governance decision yet)
+            conditions.push("(governance_reason_code IS NULL OR governance_reason_code NOT IN ('REJECTED', 'CONTRADICTED'))".into());
+        }
+        if query.governance_only {
+            // Only return records that have governance reason code set
+            conditions.push("governance_reason_code IS NOT NULL".into());
         }
 
         let where_clause = if conditions.is_empty() {
