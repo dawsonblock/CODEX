@@ -738,7 +738,7 @@ def main() -> int:
     print("\nChecking reconciliation sprint evidence reports ...")
     reconciliation_reports = [
         "memory_schema_reconciliation_report.json",
-        "governed_memory_routing_report.json",
+        "governed_memory_retrieval_routing_report.json",
         "event_log_sequence_report.json",
     ]
     manifest_artifacts = set(manifest.get("proof_artifacts", []))
