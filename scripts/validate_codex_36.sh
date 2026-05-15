@@ -8,10 +8,10 @@ echo "CODEX-main 36 Validation Suite"
 echo "=========================================="
 echo ""
 
-GREEN='[0;32m'
-RED='[0;31m'
-YELLOW='[0;33m'
-NC='[0m'
+GREEN=$'\033[0;32m'
+RED=$'\033[0;31m'
+YELLOW=$'\033[0;33m'
+NC=$'\033[0m'
 
 if ! CODEX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"; then
     echo "❌ Unable to resolve CODEX_ROOT from script location."
