@@ -4,9 +4,11 @@
     "verified_at": "2026-05-14T00:00:00Z",
     "python_verified": true,
     "rust_verified": true,
+    "ui_verified": true,
     "cargo_version": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)",
     "rustc_version": "rustc 1.95.0 (59807616e 2026-04-14)",
-    "official_proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current && python3 scripts/generate_retrieval_policy_report.py artifacts/proof/current && python3 scripts/generate_answer_quality_report.py artifacts/proof/current && python3 scripts/generate_ui_integration_report.py artifacts/proof/current",
+    "official_proof_command": "cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current && python3 scripts/generate_retrieval_policy_report.py artifacts/proof/current && python3 scripts/generate_answer_quality_report.py artifacts/proof/current && python3 scripts/generate_ui_integration_report.py artifacts/proof/current && (cd ui/codex-dioxus && cargo test --all-targets)",
+    "supplemental_verification": "artifacts/proof/verification/ui_tests.log",
     "proof_artifacts": [
         "artifacts/proof/current/simworld_summary.json",
         "artifacts/proof/current/replay_report.json",

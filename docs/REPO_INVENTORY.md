@@ -361,17 +361,17 @@ cd ui/codex-dioxus && dx build --release
 | Artifact | Purpose | Current Value |
 |---|---|---|
 | `simworld_summary.json` | Main proof pass/fail | pass: true |
-| `replay_report.json` | Replay determinism check | event_count: 557, idempotent: true |
+| `replay_report.json` | Replay determinism check | event_count: 589, idempotent: true |
 | `evidence_integrity_report.json` | Hash chain validation | valid: true, entry_count: 96 |
 | `evidence_claim_link_report.json` | Claim-evidence linkage | linked: 17/17 |
-| `contradiction_integration_report.json` | Contradiction detection | detected: 0, reported: 0 |
+| `contradiction_integration_report.json` | Contradiction detection | detected: 1, reported: 1 |
 | `provider_policy_report.json` | Provider execution counts | requests: 0, denied: 0 |
-| `tool_policy_report.json` | Tool execution counts | dry_run: 0, denied: 0 |
-| `reasoning_audit_report.json` | Audit event generation | events_emitted: 17 |
+| `tool_policy_report.json` | Tool execution counts | dry_run: 0, denied: 1 |
+| `reasoning_audit_report.json` | Audit event generation | events_emitted: 33 |
 | `claim_retrieval_report.json` | Claim retrieval signal | retrieved: 17 |
-| `pressure_replay_report.json` | Pressure state tracking | resource_survival: 0.9740 |
-| `nl_benchmark_report.json` | NL diagnostic benchmark | action_match_rate: 0.8983050847457628 (diagnostic, 6 failures) |
-| `long_horizon_report.json` | Multi-episode stability | cycles: 15, stable: true |
+| `pressure_replay_report.json` | Pressure state tracking | resource_survival: 0.974 |
+| `nl_benchmark_report.json` | NL diagnostic benchmark | action_match_rate: 0.8983050847457628 (held-out, 59 scenarios, 6 failures) |
+| `long_horizon_report.json` | Multi-episode stability | cycles: 150, stable: true |
 
 ---
 

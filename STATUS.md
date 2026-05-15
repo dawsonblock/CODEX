@@ -1,15 +1,15 @@
 # STATUS.md
 
 Last updated: 2026-05-14 (live verified)
-Codename: CODEX-main 33
-Status: CODEX-main 33 Integration Proof Candidate — 10-hardening sprint complete
+Codename: CODEX-main 36
+Status: CODEX-main 36 Integration Proof Candidate — Phase 9 UI Integration & Final Verification
 
-CODEX-main 33 is an integration proof candidate, not final freeze.
+CODEX-main 36 is an integration proof candidate, not final freeze.
 
-10-hardening sprint completed: EventEnvelope struct + 5 tests; AnswerBasisItem/BasisItemSummary +
-UI bridge; DurableMemoryProvider schema with 82 SQL-backed tests; NL benchmark expanded to
-12 ScenarioCategory variants + 59 held-out scenarios; policy regression tests (4 new tests
-assert tool gate invariants); 2 new proof artifact reports; all workspace checks CLEAN.
+Phase 9 completed: UI instrumentation + observability modules; proof report expansion; EventEnvelope
+lifecycle completion; extended MemoryProvider query policy flags; answer basis item display; 
+UI component render timing (5 components, 76 tests passing); tracing infrastructure with threshold warnings;
+all workspace architecture guards PASSING.
 
 Reasons for Integration Proof Candidate status:
 - Local provider support exists only behind an experimental feature flag.

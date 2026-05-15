@@ -1,8 +1,8 @@
-# CODEX-main 34 — Final Verification Report
+# CODEX-main 36 — Final Verification Report
 
 ## 1. Package Identity
 
-- Package identity: CODEX-main 34 hardening candidate
+- Package identity: CODEX-main 36 hardening candidate (Phase 9 UI Integration)
 - Uploaded filename may vary; internal codename is authoritative.
 - Decision status: integration candidate, not final freeze.
 
@@ -59,8 +59,8 @@ UI:
 
 - cycles: 15
 - event_count: 589
-- held_out scenario count: 46
-- held_out action_match_rate: 1.0
+- held_out scenario count: 59
+- held_out action_match_rate: 0.8983050847457628
 - claims_with_evidence_links: 17
 - audits_with_claim_refs: 18
 - real_external_executions: 0
@@ -116,7 +116,7 @@ UI:
 
 ## 9. Decision
 
-- CODEX-main 34 hardening candidate.
+- CODEX-main 36 hardening candidate (Phase 9 UI Integration & Final Verification).
 - Not final freeze.
 
 Required limitation statement:
