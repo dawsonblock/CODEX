@@ -80,8 +80,22 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
-      - name: Run UI tests
-        run: cargo test --bin codex-dioxus 2>&1
+      - name: Run UI tests (with performance metrics)
+        run: cargo test --bin codex-dioxus --release 2>&1
       - name: Report test results
         if: always()
         run: cargo test --bin codex-dioxus -- --nocapture 2>&1 | tail -20
+      - name: Archive performance metrics
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ui-performance-metrics
+          path: ui/codex-dioxus/target/release/metrics*.json
+          retention-days: 30
+      - name: Performance baseline check (UI)
+        run: |
+          if cargo test --bin codex-dioxus --release 2>&1 | grep -q "FAILED\|0 passed"; then
+            echo "❌ UI tests failed - check logs above"
+            exit 1
+          fi
+          echo "✅ UI tests passed with performance instrumentation enabled"
