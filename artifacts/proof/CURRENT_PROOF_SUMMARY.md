@@ -16,12 +16,13 @@ Regenerated proof artifacts: packaged current set under `artifacts/proof/current
 - action-types / claim guard / no-mv2 / resource recovery: pass
 - generated-artifact checks (before and after): pass
 
-## Packaged Rust/UI evidence
+## Rust/UI verification evidence
 
-- Rust packaged log summary: 274 passed, 0 failed, 0 ignored
+- Rust checks rerun in this environment: cargo fmt --check, cargo clippy --workspace --all-targets --all-features -- -D warnings, cargo test --workspace --all-targets --all-features
+- Rust test result: 274 passed, 0 failed, 0 ignored
 - UI default packaged log: 76 passed, 0 failed, 6 ignored
 - UI provider-feature packaged log: 75 passed, 0 failed, 6 ignored
-- Caveat: Rust/UI values are packaged evidence unless rerun locally
+- Caveat: UI values are packaged evidence unless rerun locally
 
 ## Core proof values
 
@@ -38,7 +39,7 @@ Regenerated proof artifacts: packaged current set under `artifacts/proof/current
 ## NL benchmark snapshot
 
 - curated: 15 scenarios, action_match_rate 1.0
-- held_out: 59 scenarios, action_match_rate 0.9152542372881356 (5 failures)
+- held_out: 59 scenarios, action_match_rate 1.0 (0 failures)
 - adversarial: 2 scenarios, action_match_rate 1.0
 
 ## Boundary status

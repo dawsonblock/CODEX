@@ -24,7 +24,7 @@
 
 ## 5. Rust test status
 
-Packaged verification evidence unless rerun locally in this environment: 274 passed, 0 failed, 0 ignored.
+Fresh in this environment: cargo fmt --check pass, cargo clippy --workspace --all-targets --all-features -- -D warnings pass, cargo test --workspace --all-targets --all-features reports 274 passed, 0 failed, 0 ignored.
 
 ## 6. Default UI test status
 
@@ -45,10 +45,10 @@ Packaged log evidence: 75 passed, 0 failed, 6 ignored (`artifacts/proof/verifica
 - curated: 15
 - held_out: 59
 - adversarial: 2
-- held_out action_match_rate: 0.9152542372881356
-- held_out failures: 5
+- held_out action_match_rate: 1.0
+- held_out failures: 0
 
-Known held-out failures are documented, not hidden.
+Current regenerated held-out diagnostic set has 0 action mismatches.
 
 ## 10. Provider/tool boundary result
 
@@ -77,13 +77,13 @@ UI tests pass in packaged logs, but warnings remain (cfg/unused/dead-code classe
 
 - Retrieval policy enforcement is not complete in all paths.
 - EventOrigin attribution is not complete in all call sites.
-- Held-out benchmark has 5 unresolved diagnostic failures.
+- Regenerated held-out diagnostic set currently has 0 action mismatches.
 - Proof benchmarks are synthetic/diagnostic unless external evidence ingestion is explicitly enabled.
 - Evidence links prove internal linkage unless independently sourced and verified.
 
 ## 16. Skipped verification and why
 
-Rust/UI tests were not fully rerun as part of this documentation-focused patch in this environment; Rust/UI statuses are therefore reported as packaged evidence unless rerun.
+UI tests were not rerun as part of this patch in this environment; UI statuses are therefore reported as packaged evidence unless rerun.
 
 ## Required honesty statement
 

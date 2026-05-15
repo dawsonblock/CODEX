@@ -21,10 +21,11 @@ This package is **not AGI, not sentient, not autonomous, not production-ready, n
 - `PYTHONPATH=src python3 -m global_workspace_runtime.scripts.check_resource_recovery`: **pass**
 - generated-artifact checks before/after: **pass**
 
-### Rust verification status
+### Rust verification status (fresh in this environment)
 
-- Rust checks are represented as **packaged logs/evidence** unless rerun locally in the current environment.
-- Packaged Rust evidence reports: **274 passed, 0 failed, 0 ignored**.
+- `cargo fmt --check`: **pass**
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`: **pass**
+- `cargo test --workspace --all-targets --all-features`: **274 passed, 0 failed, 0 ignored**
 
 ### UI verification status
 
@@ -50,11 +51,11 @@ UI tests pass in packaged logs, but warnings remain (including unexpected cfg fo
 NL benchmark (diagnostic/synthetic):
 
 - curated: `scenario_count: 15`, `action_match_rate: 1.0`
-- held_out: `scenario_count: 59`, `action_match_rate: 0.9152542372881356`, `failures: 5`
+- held_out: `scenario_count: 59`, `action_match_rate: 1.0`, `failures: 0`
 - adversarial: `scenario_count: 2`, `action_match_rate: 1.0`
 - total diagnostic scenarios: **76**
 
-Held-out failures remain visible and are not hidden.
+Current regenerated held-out diagnostic set has 0 action mismatches.
 
 ## Provider / tool boundary
 
@@ -82,6 +83,6 @@ Retrieval routing/inspection exists. Enforcement is partial: some provider paths
 
 ## Skipped verification / caveats
 
-- Rust/UI commands were not fully rerun as part of this cleanup in this environment.
-- Rust/UI statements above are packaged verification evidence unless rerun.
+- UI commands were not fully rerun as part of this cleanup in this environment.
+- UI statements above are packaged verification evidence unless rerun.
 - Operational deployment requires separate engineering, security, legal, and safety review.

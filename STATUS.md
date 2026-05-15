@@ -39,7 +39,7 @@ It is not AGI, not sentient, not autonomous, not production-ready, not deploymen
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
-- held_out: 59 scenarios, action_match_rate 0.9152542372881356 (5 failures)
+- held_out: 59 scenarios, action_match_rate 1.0 (0 failures)
 - adversarial: 2 scenarios, action_match_rate 1.00
 
 ## Provider/tool boundaries

@@ -32,6 +32,14 @@ impl SymbolicActivator {
                     influence: "prefers_refuse_unsafe_action".into(),
                 });
             }
+            crate::observation::ObservationKind::InternalDiagnostic => {
+                activations.push(SymbolActivation {
+                    symbol_id: "internal_diagnostic_intent".into(),
+                    glyph: "🩺".into(),
+                    activation: 0.9,
+                    influence: "prefers_internal_diagnostic_action".into(),
+                });
+            }
             crate::observation::ObservationKind::AmbiguousRequest => {
                 activations.push(SymbolActivation {
                     symbol_id: "ambiguity_detected".into(),
