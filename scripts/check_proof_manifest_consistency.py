@@ -160,6 +160,68 @@ def check_doc_benchmark_consistency(
                 print(f"  OK  {doc_path.name} contains '{expected_diagnostic}'")
 
 
+def check_active_codename_identity(failures: list[str], manifest_codename: str) -> None:
+    """Check that active source/doc files use consistent current codename, not stale ones."""
+    print("\nPhase I: Checking active codename identity consistency ...")
+    
+    # Extract the active codename from manifest (e.g., "CODEX-main 36 hardening candidate" -> "CODEX-main 36")
+    active_codename_base = manifest_codename.split()[0] + "-" + manifest_codename.split()[1] if " " in manifest_codename else manifest_codename
+    
+    stale_patterns = [
+        "CODEX-main 32",
+        "Codex-main 32",
+        "codex-main-10",
+        "CODEX-main 33",
+        "Codex-main 33",
+        "CODEX-main 34",
+        "Codex-main 34",
+    ]
+    
+    # Scan key active source files for stale codenames
+    files_to_check = [
+        (REPO_ROOT / "global-workspace-runtime-rs/crates/runtime-cli/src/main.rs", "runtime-cli source"),
+        (REPO_ROOT / "ui/codex-dioxus/src/app.rs", "UI app.rs"),
+        (REPO_ROOT / "ui/codex-dioxus/src/components/runtime_status.rs", "UI runtime_status.rs"),
+        (REPO_ROOT / "STATUS.md", "STATUS.md"),
+        (REPO_ROOT / "README.md", "README.md"),
+        (REPO_ROOT / "docs/REPO_INVENTORY.md", "REPO_INVENTORY.md"),
+        (REPO_ROOT / "artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md", "FINAL_VERIFICATION_REPORT.md"),
+        (REPO_ROOT / "artifacts/proof/current/provider_policy_report.json", "provider_policy_report.json"),
+        (REPO_ROOT / "artifacts/proof/verification/proof_manifest.json", "proof_manifest.json"),
+    ]
+    
+    for file_path, file_label in files_to_check:
+        if not file_path.exists():
+            continue
+        try:
+            content = file_path.read_text()
+        except Exception:
+            continue
+        
+        # Check for each stale pattern, but allow it only in historical/legacy/prior/archived contexts
+        for stale in stale_patterns:
+            if stale in content:
+                # Check if near historical/legacy markers
+                lines = content.split('\n')
+                for i, line in enumerate(lines):
+                    if stale in line:
+                        # Check surrounding lines for historical markers
+                        context_start = max(0, i - 2)
+                        context_end = min(len(lines), i + 3)
+                        context = '\n'.join(lines[context_start:context_end])
+                        
+                        historical_marker = any(marker in context.lower() for marker in [
+                            'historical', 'previous', 'prior', 'legacy', 'superseded', 'archived', 'earlier'
+                        ])
+                        
+                        if not historical_marker:
+                            failures.append(f"ACTIVE_STALE_CODENAME: {file_label} line {i+1} contains '{stale}' in active context")
+                        else:
+                            print(f"  OK  {file_label} line {i+1}: '{stale}' marked as historical")
+    
+    print("  OK  Active codename identity check passed")
+
+
 def main() -> int:
     try:
         simworld = load_json(SIMWORLD_JSON)
@@ -757,6 +819,10 @@ def main() -> int:
             failures.append(f"MANIFEST_MISSING: {artifact_key} not registered in proof_manifest.json proof_artifacts")
         else:
             print(f"  OK  {report_name} registered in manifest")
+
+    # Phase I: Active codename identity drift check
+    manifest_codename = manifest.get("codename", "UNKNOWN")
+    check_active_codename_identity(failures, manifest_codename)
 
     if failures:
         print("\nFAIL: Consistency mismatches detected:")

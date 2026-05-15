@@ -327,6 +327,7 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
         AnswerBuildContext {
             action_type: selected_action.clone(),
             evidence_ids: evidence_ids.clone(),
+            rejected_actions: vec![],
         },
     );
 
@@ -380,6 +381,8 @@ fn local_runtime_response(input: &str) -> RuntimeStepResult {
         metadata_quality,
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
+        cited_evidence_ids: answer.cited_evidence_ids,
+        rejected_action_summary: answer.rejected_action_summary,
     }
 }
 
@@ -537,6 +540,8 @@ fn mock_runtime_response(input: &str) -> RuntimeStepResult {
         metadata_quality: MetadataQuality::MockOnly,
         provider_executions_local: 0,
         provider_counters: live_provider_counters(),
+        cited_evidence_ids: vec![],
+        rejected_action_summary: None,
     }
 }
 
@@ -558,17 +563,29 @@ async fn guarded_provider_response(
     // Check provider gate FIRST — applies to both stream and non-stream
     if !provider_gate {
         PROVIDER_LOCAL_DISABLED_BLOCKS.fetch_add(1, Ordering::Relaxed);
-        let err_msg = format!(
-            "Security Error: Local provider execution is gated. Enable 'Provider Security Gate' in Settings to use {}.",
-            if model_name == "turboquant" { "Turboquant" } else { "Ollama" }
-        );
+        let err_msg = "Provider execution disabled by admin. Remaining in read-only mode.".to_string();
 
         // If streaming, send error to sender
         if let Some(sender) = stream_sender {
             let _ = sender.send(err_msg.clone());
         }
 
-        return RuntimeStepResult::with_error(err_msg);
+        // Return explicit result distinguishing POLICY denial from CONTENT denial.
+        // provider_policy_decision = Some => gate policy blocked this, not input content.
+        // tool_policy_decision = None => input was safe, policy was the decider.
+        return RuntimeStepResult {
+            response_text: err_msg,
+            selected_action: "defer_insufficient_evidence".to_string(),
+            bridge_mode: "provider_gated".to_string(),
+            provider_policy_decision: Some("provider_disabled".to_string()),
+            tool_policy_decision: None,
+            dominant_pressures: vec!["tool_risk".to_string()],
+            replay_safe: true,
+            metadata_quality: MetadataQuality::Unavailable,
+            provider_executions_local: 0,
+            provider_counters: live_provider_counters(),
+            ..RuntimeStepResult::default()
+        };
     }
 
     // Gate is enabled — proceed with provider call

@@ -34,6 +34,7 @@ pub struct AnswerEnvelope {
 pub struct AnswerBuildContext {
     pub action_type: String,
     pub evidence_ids: Vec<String>,
+    pub rejected_actions: Vec<String>,
 }
 
 /// Deterministic builder for claim-grounded answer envelopes.
@@ -147,6 +148,22 @@ impl AnswerBuilder {
             })
             .collect();
 
+        // Extract all evidence IDs from active claims
+        let cited_evidence_ids: Vec<String> = active_claims
+            .iter()
+            .flat_map(|c| c.evidence_ids.iter().cloned())
+            .collect();
+
+        // Build rejected action summary from context
+        let rejected_action_summary = if ctx.rejected_actions.is_empty() {
+            None
+        } else {
+            Some(format!(
+                "rejected_actions:{}",
+                ctx.rejected_actions.join("|")
+            ))
+        };
+
         AnswerEnvelope {
             text,
             basis,
@@ -157,8 +174,8 @@ impl AnswerBuilder {
             warnings,
             missing_evidence_reason,
             cited_claim_ids,
-            cited_evidence_ids: vec![],
-            rejected_action_summary: None,
+            cited_evidence_ids,
+            rejected_action_summary,
         }
     }
 }
@@ -258,6 +275,7 @@ mod tests {
             AnswerBuildContext {
                 action_type: "summarize".to_string(),
                 evidence_ids: vec!["e1".to_string(), "e2".to_string()],
+                rejected_actions: vec![],
             },
         );
 
@@ -330,5 +348,70 @@ mod tests {
         assert_eq!(out.basis_items.len(), 2);
         assert_eq!(out.basis_items[0].claim_id, "c1");
         assert_eq!(out.basis_items[1].claim_id, "c2");
+    }
+
+    #[test]
+    fn cited_evidence_ids_extracted_from_active_claims() {
+        let mut c1 = claim("c1", ClaimStatus::Active, 0.7);
+        c1.evidence_ids = vec!["ev-1".to_string(), "ev-2".to_string()];
+        let mut c2 = claim("c2", ClaimStatus::Active, 0.6);
+        c2.evidence_ids = vec!["ev-3".to_string()];
+        let b = AnswerBuilder::new();
+        let out = b.build("query", &[c1, c2]);
+
+        // Should contain all evidence IDs from active claims
+        assert_eq!(out.cited_evidence_ids.len(), 3);
+        assert!(out.cited_evidence_ids.contains(&"ev-1".to_string()));
+        assert!(out.cited_evidence_ids.contains(&"ev-2".to_string()));
+        assert!(out.cited_evidence_ids.contains(&"ev-3".to_string()));
+    }
+
+    #[test]
+    fn cited_evidence_ids_excludes_contradicted_claims() {
+        let mut c1 = claim("c1", ClaimStatus::Active, 0.7);
+        c1.evidence_ids = vec!["ev-1".to_string()];
+        let mut c2 = claim("c2", ClaimStatus::Contradicted, 0.9);
+        c2.evidence_ids = vec!["ev-2".to_string()];
+        let b = AnswerBuilder::new();
+        let out = b.build("query", &[c1, c2]);
+
+        // Should only include evidence from active claims, not contradicted
+        assert_eq!(out.cited_evidence_ids, vec!["ev-1".to_string()]);
+    }
+
+    #[test]
+    fn rejected_action_summary_none_when_empty() {
+        let b = AnswerBuilder::new();
+        let out = b.build_with_context(
+            "query",
+            &[claim("c1", ClaimStatus::Active, 0.7)],
+            AnswerBuildContext {
+                action_type: "answer".to_string(),
+                evidence_ids: vec![],
+                rejected_actions: vec![],
+            },
+        );
+
+        assert_eq!(out.rejected_action_summary, None);
+    }
+
+    #[test]
+    fn rejected_action_summary_populated_from_context() {
+        let b = AnswerBuilder::new();
+        let out = b.build_with_context(
+            "query",
+            &[claim("c1", ClaimStatus::Active, 0.7)],
+            AnswerBuildContext {
+                action_type: "answer".to_string(),
+                evidence_ids: vec![],
+                rejected_actions: vec!["ask_external".to_string(), "defer_provider".to_string()],
+            },
+        );
+
+        assert!(out.rejected_action_summary.is_some());
+        let summary = out.rejected_action_summary.unwrap();
+        assert!(summary.contains("rejected_actions:"));
+        assert!(summary.contains("ask_external"));
+        assert!(summary.contains("defer_provider"));
     }
 }

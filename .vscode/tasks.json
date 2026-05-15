@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Rust: Build",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--all"],
+      "problemMatcher": "$rustc",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Rust: Test",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--all", "--lib"],
+      "problemMatcher": "$rustc",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Rust: Lint (Clippy)",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["clippy", "--all", "--all-targets", "--", "-D", "warnings"],
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "Rust: Format",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["fmt", "--all"]
+    },
+    {
+      "label": "CODEX: Pre-commit Check",
+      "type": "shell",
+      "command": "bash",
+      "args": ["scripts/pre-commit-hook.sh"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "CODEX: Local Validation",
+      "type": "shell",
+      "command": "bash",
+      "args": ["scripts/validate_local.sh"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "CODEX: Generate Proof",
+      "type": "shell",
+      "command": "cd",
+      "args": ["global-workspace-runtime-rs", "&&", "cargo", "run", "-p", "runtime-cli", "--", "proof", "--strict", "--long-horizon", "--nl", "--out", "../artifacts/proof/current"],
+      "problemMatcher": "$rustc",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

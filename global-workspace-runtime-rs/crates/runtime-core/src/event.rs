@@ -29,14 +29,30 @@ pub struct ProviderCountersSnapshot {
 }
 
 /// Provenance marker for where an event was emitted.
+/// Subsystems can use these origins to tag events with their source for better audit trails.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EventOrigin {
-    RuntimeLoop,
-    Evaluator,
-    ClaimStore,
-    ToolGate,
-    ProofHarness,
+    // Core orchestration
+    RuntimeLoop, // Master event loop coordinator
+
+    // Memory & Evidence subsystems
+    MemoryStore,   // Claim store operations (ClaimAsserted, ClaimValidated, etc.)
+    EvidenceVault, // Evidence storage/retrieval (EvidenceStored, EvidenceIntegrityChecked)
+
+    // Reasoning & Policy
+    RetrievalRouter, // Memory retrieval planning (GovernedMemoryRetrievalPlanned)
+    PolicyEngine,    // Policy evaluation (GovernedMemoryAdmissionEvaluated, PolicyBiasApplied)
+
+    // Support subsystems
+    Evaluator,    // SimWorld evaluation (WorldStateUpdated, ActionApplied outcomes)
+    ToolGate,     // Tool execution governance (ToolExecuted, ToolExecutionBlocked)
+    ProofHarness, // Proof/test infrastructure (Symbolic, Replay validation)
+
+    // Future: Infrastructure
+    Instrumentation,     // Metrics, logging, tracing
+    ShutdownCoordinator, // Graceful shutdown signals
+    BridgeAdapter,       // UI/API serialization layer
 }
 
 /// Typed wrapper around a [`RuntimeEvent`] with provenance metadata.
@@ -439,7 +455,7 @@ mod tests {
 
     #[test]
     fn event_envelope_cycle_id_delegates_to_inner_event() {
-        let env = EventEnvelope::new(1, EventOrigin::ClaimStore, cycle_started(7));
+        let env = EventEnvelope::new(1, EventOrigin::MemoryStore, cycle_started(7));
         assert_eq!(env.cycle_id(), Some(7));
     }
 

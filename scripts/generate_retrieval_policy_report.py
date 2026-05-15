@@ -85,13 +85,16 @@ def generate_retrieval_report(replay_report_path: str, output_path: str) -> dict
             }
         },
         "summary": {
-            "status": "enforcement_active",
+            "status": "advisory_inspection_only",
+            "status_note": "Policy is in advisory/inspection mode. Retrieval intents are routed and logged but not enforced—all routing decisions pass through without blocking. Custom policy rules are not implemented (default to allow).",
             "total_queries_analyzed": retrieval_plans,
             "routing_accuracy": 1.0 if retrieval_plans > 0 else 0.0,
             "average_routing_confidence": 0.95,
             "memory_backed_retrieval_enabled": True,
             "evidence_validation_enabled": evidence_links > 0,
-            "policy_gating_status": "advisory" if retrieval_plans > 0 else "disabled"
+            "policy_gating_status": "advisory" if retrieval_plans > 0 else "disabled",
+            "enforcement_level": "no_blocking_enforcement",
+            "custom_rules_implemented": False
         }
     }
     

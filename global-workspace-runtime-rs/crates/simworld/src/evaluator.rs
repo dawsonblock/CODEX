@@ -92,9 +92,9 @@ impl EvaluatorRun {
             };
             let retrieval_decision = RetrievalRouter::route(&retrieval_query);
             let _retrieval_plan = RetrievalPlanner::plan(&retrieval_query);
-            let _ = self
-                .log
-                .append_with_origin(EventOrigin::Evaluator, RuntimeEvent::GovernedMemoryRetrievalPlanned {
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::GovernedMemoryRetrievalPlanned {
                     cycle_id,
                     query_id: retrieval_query.query_id.clone(),
                     intent_category: format!("{:?}", retrieval_decision.intent),
@@ -104,7 +104,8 @@ impl EvaluatorRun {
                         .iter()
                         .map(|c| c.code.clone())
                         .collect(),
-                });
+                },
+            );
             rt.has_evidence_backed_claims = retrieval
                 .matched_claims
                 .iter()
@@ -128,16 +129,19 @@ impl EvaluatorRun {
                         )
                     })
                     .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimRetrieved {
-                    cycle_id,
-                    claim_id: claim_ref.claim_id.clone(),
-                    subject,
-                    predicate,
-                    object,
-                    evidence_id: claim_ref.evidence_id.clone(),
-                    status: format!("{:?}", claim_ref.status).to_lowercase(),
-                    confidence,
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::ClaimRetrieved {
+                        cycle_id,
+                        claim_id: claim_ref.claim_id.clone(),
+                        subject,
+                        predicate,
+                        object,
+                        evidence_id: claim_ref.evidence_id.clone(),
+                        status: format!("{:?}", claim_ref.status).to_lowercase(),
+                        confidence,
+                    },
+                );
             }
 
             // Compute pressure and bias BEFORE cycle
@@ -190,19 +194,22 @@ impl EvaluatorRun {
             let outcome = self.world.apply_action(&sim_action, scenario);
             let is_unsafe = !sim_action.is_safe_for_users();
 
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::WorldStateUpdated {
-                cycle_id,
-                outcome: WorldOutcome {
-                    resource_delta: outcome.resource_delta,
-                    social_score: outcome.social_score,
-                    harm_score: outcome.harm_score,
-                    truth_score: outcome.truth_score,
-                    kindness_score: outcome.kindness_score,
-                    logic_score: outcome.logic_score,
-                    utility_score: outcome.utility_score,
-                    matches_expected: outcome.matches_expected,
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::WorldStateUpdated {
+                    cycle_id,
+                    outcome: WorldOutcome {
+                        resource_delta: outcome.resource_delta,
+                        social_score: outcome.social_score,
+                        harm_score: outcome.harm_score,
+                        truth_score: outcome.truth_score,
+                        kindness_score: outcome.kindness_score,
+                        logic_score: outcome.logic_score,
+                        utility_score: outcome.utility_score,
+                        matches_expected: outcome.matches_expected,
+                    },
                 },
-            });
+            );
 
             // ── Subsystem integration ─────────────────────────────────
             // Self-model: record action and resources
@@ -224,13 +231,16 @@ impl EvaluatorRun {
                 .get(ev_idx)
                 .map(|e| e.content_hash.clone())
                 .unwrap_or_else(|| "unknown".into());
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::EvidenceStored {
-                cycle_id,
-                entry_id: ev_id,
-                source: "observation".into(),
-                confidence: 0.7,
-                content_hash: ev_hash,
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::EvidenceStored {
+                    cycle_id,
+                    entry_id: ev_id,
+                    source: "observation".into(),
+                    confidence: 0.7,
+                    content_hash: ev_hash,
+                },
+            );
 
             // Claim store: bounded evidence -> claim creation only.
             if let Some(entry) = evidence_vault.get(ev_idx).cloned() {
@@ -253,9 +263,9 @@ impl EvaluatorRun {
                 let admission = admission_gate.admit(&candidate);
                 let claim_written =
                     admission.admitted && admission.storage_location == "active_claim";
-                let _ = self
-                    .log
-                    .append_with_origin(EventOrigin::Evaluator, RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::GovernedMemoryAdmissionEvaluated {
                         cycle_id,
                         candidate_id: candidate.id.clone(),
                         decision_kind: admission.storage_location.clone(),
@@ -271,35 +281,48 @@ impl EvaluatorRun {
                         governed_memory_writer: false,
                         claim_written,
                         override_applied: false,
-                    });
+                    },
+                );
                 if claim_written {
                     if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
                         let claim_id = claim.id.clone();
                         let claim_subject = claim.subject.clone();
                         let claim_predicate = claim.predicate.clone();
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimAsserted {
-                            cycle_id,
-                            claim_id: claim_id.clone(),
-                            subject: claim_subject,
-                            predicate: claim_predicate,
-                        });
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimLifecycleRecorded {
-                            cycle_id,
-                            claim_id: claim_id.clone(),
-                            lifecycle_event: "created".into(),
-                            event_origin: EventOrigin::ClaimStore,
-                        });
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ClaimAsserted {
+                                cycle_id,
+                                claim_id: claim_id.clone(),
+                                subject: claim_subject,
+                                predicate: claim_predicate,
+                            },
+                        );
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ClaimLifecycleRecorded {
+                                cycle_id,
+                                claim_id: claim_id.clone(),
+                                lifecycle_event: "created".into(),
+                                event_origin: EventOrigin::MemoryStore,
+                            },
+                        );
                         let _ = claim_store.validate(&claim_id);
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimValidated {
-                            cycle_id,
-                            claim_id: claim_id.clone(),
-                        });
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimLifecycleRecorded {
-                            cycle_id,
-                            claim_id,
-                            lifecycle_event: "validated".into(),
-                            event_origin: EventOrigin::ClaimStore,
-                        });
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ClaimValidated {
+                                cycle_id,
+                                claim_id: claim_id.clone(),
+                            },
+                        );
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ClaimLifecycleRecorded {
+                                cycle_id,
+                                claim_id,
+                                lifecycle_event: "validated".into(),
+                                event_origin: EventOrigin::MemoryStore,
+                            },
+                        );
                     }
                 }
             }
@@ -321,16 +344,19 @@ impl EvaluatorRun {
                         )
                     })
                     .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimRetrieved {
-                    cycle_id,
-                    claim_id: claim_ref.claim_id.clone(),
-                    subject,
-                    predicate,
-                    object,
-                    evidence_id: claim_ref.evidence_id.clone(),
-                    status: format!("{:?}", claim_ref.status).to_lowercase(),
-                    confidence,
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::ClaimRetrieved {
+                        cycle_id,
+                        claim_id: claim_ref.claim_id.clone(),
+                        subject,
+                        predicate,
+                        object,
+                        evidence_id: claim_ref.evidence_id.clone(),
+                        status: format!("{:?}", claim_ref.status).to_lowercase(),
+                        confidence,
+                    },
+                );
             }
 
             // Contradiction detection: every 10 cycles
@@ -343,64 +369,82 @@ impl EvaluatorRun {
                 let contra_ids = contradiction_engine.detect(&claim_store);
                 for cid in &contra_ids {
                     if let Some(c) = contradiction_engine.get(cid) {
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ContradictionDetected {
-                            cycle_id,
-                            claim_a: c.claim_a.clone(),
-                            claim_b: c.claim_b.clone(),
-                            subject: c.subject.clone(),
-                        });
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ContradictionDetected {
+                                cycle_id,
+                                claim_a: c.claim_a.clone(),
+                                claim_b: c.claim_b.clone(),
+                                subject: c.subject.clone(),
+                            },
+                        );
                     }
                 }
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ContradictionChecked {
-                    cycle_id,
-                    checked_claim_ids,
-                    contradiction_ids: contra_ids,
-                    active_contradictions: contradiction_engine.active().len(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::ContradictionChecked {
+                        cycle_id,
+                        checked_claim_ids,
+                        contradiction_ids: contra_ids,
+                        active_contradictions: contradiction_engine.active().len(),
+                    },
+                );
             }
 
             // ── Pressure events (per-field, real old values) ────────
             if (old_safety - pressure.safety_pressure).abs() > 0.001 {
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PressureUpdated {
-                    cycle_id,
-                    field: "safety".into(),
-                    old_value: old_safety,
-                    new_value: pressure.safety_pressure,
-                    source: "Observation".into(),
-                    reason: "threat from observation".into(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::PressureUpdated {
+                        cycle_id,
+                        field: "safety".into(),
+                        old_value: old_safety,
+                        new_value: pressure.safety_pressure,
+                        source: "Observation".into(),
+                        reason: "threat from observation".into(),
+                    },
+                );
             }
             if (old_uncertainty - pressure.uncertainty_pressure).abs() > 0.001 {
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PressureUpdated {
-                    cycle_id,
-                    field: "uncertainty".into(),
-                    old_value: old_uncertainty,
-                    new_value: pressure.uncertainty_pressure,
-                    source: "Observation".into(),
-                    reason: "uncertainty from observation".into(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::PressureUpdated {
+                        cycle_id,
+                        field: "uncertainty".into(),
+                        old_value: old_uncertainty,
+                        new_value: pressure.uncertainty_pressure,
+                        source: "Observation".into(),
+                        reason: "uncertainty from observation".into(),
+                    },
+                );
             }
             let dominant: Vec<String> = pressure
                 .dominant_pressures(3)
                 .iter()
                 .map(|f| f.as_str().to_string())
                 .collect();
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PolicyBiasApplied {
-                cycle_id,
-                dominant_pressures: dominant.clone(),
-                selected_action: action_type.to_string(),
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::PolicyBiasApplied {
+                    cycle_id,
+                    dominant_pressures: dominant.clone(),
+                    selected_action: action_type.to_string(),
+                },
+            );
 
             let retrieval_for_audit = claim_store.retrieve_for_observation(observation);
             let claims_for_answer = claim_store.all_claims().cloned().collect::<Vec<_>>();
             let answer_envelope = answer_builder.build(observation, &claims_for_answer);
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::AnswerEnvelopeBuilt {
-                cycle_id,
-                cited_claim_ids: answer_envelope.cited_claim_ids.clone(),
-                warning_count: answer_envelope.warnings.len(),
-                confidence: answer_envelope.confidence,
-                event_origin: EventOrigin::Evaluator,
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::AnswerEnvelopeBuilt {
+                    cycle_id,
+                    cited_claim_ids: answer_envelope.cited_claim_ids.clone(),
+                    warning_count: answer_envelope.warnings.len(),
+                    confidence: answer_envelope.confidence,
+                    event_origin: EventOrigin::Evaluator,
+                },
+            );
             let claim_ids_for_audit = retrieval_for_audit
                 .matched_claims
                 .iter()
@@ -439,16 +483,19 @@ impl EvaluatorRun {
             .with_disputed_claim_ids(disputed_claim_ids_for_audit)
             .with_contradiction_ids(contradiction_ids_for_audit.clone())
             .with_dominant_pressures(dominant.clone());
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ReasoningAuditGenerated {
-                cycle_id,
-                audit_id: audit.audit_id.clone(),
-                selected_action: action_type.to_string(),
-                evidence_ids: audit.evidence_ids.clone(),
-                claim_ids: claim_ids_for_audit,
-                contradiction_ids: contradiction_ids_for_audit,
-                dominant_pressures: dominant.clone(),
-                audit_text: audit.to_text(),
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::ReasoningAuditGenerated {
+                    cycle_id,
+                    audit_id: audit.audit_id.clone(),
+                    selected_action: action_type.to_string(),
+                    evidence_ids: audit.evidence_ids.clone(),
+                    claim_ids: claim_ids_for_audit,
+                    contradiction_ids: contradiction_ids_for_audit,
+                    dominant_pressures: dominant.clone(),
+                    audit_text: audit.to_text(),
+                },
+            );
 
             builder.record_outcome(
                 outcome.total_score(),
@@ -512,18 +559,21 @@ impl EvaluatorRun {
             self.traces.push(trace);
 
             // ── Provider counters report (Simulated, always zero) ────
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ProviderCountersReported {
-                cycle_id,
-                snapshot: runtime_core::event::ProviderCountersSnapshot {
-                    local_requests: 0,
-                    local_successes: 0,
-                    local_failures: 0,
-                    local_disabled_blocks: 0,
-                    cloud_requests: 0,
-                    external_requests: 0,
-                    feature_enabled: false,
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::ProviderCountersReported {
+                    cycle_id,
+                    snapshot: runtime_core::event::ProviderCountersSnapshot {
+                        local_requests: 0,
+                        local_successes: 0,
+                        local_failures: 0,
+                        local_disabled_blocks: 0,
+                        cloud_requests: 0,
+                        external_requests: 0,
+                        feature_enabled: false,
+                    },
                 },
-            });
+            );
         }
 
         builder.set_final_resources(self.world.resources);
@@ -589,9 +639,9 @@ impl EvaluatorRun {
             };
             let retrieval_decision = RetrievalRouter::route(&retrieval_query);
             let _retrieval_plan = RetrievalPlanner::plan(&retrieval_query);
-            let _ = self
-                .log
-                .append_with_origin(EventOrigin::Evaluator, RuntimeEvent::GovernedMemoryRetrievalPlanned {
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::GovernedMemoryRetrievalPlanned {
                     cycle_id,
                     query_id: retrieval_query.query_id.clone(),
                     intent_category: format!("{:?}", retrieval_decision.intent),
@@ -601,7 +651,8 @@ impl EvaluatorRun {
                         .iter()
                         .map(|c| c.code.clone())
                         .collect(),
-                });
+                },
+            );
             rt.has_evidence_backed_claims = retrieval
                 .matched_claims
                 .iter()
@@ -625,16 +676,19 @@ impl EvaluatorRun {
                         )
                     })
                     .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimRetrieved {
-                    cycle_id,
-                    claim_id: claim_ref.claim_id.clone(),
-                    subject,
-                    predicate,
-                    object,
-                    evidence_id: claim_ref.evidence_id.clone(),
-                    status: format!("{:?}", claim_ref.status).to_lowercase(),
-                    confidence,
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::ClaimRetrieved {
+                        cycle_id,
+                        claim_id: claim_ref.claim_id.clone(),
+                        subject,
+                        predicate,
+                        object,
+                        evidence_id: claim_ref.evidence_id.clone(),
+                        status: format!("{:?}", claim_ref.status).to_lowercase(),
+                        confidence,
+                    },
+                );
             }
 
             // Compute pressure and bias (same as standard run)
@@ -689,19 +743,22 @@ impl EvaluatorRun {
             let outcome = self.world.apply_action(&sim_action, world_scenario);
             let is_unsafe = !sim_action.is_safe_for_users();
 
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::WorldStateUpdated {
-                cycle_id,
-                outcome: WorldOutcome {
-                    resource_delta: outcome.resource_delta,
-                    social_score: outcome.social_score,
-                    harm_score: outcome.harm_score,
-                    truth_score: outcome.truth_score,
-                    kindness_score: outcome.kindness_score,
-                    logic_score: outcome.logic_score,
-                    utility_score: outcome.utility_score,
-                    matches_expected: sim_action.as_str() == expected_str,
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::WorldStateUpdated {
+                    cycle_id,
+                    outcome: WorldOutcome {
+                        resource_delta: outcome.resource_delta,
+                        social_score: outcome.social_score,
+                        harm_score: outcome.harm_score,
+                        truth_score: outcome.truth_score,
+                        kindness_score: outcome.kindness_score,
+                        logic_score: outcome.logic_score,
+                        utility_score: outcome.utility_score,
+                        matches_expected: sim_action.as_str() == expected_str,
+                    },
                 },
-            });
+            );
 
             // Subsystem integration (same as standard run)
             self_model.record_action(action_type.to_string());
@@ -721,13 +778,16 @@ impl EvaluatorRun {
                 .get(ev_idx)
                 .map(|e| e.content_hash.clone())
                 .unwrap_or_else(|| "unknown".into());
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::EvidenceStored {
-                cycle_id,
-                entry_id: ev_id,
-                source: "nl_observation".into(),
-                confidence: 0.7,
-                content_hash: ev_hash,
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::EvidenceStored {
+                    cycle_id,
+                    entry_id: ev_id,
+                    source: "nl_observation".into(),
+                    confidence: 0.7,
+                    content_hash: ev_hash,
+                },
+            );
 
             if let Some(entry) = evidence_vault.get(ev_idx).cloned() {
                 let structured_entry = evidence::EvidenceEntry {
@@ -749,9 +809,9 @@ impl EvaluatorRun {
                 let admission = admission_gate.admit(&candidate);
                 let claim_written =
                     admission.admitted && admission.storage_location == "active_claim";
-                let _ = self
-                    .log
-                    .append_with_origin(EventOrigin::Evaluator, RuntimeEvent::GovernedMemoryAdmissionEvaluated {
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::GovernedMemoryAdmissionEvaluated {
                         cycle_id,
                         candidate_id: candidate.id.clone(),
                         decision_kind: admission.storage_location.clone(),
@@ -767,22 +827,27 @@ impl EvaluatorRun {
                         governed_memory_writer: false,
                         claim_written,
                         override_applied: false,
-                    });
+                    },
+                );
                 if claim_written {
                     if let Ok(claim) = claim_store.assert_from_evidence(&structured_entry) {
                         let claim_id = claim.id.clone();
                         let claim_subject = claim.subject.clone();
                         let claim_predicate = claim.predicate.clone();
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimAsserted {
-                            cycle_id,
-                            claim_id: claim_id.clone(),
-                            subject: claim_subject,
-                            predicate: claim_predicate,
-                        });
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ClaimAsserted {
+                                cycle_id,
+                                claim_id: claim_id.clone(),
+                                subject: claim_subject,
+                                predicate: claim_predicate,
+                            },
+                        );
                         let _ = claim_store.validate(&claim_id);
-                        let _ = self
-                            .log
-                            .append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimValidated { cycle_id, claim_id });
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ClaimValidated { cycle_id, claim_id },
+                        );
                     }
                 }
             }
@@ -804,16 +869,19 @@ impl EvaluatorRun {
                         )
                     })
                     .unwrap_or_else(|| (0.0, "unknown".to_string(), "retrieved".to_string(), None));
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ClaimRetrieved {
-                    cycle_id,
-                    claim_id: claim_ref.claim_id.clone(),
-                    subject,
-                    predicate,
-                    object,
-                    evidence_id: claim_ref.evidence_id.clone(),
-                    status: format!("{:?}", claim_ref.status).to_lowercase(),
-                    confidence,
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::ClaimRetrieved {
+                        cycle_id,
+                        claim_id: claim_ref.claim_id.clone(),
+                        subject,
+                        predicate,
+                        object,
+                        evidence_id: claim_ref.evidence_id.clone(),
+                        status: format!("{:?}", claim_ref.status).to_lowercase(),
+                        confidence,
+                    },
+                );
             }
 
             if cycle_id % 5 == 0 && cycle_id > 0 {
@@ -825,63 +893,81 @@ impl EvaluatorRun {
                 let contra_ids = contradiction_engine.detect(&claim_store);
                 for cid in &contra_ids {
                     if let Some(c) = contradiction_engine.get(cid) {
-                        let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ContradictionDetected {
-                            cycle_id,
-                            claim_a: c.claim_a.clone(),
-                            claim_b: c.claim_b.clone(),
-                            subject: c.subject.clone(),
-                        });
+                        let _ = self.log.append_with_origin(
+                            EventOrigin::Evaluator,
+                            RuntimeEvent::ContradictionDetected {
+                                cycle_id,
+                                claim_a: c.claim_a.clone(),
+                                claim_b: c.claim_b.clone(),
+                                subject: c.subject.clone(),
+                            },
+                        );
                     }
                 }
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ContradictionChecked {
-                    cycle_id,
-                    checked_claim_ids,
-                    contradiction_ids: contra_ids,
-                    active_contradictions: contradiction_engine.active().len(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::ContradictionChecked {
+                        cycle_id,
+                        checked_claim_ids,
+                        contradiction_ids: contra_ids,
+                        active_contradictions: contradiction_engine.active().len(),
+                    },
+                );
             }
 
             // Pressure events (per-field, real old values)
             if (old_safety - pressure.safety_pressure).abs() > 0.001 {
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PressureUpdated {
-                    cycle_id,
-                    field: "safety".into(),
-                    old_value: old_safety,
-                    new_value: pressure.safety_pressure,
-                    source: "Observation".into(),
-                    reason: "threat from NL observation".into(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::PressureUpdated {
+                        cycle_id,
+                        field: "safety".into(),
+                        old_value: old_safety,
+                        new_value: pressure.safety_pressure,
+                        source: "Observation".into(),
+                        reason: "threat from NL observation".into(),
+                    },
+                );
             }
             if (old_uncertainty - pressure.uncertainty_pressure).abs() > 0.001 {
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PressureUpdated {
-                    cycle_id,
-                    field: "uncertainty".into(),
-                    old_value: old_uncertainty,
-                    new_value: pressure.uncertainty_pressure,
-                    source: "Observation".into(),
-                    reason: "uncertainty from NL observation".into(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::PressureUpdated {
+                        cycle_id,
+                        field: "uncertainty".into(),
+                        old_value: old_uncertainty,
+                        new_value: pressure.uncertainty_pressure,
+                        source: "Observation".into(),
+                        reason: "uncertainty from NL observation".into(),
+                    },
+                );
             }
             if (old_resource - pressure.resource_pressure).abs() > 0.001 {
-                let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PressureUpdated {
-                    cycle_id,
-                    field: "resource".into(),
-                    old_value: old_resource,
-                    new_value: pressure.resource_pressure,
-                    source: "ResourceState".into(),
-                    reason: "resource level change in NL mode".into(),
-                });
+                let _ = self.log.append_with_origin(
+                    EventOrigin::Evaluator,
+                    RuntimeEvent::PressureUpdated {
+                        cycle_id,
+                        field: "resource".into(),
+                        old_value: old_resource,
+                        new_value: pressure.resource_pressure,
+                        source: "ResourceState".into(),
+                        reason: "resource level change in NL mode".into(),
+                    },
+                );
             }
             let dominant: Vec<String> = pressure
                 .dominant_pressures(3)
                 .iter()
                 .map(|f| f.as_str().to_string())
                 .collect();
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::PolicyBiasApplied {
-                cycle_id,
-                dominant_pressures: dominant.clone(),
-                selected_action: action_type.to_string(),
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::PolicyBiasApplied {
+                    cycle_id,
+                    dominant_pressures: dominant.clone(),
+                    selected_action: action_type.to_string(),
+                },
+            );
 
             let retrieval_for_audit = claim_store.retrieve_for_observation(observation);
             let claim_ids_for_audit = retrieval_for_audit
@@ -909,16 +995,19 @@ impl EvaluatorRun {
             .with_claim_ids(claim_ids_for_audit.clone())
             .with_contradiction_ids(contradiction_ids_for_audit.clone())
             .with_dominant_pressures(dominant.clone());
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ReasoningAuditGenerated {
-                cycle_id,
-                audit_id: audit.audit_id.clone(),
-                selected_action: action_type.to_string(),
-                evidence_ids: audit.evidence_ids.clone(),
-                claim_ids: claim_ids_for_audit,
-                contradiction_ids: contradiction_ids_for_audit,
-                dominant_pressures: dominant,
-                audit_text: audit.to_text(),
-            });
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::ReasoningAuditGenerated {
+                    cycle_id,
+                    audit_id: audit.audit_id.clone(),
+                    selected_action: action_type.to_string(),
+                    evidence_ids: audit.evidence_ids.clone(),
+                    claim_ids: claim_ids_for_audit,
+                    contradiction_ids: contradiction_ids_for_audit,
+                    dominant_pressures: dominant,
+                    audit_text: audit.to_text(),
+                },
+            );
 
             let action_match = action_type.to_string() == expected_str;
             builder.record_outcome(
@@ -945,18 +1034,21 @@ impl EvaluatorRun {
             self.traces.push(trace);
 
             // ── Provider counters report (Simulated, always zero) ────
-            let _ = self.log.append_with_origin(EventOrigin::Evaluator, RuntimeEvent::ProviderCountersReported {
-                cycle_id,
-                snapshot: runtime_core::event::ProviderCountersSnapshot {
-                    local_requests: 0,
-                    local_successes: 0,
-                    local_failures: 0,
-                    local_disabled_blocks: 0,
-                    cloud_requests: 0,
-                    external_requests: 0,
-                    feature_enabled: false,
+            let _ = self.log.append_with_origin(
+                EventOrigin::Evaluator,
+                RuntimeEvent::ProviderCountersReported {
+                    cycle_id,
+                    snapshot: runtime_core::event::ProviderCountersSnapshot {
+                        local_requests: 0,
+                        local_successes: 0,
+                        local_failures: 0,
+                        local_disabled_blocks: 0,
+                        cloud_requests: 0,
+                        external_requests: 0,
+                        feature_enabled: false,
+                    },
                 },
-            });
+            );
         }
 
         builder.set_final_resources(self.world.resources);

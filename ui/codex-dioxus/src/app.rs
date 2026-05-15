@@ -20,9 +20,9 @@ use crate::components::settings_panel::SettingsPanel;
 use crate::{LOGO_SVG, MAIN_CSS};
 
 pub const UI_BOUNDARY_LINES: [&str; 5] = [
-    "Codex-main 32 is not sentient.",
-    "Codex-main 32 is not conscious.",
-    "Codex-main 32 is not AGI.",
+    "Codex-main 36 is not sentient.",
+    "Codex-main 36 is not conscious.",
+    "Codex-main 36 is not AGI.",
     "Local provider modes require the 'ui-local-providers' build feature. Disabled by default.",
     "UI shell is bounded; real external cloud tools are disabled. CODEX runtime remains authoritative.",
 ];

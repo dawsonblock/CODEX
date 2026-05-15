@@ -1,7 +1,7 @@
 # CODEX-1 Repository Inventory
 
 **Last Updated:** May 14, 2026  
-**Status:** Integration Proof Candidate (codex-main-10-hardening)  
+**Status:** Integration Proof Candidate (CODEX-main 36 hardening candidate)  
 **Rust Authority:** `global-workspace-runtime-rs/crates/runtime-core/`
 
 ---

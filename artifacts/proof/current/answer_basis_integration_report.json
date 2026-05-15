@@ -4,16 +4,18 @@
     "answer_basis_items_in_runtime_step_result": true,
     "basis_item_fields": [
       "claim_id",
-      "excerpt",
-      "confidence_pct",
-      "source_uri"
+      "subject",
+      "predicate",
+      "object",
+      "confidence",
+      "evidence_ids"
     ],
     "basis_items_in_answer_envelope": true,
     "bridge_wiring_complete": true,
-    "confidence_pct_clamped_to_u8": true,
+    "confidence_is_f64": true,
     "ui_summary_type": "BasisItemSummary"
   },
-  "generated_timestamp": 1778750832,
+  "generated_timestamp": 1778823608,
   "limitations": [
     "AnswerBasisItem is a compile-time struct; runtime population depends on evaluator logic.",
     "BasisItemSummary mirrors AnswerBasisItem for the UI bridge layer with no external calls."

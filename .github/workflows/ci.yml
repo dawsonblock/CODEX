@@ -60,6 +60,19 @@ jobs:
         run: cargo build
       - name: Run tests
         run: cargo test --workspace --all-targets --all-features
+      - name: Generate code coverage
+        run: |
+          if ! command -v cargo-tarpaulin &> /dev/null; then
+            cargo install cargo-tarpaulin
+          fi
+          cargo tarpaulin --workspace --out Xml --timeout 600 \
+            --exclude-files prove.rs symbolic.rs --output-dir ../coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ../coverage/cobertura.xml
+          flags: rust
+          fail_ci_if_error: false
       - name: Run proof
         run: cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
       - name: Oracle guard

@@ -12,7 +12,7 @@
     "origin_variants": 5,
     "timestamp_is_utc": true
   },
-  "generated_timestamp": 1778750832,
+  "generated_timestamp": 1778823608,
   "limitations": [
     "EventEnvelope wraps RuntimeEvent structurally; sequence is caller-assigned, not auto-incremented.",
     "Timestamp is wall-clock Utc::now() at construction; no monotonic guarantee across restarts."

@@ -53,6 +53,12 @@ pub struct RuntimeStepResult {
     pub provider_policy_decision: Option<String>,
     pub metadata_quality: MetadataQuality,
     pub bridge_mode: String,
+    /// Evidence IDs cited/referenced in the answer answer_basis_items
+    #[serde(default)]
+    pub cited_evidence_ids: Vec<String>,
+    /// Summary of actions considered but rejected (from policy decisions)
+    #[serde(default)]
+    pub rejected_action_summary: Option<String>,
 
     // Kept from previous structure to maintain UI compatibility
     pub pressure_updates: usize,
@@ -102,6 +108,8 @@ impl RuntimeStepResult {
             response_text: err,
             selected_action: "refuse_unsafe".to_string(),
             bridge_mode: "error".to_string(),
+            tool_policy_decision: Some("deny_unsafe".to_string()),
+            provider_policy_decision: None,
             ..Default::default()
         }
     }

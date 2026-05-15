@@ -5,7 +5,7 @@ use crate::bridge::types::ProofManifest;
 #[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn runtime_status_snapshot(manifest: &ProofManifest) -> String {
     format!(
-        "codename=Codex-main 32\nruntime=Rust-authoritative runtime\npython=legacy/reference only\nproof={}\nactions=10\nmemvid=inactive/stubbed\ntools=no real autonomous external tool executor",
+        "codename=Codex-main 36\nruntime=Rust-authoritative runtime\npython=legacy/reference only\nproof={}\nactions=10\nmemvid=inactive/stubbed\ntools=no real autonomous external tool executor",
         if manifest.rust_verified {
             "verified"
         } else {
@@ -22,7 +22,7 @@ pub fn RuntimeStatusPanel(manifest: Option<ProofManifest>) -> Element {
             h3 { "Runtime Status" }
             div { class: "kv",
                 div { class: "k", "internal codename" }
-                div { "Codex-main 32" }
+                div { "Codex-main 36" }
 
                 div { class: "k", "runtime authority" }
                 div { "Rust-authoritative runtime" }
@@ -63,7 +63,7 @@ mod tests {
             ..ProofManifest::default()
         };
         let snapshot = runtime_status_snapshot(&manifest);
-        let expected = "codename=Codex-main 32\nruntime=Rust-authoritative runtime\npython=legacy/reference only\nproof=verified\nactions=10\nmemvid=inactive/stubbed\ntools=no real autonomous external tool executor";
+        let expected = "codename=Codex-main 36\nruntime=Rust-authoritative runtime\npython=legacy/reference only\nproof=verified\nactions=10\nmemvid=inactive/stubbed\ntools=no real autonomous external tool executor";
         assert_eq!(snapshot, expected);
     }
 }

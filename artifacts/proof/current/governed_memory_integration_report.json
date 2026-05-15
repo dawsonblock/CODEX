@@ -27,7 +27,7 @@
     "runtime_integrated": true,
     "tool_executions": 0
   },
-  "generated_timestamp": 1778750832,
+  "generated_timestamp": 1778823608,
   "limitations": [
     "Governed-memory now participates in the live claim-admission path before ClaimStore writes.",
     "Live admission decisions are replay-counted; retroactive evaluations are retained separately for comparison.",
