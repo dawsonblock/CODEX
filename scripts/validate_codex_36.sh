@@ -17,7 +17,6 @@ if ! CODEX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"; then
     echo "❌ Unable to resolve CODEX_ROOT from script location."
     exit 1
 fi
-RUNTIME_ROOT="$CODEX_ROOT/global-workspace-runtime-rs"
 
 FAILED=0
 
