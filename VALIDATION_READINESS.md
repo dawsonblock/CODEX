@@ -135,7 +135,7 @@ pub enum EventOrigin {
 - Portable (uses environment variables)
 - Color-coded output
 - Concise pass/fail indicators
-- Production-ready for CI/CD integration
+- Prepared for CI validation (not a production deployment certification)
 
 **Latest Run Results**:
 ```

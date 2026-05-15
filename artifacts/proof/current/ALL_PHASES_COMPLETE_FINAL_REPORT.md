@@ -11,10 +11,10 @@
 All 14 phases of the CODEX-main 36 hardening initiative are now complete and verified. The package is:
 
 - ✅ **Internally consistent** (unified identity across 6+ locations)
-- ✅ **Fully tested** (248/248 tests passing)
+- ✅ **Fully tested** (248/248 tests passing within current proof scope)
 - ✅ **Reproducible** (all artifacts regenerable via cargo)
 - ✅ **Transparent** (all limitations documented with root cause)
-- ✅ **Production-ready** (comprehensive validation suite in place)
+- ✅ **Validation candidate** (comprehensive validation suite in place, operational deployment out of scope)
 
 ---
 
@@ -229,7 +229,7 @@ All 14 phases of the CODEX-main 36 hardening initiative are now complete and ver
 [6/6] Verifying metadata populated... ✅ Citation metadata fields present
 
 ✅ ALL VALIDATIONS PASSED
-Package CODEX-main 36 ready for deployment
+Package CODEX-main 36 is a hardening candidate; operational deployment requires independent review
 ```
 
 ---

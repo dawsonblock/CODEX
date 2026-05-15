@@ -91,7 +91,7 @@ echo ""
 echo "=========================================="
 if [ $FAILED -lt 2 ]; then
     echo -e "${GREEN}✅ CORE VALIDATIONS PASSED${NC}"
-    echo "Package CODEX-main 36 ready for deployment"
+    echo "Package CODEX-main 36 validations passed; not a production-ready certification"
     echo ""
     echo "📊 Summary:"
     echo "  • Build: ✅ Clean"

@@ -13,7 +13,7 @@ You conducted a detailed deep-extraction analysis of CODEX-main 17.zip and ident
 
 ### ✅ Strengths Confirmed
 1. **Proof Manifest Consistency** — Passes all validation checks
-2. **Claim Guard Compliance** — Banned "production-ready" language cleaned
+2. **Claim Guard Compliance** — Removed overclaimed deployment-readiness language
 3. **Core Boundary Enforcement** — Real external executions: 0 (verified strict)
 4. **Packaged Test Evidence** — Rust (274 tests ✅) and UI (76 tests ✅) logs provided
 5. **EventLog Architecture** — EventEnvelope now primary format with fallback support

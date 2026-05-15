@@ -361,7 +361,7 @@ These enhancements align with the Enhancement Opportunities document:
 - ✅ 0 new CI failures introduced
 - ✅ 248/248 tests still passing
 - ✅ All enhancements backward compatible
-- ✅ All enhancements production-ready
+- ✅ All enhancements implemented as hardening-candidate scaffolds within current test/proof limits
 
 **Expected outcomes after deployment**:
 - 90% reduction in format/lint CI failures
@@ -375,8 +375,8 @@ These enhancements align with the Enhancement Opportunities document:
 ## Next Recommended Steps
 
 ### Immediate (This week):
-1. ✅ Deploy all Phase 15 enhancements to main branch
-2. ✅ Test Makefile targets with full team
+1. ✅ Commit all Phase 15 enhancements to main branch
+2. ✅ Test Makefile targets with full team (controlled validation)
 3. ✅ Verify pre-commit hooks work across OSX/Linux
 
 ### Short-term (Next 2-3 weeks):

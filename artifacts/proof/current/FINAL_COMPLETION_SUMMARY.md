@@ -231,10 +231,10 @@ CODEX-main 36 hardening initiative is **100% complete and verified**.
 
 ### What You Get
 ✅ Internally consistent package (identity unified)  
-✅ Comprehensive test coverage (248/248 passing)  
+✅ Comprehensive test coverage (248/248 passing within current scope)  
 ✅ Honest documentation (all claims code-backed)  
-✅ Transparent failure analysis (6 cases documented)  
-✅ Production-ready code (safe for deployment)  
+✅ Transparent failure analysis (5 NL failures documented)  
+✅ Validated scaffolding (testing complete, deployment out of scope)  
 ✅ Audit-friendly artifacts (regenerable via cargo)  
 
 ### What's Maintained
@@ -245,7 +245,7 @@ CODEX-main 36 hardening initiative is **100% complete and verified**.
 ✅ No hidden failures  
 ✅ Full reproducibility  
 
-**Ready for deployment, integration, or external audit.**
+**Ready for controlled review and bounded test integration.**
 
 ---
 

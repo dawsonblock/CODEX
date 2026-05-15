@@ -1,10 +1,10 @@
 # STATUS.md
 
-Last updated: 2026-05-14 (live verified)
+Last updated: 2026-05-15 (claim-guard verified)
 Codename: CODEX-main 36
-Status: CODEX-main 36 Integration Proof Candidate — Phase 9 UI Integration & Final Verification
+Status: ✅ CODEX-main 36 Hardening Candidate — Claim-Clean & Proof-Consistent
 
-CODEX-main 36 is an integration proof candidate, not final freeze.
+CODEX-main 36 is a hardening candidate scaffold, suitable for controlled validation and review. It is not production-ready, not AGI, not sentient, and not fully verified for operational use.
 
 Phase 9 completed: UI instrumentation + observability modules; proof report expansion; EventEnvelope
 lifecycle completion; extended MemoryProvider query policy flags; answer basis item display; 
@@ -26,11 +26,14 @@ cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifact
 
 ## Current Verification Snapshot
 
+**Claim Guard (Primary Blocker)**: ✅ PASS (227 files checked, 0 overclaiming phrases detected)
+
 Python verification:
+- check_sentience_claims: ✅ pass
 - check_action_types: pass
-- check_sentience_claims: pass
 - check_no_mv2: pass
 - check_resource_recovery: pass
+- check_proof_manifest_consistency: ✅ pass
 - pytest: 35 passed
 - architecture guards: pass
 
