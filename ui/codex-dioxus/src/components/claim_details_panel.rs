@@ -1,6 +1,6 @@
+use crate::bridge::instrumentation::{end_component_render_timer, start_component_render_timer};
 use crate::bridge::state_provider::use_ui_runtime_state;
 use crate::bridge::types::{BasisItemSummary, RuntimeStepResult};
-use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Enhanced claim details panel showing detailed information about each claim
@@ -11,7 +11,7 @@ pub fn ClaimDetailsPanel(#[props(default)] trace: Option<RuntimeStepResult>) -> 
     // Try to get state from context for live data
     let state = use_ui_runtime_state();
     let live_claims = state.read().claims.read().clone();
-    
+
     let element = if let Some(trace) = trace {
         // Only show if we have basis items (grounded answer)
         if trace.answer_basis_items.is_empty() {
@@ -32,92 +32,92 @@ pub fn ClaimDetailsPanel(#[props(default)] trace: Option<RuntimeStepResult>) -> 
             let contradicted = trace.contradiction_ids.len();
 
             rsx! {
-        section { class: "card",
-            h3 { "Claim Details" }
+            section { class: "card",
+                h3 { "Claim Details" }
 
-            div { class: "claim-summary-row",
-                span { class: "claim-summary-item",
-                    span { class: "summary-label", "Grounded Claims" }
-                    span { class: "summary-value", "{grounded_claims}" }
-                }
-                span { class: "claim-summary-item",
-                    span { class: "summary-label", "Total Retrieved" }
-                    span { class: "summary-value", "{total_claims}" }
-                }
-                if contradicted > 0 {
+                div { class: "claim-summary-row",
                     span { class: "claim-summary-item",
-                        span { class: "summary-label", "Contradicted" }
-                        span { class: "summary-value bad", "{contradicted}" }
+                        span { class: "summary-label", "Grounded Claims" }
+                        span { class: "summary-value", "{grounded_claims}" }
+                    }
+                    span { class: "claim-summary-item",
+                        span { class: "summary-label", "Total Retrieved" }
+                        span { class: "summary-value", "{total_claims}" }
+                    }
+                    if contradicted > 0 {
+                        span { class: "claim-summary-item",
+                            span { class: "summary-label", "Contradicted" }
+                            span { class: "summary-value bad", "{contradicted}" }
+                        }
                     }
                 }
-            }
 
-            div { class: "claims-list",
-                for (idx, item) in trace.answer_basis_items.iter().enumerate() {
-                    div { class: "claim-card",
-                        div { class: "claim-header",
-                            span { class: "claim-index", "{idx + 1}." }
-                            code { class: "claim-id", "{item.claim_id}" }
-                            span { class: "claim-confidence",
-                                span {
-                                    class: "confidence-badge claim-badge {confidence_class(item.confidence_pct)}",
-                                    "{item.confidence_pct}%"
+                div { class: "claims-list",
+                    for (idx, item) in trace.answer_basis_items.iter().enumerate() {
+                        div { class: "claim-card",
+                            div { class: "claim-header",
+                                span { class: "claim-index", "{idx + 1}." }
+                                code { class: "claim-id", "{item.claim_id}" }
+                                span { class: "claim-confidence",
+                                    span {
+                                        class: "confidence-badge claim-badge {confidence_class(item.confidence_pct)}",
+                                        "{item.confidence_pct}%"
+                                    }
                                 }
                             }
-                        }
 
-                        div { class: "claim-content",
-                            div { class: "claim-triple",
-                                div { class: "claim-part",
-                                    span { class: "claim-label", "Subject" }
-                                    span { class: "claim-value subject", "{item.subject}" }
+                            div { class: "claim-content",
+                                div { class: "claim-triple",
+                                    div { class: "claim-part",
+                                        span { class: "claim-label", "Subject" }
+                                        span { class: "claim-value subject", "{item.subject}" }
+                                    }
+                                    div { class: "claim-part",
+                                        span { class: "claim-label", "Predicate" }
+                                        code { class: "claim-value predicate", "{item.predicate}" }
+                                    }
+                                    div { class: "claim-part",
+                                        span { class: "claim-label", "Object" }
+                                        span { class: "claim-value object",
+                                            if let Some(obj) = &item.object {
+                                                "{obj}"
+                                            } else {
+                                                span { class: "muted", "(none)" }
+                                            }
+                                        }
+                                    }
                                 }
-                                div { class: "claim-part",
-                                    span { class: "claim-label", "Predicate" }
-                                    code { class: "claim-value predicate", "{item.predicate}" }
-                                }
-                                div { class: "claim-part",
-                                    span { class: "claim-label", "Object" }
-                                    span { class: "claim-value object",
-                                        if let Some(obj) = &item.object {
-                                            "{obj}"
-                                        } else {
-                                            span { class: "muted", "(none)" }
+                            }
+
+                            if !item.evidence_ids.is_empty() {
+                                div { class: "claim-evidence",
+                                    span { class: "evidence-label", "Backing Evidence ({item.evidence_ids.len()})" }
+                                    div { class: "evidence-list",
+                                        for ev_id in &item.evidence_ids {
+                                            span { class: "evidence-ref", "{ev_id}" }
                                         }
                                     }
                                 }
                             }
                         }
+                    }
+                }
 
-                        if !item.evidence_ids.is_empty() {
-                            div { class: "claim-evidence",
-                                span { class: "evidence-label", "Backing Evidence ({item.evidence_ids.len()})" }
-                                div { class: "evidence-list",
-                                    for ev_id in &item.evidence_ids {
-                                        span { class: "evidence-ref", "{ev_id}" }
-                                    }
-                                }
+                if !trace.contradiction_ids.is_empty() {
+                    div { class: "contradicted-claims",
+                        h4 { "⚠️ Contradicted Claims" }
+                        div { class: "contradiction-list",
+                            for contra_id in &trace.contradiction_ids {
+                                span { class: "contradiction-badge", "{contra_id}" }
                             }
                         }
-                    }
-                }
-            }
-
-            if !trace.contradiction_ids.is_empty() {
-                div { class: "contradicted-claims",
-                    h4 { "⚠️ Contradicted Claims" }
-                    div { class: "contradiction-list",
-                        for contra_id in &trace.contradiction_ids {
-                            span { class: "contradiction-badge", "{contra_id}" }
+                        p { class: "muted small",
+                            "These claims are superseded or contradicted and are not included in the answer."
                         }
                     }
-                    p { class: "muted small",
-                        "These claims are superseded or contradicted and are not included in the answer."
-                    }
                 }
             }
-        }
-            }
+                }
         }
     } else {
         // If no trace provided, show live claims from state instead

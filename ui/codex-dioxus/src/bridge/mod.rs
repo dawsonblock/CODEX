@@ -1,12 +1,13 @@
+pub mod instrumentation;
 pub mod live_claim_store_bridge;
 pub mod live_event_bridge;
 pub mod live_evidence_vault_bridge;
-pub mod instrumentation;
 pub mod metrics;
 pub mod pressure_metrics_bridge;
 pub mod proof_reader;
 pub mod runtime_client;
 pub mod state_provider;
 pub mod trace_cycle_bridge;
+pub mod tracing_setup;
 pub mod types;
 pub mod ui_state;

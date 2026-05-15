@@ -1,5 +1,5 @@
+use crate::bridge::instrumentation::{end_component_render_timer, start_component_render_timer};
 use crate::bridge::state_provider::use_ui_runtime_state;
-use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Long-horizon trace viewer for detailed per-cycle analysis
@@ -136,7 +136,7 @@ pub fn LongHorizonTraceViewer(#[props(default)] current_cycle: Option<usize>) ->
             }
         }
     };
-    
+
     end_component_render_timer("LongHorizonTraceViewer", timer);
     element
 }

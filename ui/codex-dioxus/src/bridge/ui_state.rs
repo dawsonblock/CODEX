@@ -1,8 +1,10 @@
 use crate::bridge::metrics::global_metrics;
+use crate::bridge::tracing_setup::{trace_signal_read, trace_signal_write};
 use crate::bridge::types::{EvidenceDisplay, LiveClaimDisplay, PressureMetrics, TimelineEvent};
 use dioxus::prelude::*;
 use std::collections::HashMap;
 use std::time::Instant;
+use tracing::info;
 
 /// Global state for bridging runtime events to Dioxus UI components.
 /// Uses Signal to enable reactive updates across the entire UI.
@@ -62,12 +64,14 @@ impl UIRuntimeState {
         events.push(event);
         self.timeline_events.set(events);
         self.update_timestamp();
-        global_metrics().record_signal_write("timeline_events_add", start.elapsed().as_micros() as u64);
+        global_metrics()
+            .record_signal_write("timeline_events_add", start.elapsed().as_micros() as u64);
     }
 
     /// Update claims and index by ID.
     pub fn set_claims(&mut self, claims: Vec<LiveClaimDisplay>) {
         let start = Instant::now();
+        info!("Signal: updating claims collection");
         let mut index = HashMap::new();
         for claim in &claims {
             index.insert(claim.claim_id.clone(), claim.clone());
@@ -75,7 +79,9 @@ impl UIRuntimeState {
         self.claims.set(claims);
         self.claims_by_id.set(index);
         self.update_timestamp();
-        global_metrics().record_signal_write("claims", start.elapsed().as_micros() as u64);
+        let duration = start.elapsed().as_micros() as u64;
+        global_metrics().record_signal_write("claims", duration);
+        trace_signal_write("claims", duration);
     }
 
     /// Get a specific claim by ID.
@@ -89,6 +95,7 @@ impl UIRuntimeState {
     /// Update evidence and index by ID.
     pub fn set_evidence(&mut self, evidence: Vec<EvidenceDisplay>) {
         let start = Instant::now();
+        info!("Signal: updating evidence collection");
         let mut index = HashMap::new();
         for ev in &evidence {
             index.insert(ev.entry_id.clone(), ev.clone());
@@ -96,7 +103,9 @@ impl UIRuntimeState {
         self.evidence.set(evidence);
         self.evidence_by_id.set(index);
         self.update_timestamp();
-        global_metrics().record_signal_write("evidence", start.elapsed().as_micros() as u64);
+        let duration = start.elapsed().as_micros() as u64;
+        global_metrics().record_signal_write("evidence", duration);
+        trace_signal_write("evidence", duration);
     }
 
     /// Get a specific evidence by ID.
@@ -114,33 +123,43 @@ impl UIRuntimeState {
         self.pressure_metrics.set(metrics);
         self.current_pressure.set(current);
         self.update_timestamp();
-        global_metrics().record_signal_write("pressure_metrics", start.elapsed().as_micros() as u64);
+        global_metrics()
+            .record_signal_write("pressure_metrics", start.elapsed().as_micros() as u64);
     }
 
     /// Add a single pressure metric.
     pub fn add_pressure_metric(&mut self, metric: PressureMetrics) {
         let start = Instant::now();
+        info!("Signal: adding pressure metric");
         let mut metrics = self.pressure_metrics.read().clone();
         metrics.push(metric.clone());
         self.pressure_metrics.set(metrics);
         self.current_pressure.set(Some(metric));
         self.update_timestamp();
-        global_metrics().record_signal_write("pressure_metrics_add", start.elapsed().as_micros() as u64);
+        let duration = start.elapsed().as_micros() as u64;
+        global_metrics().record_signal_write("pressure_metrics_add", duration);
+        trace_signal_write("pressure_metrics", duration);
     }
 
     /// Set current cycle.
     pub fn set_current_cycle(&mut self, cycle: usize) {
         let start = Instant::now();
+        info!("Signal: setting current cycle to {}", cycle);
         self.current_cycle.set(cycle);
         self.update_timestamp();
-        global_metrics().record_signal_write("current_cycle", start.elapsed().as_micros() as u64);
+        let duration = start.elapsed().as_micros() as u64;
+        global_metrics().record_signal_write("current_cycle", duration);
+        trace_signal_write("current_cycle", duration);
     }
 
     /// Set loading state.
     pub fn set_loading(&mut self, loading: bool) {
         let start = Instant::now();
+        info!("Signal: set loading state to {}", loading);
         self.is_loading.set(loading);
-        global_metrics().record_signal_write("is_loading", start.elapsed().as_micros() as u64);
+        let duration = start.elapsed().as_micros() as u64;
+        global_metrics().record_signal_write("is_loading", duration);
+        trace_signal_write("is_loading", duration);
     }
 
     /// Set error message.

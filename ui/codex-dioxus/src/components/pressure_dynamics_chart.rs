@@ -1,5 +1,5 @@
+use crate::bridge::instrumentation::{end_component_render_timer, start_component_render_timer};
 use crate::bridge::state_provider::use_ui_runtime_state;
-use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Pressure dynamics display showing action score trends across cycles
@@ -129,7 +129,7 @@ pub fn PressureDynamicsChart(#[props(default)] cycle_count: Option<u8>) -> Eleme
             }
         }
     };
-    
+
     end_component_render_timer("PressureDynamicsChart", timer);
     element
 }

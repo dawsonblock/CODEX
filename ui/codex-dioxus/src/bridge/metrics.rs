@@ -1,14 +1,13 @@
+use std::collections::HashMap;
 /// Performance Metrics Collection Module
-/// 
+///
 /// Provides centralized metrics collection for:
 /// - Signal read/write operations
 /// - Component render performance
 /// - Memory usage tracking
 /// - Latency histograms
-
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 
 /// Central metrics collector
 #[derive(Clone, Debug)]
@@ -16,14 +15,14 @@ pub struct MetricsCollector {
     /// Signal operation counters by field name
     signal_reads: Arc<Mutex<HashMap<String, AtomicU64>>>,
     signal_writes: Arc<Mutex<HashMap<String, AtomicU64>>>,
-    
+
     /// Component render timing
     component_renders: Arc<Mutex<HashMap<String, AtomicU64>>>,
     component_render_count: Arc<Mutex<HashMap<String, AtomicU64>>>,
-    
+
     /// Memory usage estimates (bytes)
     memory_usage: Arc<AtomicU64>,
-    
+
     /// Global operation counter
     total_operations: Arc<AtomicU64>,
 }
@@ -45,12 +44,13 @@ impl MetricsCollector {
     pub fn record_signal_read(&self, field_name: &str, _duration_micros: u64) {
         // Ensure entry exists in HashMap
         let mut reads = self.signal_reads.lock().unwrap_or_else(|e| e.into_inner());
-        reads.entry(field_name.to_string())
+        reads
+            .entry(field_name.to_string())
             .or_insert_with(|| AtomicU64::new(0))
             .fetch_add(1, Ordering::Relaxed);
-        
+
         self.total_operations.fetch_add(1, Ordering::Relaxed);
-        
+
         #[cfg(feature = "verbose_metrics")]
         tracing::debug!(
             field = field_name,
@@ -63,12 +63,13 @@ impl MetricsCollector {
     pub fn record_signal_write(&self, field_name: &str, _duration_micros: u64) {
         // Ensure entry exists in HashMap
         let mut writes = self.signal_writes.lock().unwrap_or_else(|e| e.into_inner());
-        writes.entry(field_name.to_string())
+        writes
+            .entry(field_name.to_string())
             .or_insert_with(|| AtomicU64::new(0))
             .fetch_add(1, Ordering::Relaxed);
-        
+
         self.total_operations.fetch_add(1, Ordering::Relaxed);
-        
+
         #[cfg(feature = "verbose_metrics")]
         tracing::info!(
             field = field_name,
@@ -80,20 +81,28 @@ impl MetricsCollector {
     /// Record a component render operation
     pub fn record_component_render(&self, component_name: &str, _duration_micros: u64) {
         // Ensure entries exist
-        let mut renders = self.component_renders.lock().unwrap_or_else(|e| e.into_inner());
-        let mut counts = self.component_render_count.lock().unwrap_or_else(|e| e.into_inner());
-        
-        renders.entry(component_name.to_string())
+        let mut renders = self
+            .component_renders
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let mut counts = self
+            .component_render_count
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+
+        renders
+            .entry(component_name.to_string())
             .or_insert_with(|| AtomicU64::new(0))
             .fetch_add(_duration_micros, Ordering::Relaxed);
-        
-        counts.entry(component_name.to_string())
+
+        counts
+            .entry(component_name.to_string())
             .or_insert_with(|| AtomicU64::new(0))
             .fetch_add(1, Ordering::Relaxed);
-        
+
         drop(renders);
         drop(counts);
-        
+
         #[cfg(feature = "verbose_metrics")]
         tracing::info!(
             component = component_name,
@@ -120,7 +129,8 @@ impl MetricsCollector {
     /// Get Signal read count for a field
     pub fn signal_read_count(&self, field_name: &str) -> u64 {
         let reads = self.signal_reads.lock().unwrap_or_else(|e| e.into_inner());
-        reads.get(field_name)
+        reads
+            .get(field_name)
             .map(|c| c.load(Ordering::Relaxed))
             .unwrap_or(0)
     }
@@ -128,23 +138,32 @@ impl MetricsCollector {
     /// Get Signal write count for a field
     pub fn signal_write_count(&self, field_name: &str) -> u64 {
         let writes = self.signal_writes.lock().unwrap_or_else(|e| e.into_inner());
-        writes.get(field_name)
+        writes
+            .get(field_name)
             .map(|c| c.load(Ordering::Relaxed))
             .unwrap_or(0)
     }
 
     /// Get component render count
     pub fn component_render_count(&self, component_name: &str) -> u64 {
-        let counts = self.component_render_count.lock().unwrap_or_else(|e| e.into_inner());
-        counts.get(component_name)
+        let counts = self
+            .component_render_count
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        counts
+            .get(component_name)
             .map(|c| c.load(Ordering::Relaxed))
             .unwrap_or(0)
     }
 
     /// Get component total render time (in microseconds)
     pub fn component_total_render_time(&self, component_name: &str) -> u64 {
-        let renders = self.component_renders.lock().unwrap_or_else(|e| e.into_inner());
-        renders.get(component_name)
+        let renders = self
+            .component_renders
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        renders
+            .get(component_name)
             .map(|c| c.load(Ordering::Relaxed))
             .unwrap_or(0)
     }
@@ -153,7 +172,7 @@ impl MetricsCollector {
     pub fn component_avg_render_time(&self, component_name: &str) -> f64 {
         let total = self.component_total_render_time(component_name);
         let count = self.component_render_count(component_name);
-        
+
         if count == 0 {
             0.0
         } else {
@@ -200,7 +219,7 @@ impl MetricsCollector {
                 let count = self.component_render_count(name);
                 let total = self.component_total_render_time(name);
                 let avg = self.component_avg_render_time(name);
-                
+
                 component_renders.push(ComponentMetrics {
                     name: name.clone(),
                     render_count: count,
@@ -279,7 +298,7 @@ mod tests {
         let metrics = MetricsCollector::new();
         metrics.record_signal_read("test_field", 10);
         metrics.record_signal_read("test_field", 15);
-        
+
         assert_eq!(metrics.signal_read_count("test_field"), 2);
         assert_eq!(metrics.total_operations(), 2);
     }
@@ -288,7 +307,7 @@ mod tests {
     fn test_signal_write_recording() {
         let metrics = MetricsCollector::new();
         metrics.record_signal_write("test_field", 20);
-        
+
         assert_eq!(metrics.signal_write_count("test_field"), 1);
         assert_eq!(metrics.total_operations(), 1);
     }
@@ -299,7 +318,7 @@ mod tests {
         metrics.record_component_render("TestComponent", 1000);
         metrics.record_component_render("TestComponent", 2000);
         metrics.record_component_render("TestComponent", 3000);
-        
+
         assert_eq!(metrics.component_render_count("TestComponent"), 3);
         assert_eq!(metrics.component_total_render_time("TestComponent"), 6000);
         assert_eq!(metrics.component_avg_render_time("TestComponent"), 2000.0);
@@ -318,15 +337,14 @@ mod tests {
         metrics.record_signal_read("field", 10);
         metrics.record_signal_write("field", 20);
         metrics.update_memory_usage(100);
-        
+
         assert!(metrics.total_operations() > 0);
-        
+
         metrics.reset();
-        
+
         assert_eq!(metrics.total_operations(), 0);
         assert_eq!(metrics.signal_read_count("field"), 0);
         assert_eq!(metrics.signal_write_count("field"), 0);
         assert_eq!(metrics.memory_usage(), 0);
     }
 }
-

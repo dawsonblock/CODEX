@@ -1,6 +1,6 @@
+use crate::bridge::instrumentation::{end_component_render_timer, start_component_render_timer};
 use crate::bridge::state_provider::use_ui_runtime_state;
 use crate::bridge::types::BasisItemSummary;
-use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Renders an answer basis items table showing claims and evidence backing
@@ -108,7 +108,7 @@ pub fn BasisItemsTable(
             }
         }
     };
-    
+
     end_component_render_timer("BasisItemsTable", timer);
     element
 }

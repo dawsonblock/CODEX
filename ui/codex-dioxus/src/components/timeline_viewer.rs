@@ -1,5 +1,5 @@
+use crate::bridge::instrumentation::{end_component_render_timer, start_component_render_timer};
 use crate::bridge::state_provider::use_ui_runtime_state;
-use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Timeline visualization showing claim creation sequence and evidence linking
@@ -11,7 +11,7 @@ pub fn TimelineViewer(
     #[props(default)] cycle_count: Option<usize>,
 ) -> Element {
     let timer = start_component_render_timer();
-    
+
     // Get state from context
     let state = use_ui_runtime_state();
 
@@ -88,7 +88,7 @@ pub fn TimelineViewer(
             }
         }
     };
-    
+
     end_component_render_timer("TimelineViewer", timer);
     element
 }
