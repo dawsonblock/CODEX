@@ -307,7 +307,7 @@ App
 - answer_grounding_metrics (16/18 answers)
 - claims_and_evidence (17 claims, 96 evidence)
 - retrieval_performance (15 queries, 100% accuracy)
-- ui_readiness (production_ready: false; validation_candidate: true)
+- ui_readiness (production_ready: false)
 ```
 
 **Updated Official Proof Command:**
