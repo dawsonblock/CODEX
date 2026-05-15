@@ -47,7 +47,7 @@ CODEX-main 36 represents a comprehensive **internal hardening pass** on the CODE
 | Schema mismatch | Legacy claim format in store | Phase 12 (migration) |
 
 **Impact:** ~6.2% edge-case coverage (documented, not hidden)  
-**Recommendation:** Acceptable for production with known limitations disclosure
+**Recommendation:** Proceed with controlled validation; limitations documented in NL_FAILURES_ANALYSIS.md
 
 ---
 
@@ -189,14 +189,14 @@ Run anytime to verify deployment readiness:
 6. **Migration:** ~1.2% legacy claim format not fully integrated (Phase 12 mitigation: schema migration)
 
 **Combined Impact:** ~6.2% edge-case coverage  
-**Status:** Documented, understood, acceptable for production with disclosure
+**Status:** Documented, understood; controlled validation recommended with known limitations disclosure
 
 ---
 
 ## Recommendations
 
-### Immediate Deployment
-✅ **APPROVED** for production deployment with **known limitations disclosure**
+### Validation Readiness
+✅ **Hardening candidate prepared for controlled validation** (known limitations documented; not production-ready)
 
 ### Quality Assurance
 - Run `./scripts/validate_codex_36.sh` in CI/CD pipeline
@@ -225,7 +225,7 @@ CODEX-main 36 hardening represents a commitment to honesty and internal consiste
 
 **Status:** Hardening candidate ready for integration  
 **Proof of concept:** 248 tests passing, proof validation clean  
-**Recommendation:** Approved for production deployment
+**Recommendation:** Proceed with controlled validation; operational deployment requires independent review
 
 ---
 

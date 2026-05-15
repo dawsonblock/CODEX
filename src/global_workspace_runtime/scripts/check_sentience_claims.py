@@ -54,6 +54,18 @@ _BANNED: list[str] = [
     "production-ready",
     "safe autonomous",
     "superintelligence",
+    # Deployment / release readiness claims
+    "ready for deployment",
+    "ready for production",
+    "ready for production deployment",
+    "ready for immediate deployment",
+    "production deployment",
+    "approved for production",
+    "production ready",
+    "deployment-ready",
+    "release-ready",
+    "deploy to production",
+    "approved for deployment",
 ]
 
 # Single-word banned terms — matched with word boundaries, but only in lines

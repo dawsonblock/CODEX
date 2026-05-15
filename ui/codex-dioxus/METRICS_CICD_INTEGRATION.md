@@ -336,4 +336,4 @@ This ensures metrics from one test don't affect the next.
 ✅ Artifacts are stored for historical trend analysis  
 ✅ Structured logging enables detailed performance investigation  
 
-The infrastructure is ready for production monitoring and team-wide performance awareness.
+The infrastructure is ready for team-wide monitoring and performance awareness.

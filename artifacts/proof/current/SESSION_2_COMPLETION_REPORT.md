@@ -196,7 +196,7 @@ OVERALL: 172/172 PASSING ✅
 - ✅ All limitations documented (NL failures with analysis)
 - ✅ Design guides created for next 5 phases
 - ✅ Implementation effort estimated (~90 min for 9-14)
-- ✅ Ready for external audit or deployment
+- ✅ Ready for external audit or controlled validation
 
 ---
 
@@ -232,14 +232,16 @@ Phases 9-14 represent incremental improvements totaling ~90 minutes:
 - Phase 13: Version/patch notes formalization
 - Phase 14: Final validation gate
 
-### For Production Deployment
-CODEX-main 36 meets all criteria for production:
+### For Controlled Validation
+CODEX-main 36 meets all criteria for controlled validation and review:
 - Zero provider execution in default build ✅
 - Read-only mode by default ✅
 - Citation metadata traceable ✅
 - Known limitations documented ✅
 - Test coverage comprehensive ✅
 - Proof artifacts consistent ✅
+
+> **Note:** Operational deployment is out of scope and requires independent review.
 
 ---
 
@@ -248,7 +250,7 @@ CODEX-main 36 meets all criteria for production:
 ### Immediate (Ready Now)
 1. Review NL_FAILURES_ANALYSIS.md for stakeholder approval
 2. Run final validation suite: `scripts/validate_codex_36.sh` (design ready)
-3. Deploy CODEX-main 36 to staging/production
+3. Proceed with controlled validation of CODEX-main 36 (operational deployment requires independent review)
 
 ### Short-term (Optional)
 1. Implement Phase 9 (30 min)
@@ -288,7 +290,7 @@ CODEX-main 36 meets all criteria for production:
 7. ✅ **Proof artifacts consistent** and regenerable
 8. ✅ **Ready for immediate integration** with optional Phase 9-14 followup
 
-The package has evolved from CODEX-main 17 (inconsistent, overclaiming) to CODEX-main 36 (consistent, honest, auditable). All non-negotiable constraints satisfied. Ready for deployment.
+The package has evolved from CODEX-main 17 (inconsistent, overclaiming) to CODEX-main 36 (consistent, honest, auditable). All non-negotiable constraints satisfied. Ready for review and bounded test integration.
 
 ---
 
