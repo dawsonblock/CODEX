@@ -4,6 +4,7 @@ pub mod live_evidence_vault_bridge;
 pub mod pressure_metrics_bridge;
 pub mod proof_reader;
 pub mod runtime_client;
+pub mod state_provider;
 pub mod trace_cycle_bridge;
 pub mod types;
 pub mod ui_state;

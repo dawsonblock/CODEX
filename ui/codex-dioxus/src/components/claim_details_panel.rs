@@ -1,15 +1,69 @@
-use crate::bridge::types::{BasisItemSummary, RuntimeStepResult};
+use crate::bridge::state_provider::use_ui_runtime_state;
+use crate::bridge::types::RuntimeStepResult;
 use dioxus::prelude::*;
 
 /// Enhanced claim details panel showing detailed information about each claim
-/// backing an answer, sourced from answer_basis_items
+/// backing an answer, sourced from answer_basis_items or live state
 #[component]
-pub fn ClaimDetailsPanel(trace: Option<RuntimeStepResult>) -> Element {
+pub fn ClaimDetailsPanel(#[props(default)] trace: Option<RuntimeStepResult>) -> Element {
+    // Try to get state from context for live data
+    let state = use_ui_runtime_state();
+    let live_claims = state.read().claims.read().clone();
     let Some(trace) = trace else {
+        // If no trace provided, show live claims from state instead
+        if live_claims.is_empty() {
+            return rsx! {
+                section { class: "card",
+                    h3 { "Claim Details" }
+                    p { class: "muted", "No claims available. Awaiting runtime data..." }
+                }
+            };
+        }
+
+        // Show live claims from state
         return rsx! {
             section { class: "card",
-                h3 { "Claim Details" }
-                p { class: "muted", "Not available in current runtime bridge." }
+                h3 { "Claim Details (Live)" }
+                p { class: "muted small", "{live_claims.len()} claims in runtime state" }
+
+                div { class: "claims-list",
+                    for (idx, claim) in live_claims.iter().enumerate() {
+                        div { class: "claim-card",
+                            div { class: "claim-header",
+                                span { class: "claim-index", "{idx + 1}." }
+                                code { class: "claim-id", "{claim.claim_id}" }
+                                span { class: "claim-confidence",
+                                    span {
+                                        class: "confidence-badge claim-badge {confidence_class(claim.confidence_pct)}",
+                                        "{claim.confidence_pct}%"
+                                    }
+                                }
+                            }
+                            div { class: "claim-content",
+                                div { class: "claim-triple",
+                                    div { class: "claim-part",
+                                        span { class: "claim-label", "Subject" }
+                                        span { class: "claim-value subject", "{claim.subject}" }
+                                    }
+                                    div { class: "claim-part",
+                                        span { class: "claim-label", "Predicate" }
+                                        code { class: "claim-value predicate", "{claim.predicate}" }
+                                    }
+                                    div { class: "claim-part",
+                                        span { class: "claim-label", "Object" }
+                                        span { class: "claim-value object",
+                                            if let Some(obj) = &claim.object {
+                                                "{obj}"
+                                            } else {
+                                                span { class: "muted", "(none)" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         };
     };

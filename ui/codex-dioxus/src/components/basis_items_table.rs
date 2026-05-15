@@ -1,14 +1,23 @@
+use crate::bridge::state_provider::use_ui_runtime_state;
 use crate::bridge::types::BasisItemSummary;
 use dioxus::prelude::*;
 
 /// Renders an answer basis items table showing claims and evidence backing
+/// Can show either passed basis_items or live evidence from state
 #[component]
 pub fn BasisItemsTable(
-    basis_items: Vec<BasisItemSummary>,
-    warnings: Vec<String>,
+    #[props(default)] basis_items: Vec<BasisItemSummary>,
+    #[props(default)] warnings: Vec<String>,
     #[props(default)] show_warnings: bool,
 ) -> Element {
-    if basis_items.is_empty() && (warnings.is_empty() || !show_warnings) {
+    // Get live state
+    let state = use_ui_runtime_state();
+    let live_evidence = state.read().evidence.read().clone();
+
+    // Use passed basis_items if provided, otherwise use live evidence count
+    let has_items = !basis_items.is_empty() || !live_evidence.is_empty();
+
+    if !has_items && (warnings.is_empty() || !show_warnings) {
         return rsx! {
             div { class: "basis-items-empty",
                 "(no basis items)"
