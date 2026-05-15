@@ -26,6 +26,7 @@ Current diagnostic benchmark values remain:
 - curated: 15 scenarios
 - held_out: 59 scenarios, action_match_rate 0.9152542372881356, failures 5
 - adversarial: 2 scenarios
+- benchmark tuple: (15 curated, 59 held-out, 2 adversarial)
 
 ## Operational limit
 

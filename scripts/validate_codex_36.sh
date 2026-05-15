@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # CODEX-main 36 Validation Suite (review scope)
+set -euo pipefail
 
 echo "=========================================="
 echo "CODEX-main 36 Validation Suite"
@@ -12,7 +13,10 @@ RED='[0;31m'
 YELLOW='[0;33m'
 NC='[0m'
 
-CODEX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if ! CODEX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"; then
+    echo "❌ Unable to resolve CODEX_ROOT from script location."
+    exit 1
+fi
 RUNTIME_ROOT="$CODEX_ROOT/global-workspace-runtime-rs"
 
 FAILED=0
