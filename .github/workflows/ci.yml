@@ -68,3 +68,20 @@ jobs:
         run: python3 ../scripts/clean_generated_artifacts.py
       - name: Final generated artifact check
         run: python3 ../scripts/check_no_generated_artifacts.py
+
+  ui-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui/codex-dioxus
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
+      - name: Run UI tests
+        run: cargo test --bin codex-dioxus 2>&1
+      - name: Report test results
+        if: always()
+        run: cargo test --bin codex-dioxus -- --nocapture 2>&1 | tail -20
