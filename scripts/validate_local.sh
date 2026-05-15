@@ -136,7 +136,7 @@ if [ $FAILED_CHECKS -eq 0 ]; then
     echo -e "${GREEN}╔════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║  ✅ ALL VALIDATIONS PASSED ($PASSED_CHECKS/$TOTAL_CHECKS)                    ║${NC}"
     echo -e "${GREEN}║                                                        ║${NC}"
-    echo -e "${GREEN}║  Ready for review.                             ║${NC}"
+    printf "${GREEN}║  %-54s║${NC}\n" "Ready for review."
     echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo "Next steps:"
