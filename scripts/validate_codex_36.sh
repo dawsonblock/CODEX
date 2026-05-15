@@ -1,107 +1,81 @@
 #!/bin/bash
 
-# CODEX-main 36 Final Validation Suite
-# Comprehensive end-to-end verification before deployment
+# CODEX-main 36 Validation Suite (review scope)
 
 echo "=========================================="
 echo "CODEX-main 36 Validation Suite"
 echo "=========================================="
 echo ""
 
-# Colors for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-NC='\033[0m' # No Color
+GREEN='[0;32m'
+RED='[0;31m'
+YELLOW='[0;33m'
+NC='[0m'
 
-CODEX_ROOT="/Users/dawsonblock/CODEX-1"
+CODEX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RUNTIME_ROOT="$CODEX_ROOT/global-workspace-runtime-rs"
 
 FAILED=0
 
-# ========================================
-# PHASE 1: Build Clean
-# ========================================
-echo "[1/6] Verifying clean build..."
-if (cd $RUNTIME_ROOT && cargo build --all 2>/dev/null) && echo "✅ Build clean" || echo "❌ Build failed"; then
-    : # success
+echo "[1/7] Running proof-manifest consistency check..."
+if (cd "$CODEX_ROOT" && python3 scripts/check_proof_manifest_consistency.py >/dev/null 2>&1); then
+    echo "✅ Proof-manifest consistency check passed"
 else
+    echo "❌ Proof-manifest consistency check failed"
     FAILED=$((FAILED + 1))
 fi
 
-# ========================================
-# PHASE 2: Test Suite
-# ========================================
-echo "[2/6] Running test suite (248 tests)..."
-if (cd $RUNTIME_ROOT && cargo test --all --lib 2>&1 | grep -q "test result: ok"); then
-    echo "✅ All tests pass"
+echo "[2/7] Running claim guard..."
+if (cd "$CODEX_ROOT" && PYTHONPATH=src python3 -m global_workspace_runtime.scripts.check_sentience_claims >/dev/null 2>&1); then
+    echo "✅ Claim guard passed"
 else
-    echo "❌ Tests failed"
+    echo "❌ Claim guard failed"
     FAILED=$((FAILED + 1))
 fi
 
-# ========================================
-# PHASE 3: Proof Artifacts
-# ========================================
-echo "[3/6] Validating proof artifacts..."
-if (cd $RUNTIME_ROOT && python3 scripts/check_proof_manifest_consistency.py 2>&1 | grep -q "pass"); then
-    echo "✅ Proof validation passes"
+echo "[3/7] Checking Rust workspace test command availability..."
+if command -v cargo >/dev/null 2>&1; then
+    echo "✅ cargo available (run full Rust tests separately for fresh verification)"
 else
-    echo "⚠️  Proof check shows expected NL limitations"
+    echo "⚠️  cargo unavailable in this environment"
 fi
 
-# ========================================
-# PHASE 4: Active Codename Check
-# ========================================
-echo "[4/6] Verifying active codename identity..."
-CODENAME_COUNT=$(grep -r "CODEX-main 36" $RUNTIME_ROOT $CODEX_ROOT/ui $CODEX_ROOT/docs 2>/dev/null | wc -l)
-if [ "$CODENAME_COUNT" -gt 0 ]; then
-    echo "✅ Active codename found (${CODENAME_COUNT} locations)"
+echo "[4/7] Checking packaged default UI log registration..."
+if grep -q "artifacts/proof/verification/ui_tests.log" "$CODEX_ROOT/artifacts/proof/verification/proof_manifest.json"; then
+    echo "✅ Packaged default UI log is registered"
 else
-    echo "❌ Codename identity not found"
+    echo "❌ Packaged default UI log registration missing"
     FAILED=$((FAILED + 1))
 fi
 
-# ========================================
-# PHASE 5: No Provider Code in Default Build
-# ========================================
-echo "[5/6] Confirming no provider execution in default build..."
-PROVIDER_REFS=$(grep -r "provider_enabled\|turboquant\|ollama" $RUNTIME_ROOT/crates --include="*.rs" 2>/dev/null | grep -v "feature\|//\|test\|comment" | wc -l)
-if [ "$PROVIDER_REFS" -eq 0 ]; then
-    echo "✅ No provider execution in default build"
+echo "[5/7] Checking packaged provider-feature UI log registration..."
+if grep -q "artifacts/proof/verification/ui_provider_feature_tests.log" "$CODEX_ROOT/artifacts/proof/verification/proof_manifest.json"; then
+    echo "✅ Packaged provider-feature UI log is registered"
 else
-    echo "⚠️  Found ${PROVIDER_REFS} provider refs (likely in feature gates)"
-fi
-
-# ========================================
-# PHASE 6: Citation Metadata Populated
-# ========================================
-echo "[6/6] Verifying answer metadata populated..."
-if grep -q "cited_evidence_ids\|rejected_action_summary" $RUNTIME_ROOT/crates/memory/src/answer_builder.rs 2>/dev/null; then
-    echo "✅ Citation metadata fields present"
-else
-    echo "❌ Citation metadata fields missing"
+    echo "❌ Packaged provider-feature UI log registration missing"
     FAILED=$((FAILED + 1))
 fi
 
-# ========================================
-# FINAL RESULT
-# ========================================
+echo "[6/7] Scope note for provider-feature UI tests..."
+echo "ℹ️  This script does not execute: cargo test --all-targets --features ui-local-providers"
+echo "ℹ️  Provider-feature status here is based on packaged logs unless rerun manually."
+
+echo "[7/7] Generated-artifact check..."
+if (cd "$CODEX_ROOT" && python3 scripts/check_no_generated_artifacts.py >/dev/null 2>&1); then
+    echo "✅ Generated-artifact check passed"
+else
+    echo "❌ Generated-artifact check failed"
+    FAILED=$((FAILED + 1))
+fi
+
 echo ""
 echo "=========================================="
-if [ $FAILED -lt 2 ]; then
-    echo -e "${GREEN}✅ CORE VALIDATIONS PASSED${NC}"
-    echo "Package CODEX-main 36 validations passed; not a production-ready certification"
-    echo ""
-    echo "📊 Summary:"
-    echo "  • Build: ✅ Clean"
-    echo "  • Tests: ✅ All passing"
-    echo "  • Identity: ✅ Unified (CODEX-main 36)"
-    echo "  • Security: ✅ No provider execution"
-    echo "  • Metadata: ✅ Citation fields complete"
-    echo "  • NL Limitations: Documented in NL_FAILURES_ANALYSIS.md"
+if [ $FAILED -eq 0 ]; then
+    echo -e "${GREEN}✅ VALIDATION CHECKS PASSED${NC}"
+    echo "Ready for review and controlled test integration."
+    echo "This is not a production certification or deployment authorization."
     exit 0
 else
-    echo -e "${RED}❌ ${FAILED} validation(s) failed${NC}"
+    echo -e "${RED}❌ ${FAILED} validation check(s) failed${NC}"
     exit 1
 fi

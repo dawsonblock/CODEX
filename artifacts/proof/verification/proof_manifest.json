@@ -461,5 +461,31 @@
             "confidence_pct",
             "source_uri"
         ]
-    }
+    },
+    "supplemental_verifications": [
+        {
+            "name": "ui_default_tests_packaged",
+            "path": "artifacts/proof/verification/ui_tests.log",
+            "command": "cd ui/codex-dioxus && cargo test --all-targets",
+            "result": "passed",
+            "passed_count": 76,
+            "failed_count": 0,
+            "ignored_count": 6,
+            "timestamp": null,
+            "evidence_scope": "packaged_log",
+            "caveat": "Packaged verification evidence unless freshly rerun in the current environment."
+        },
+        {
+            "name": "ui_provider_feature_tests_packaged",
+            "path": "artifacts/proof/verification/ui_provider_feature_tests.log",
+            "command": "cd ui/codex-dioxus && cargo test --all-targets --features ui-local-providers",
+            "result": "passed",
+            "passed_count": 75,
+            "failed_count": 0,
+            "ignored_count": 6,
+            "timestamp": null,
+            "evidence_scope": "packaged_log",
+            "caveat": "Packaged verification evidence unless freshly rerun in the current environment."
+        }
+    ]
 }

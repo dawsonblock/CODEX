@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CODEX-main 36 Local Validation Script
-# Run full CI checks locally before pushing to remote
+# Run full validation checks locally before review
 # Usage: bash scripts/validate_local.sh
 
 set -e
@@ -136,12 +136,12 @@ if [ $FAILED_CHECKS -eq 0 ]; then
     echo -e "${GREEN}╔════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║  ✅ ALL VALIDATIONS PASSED ($PASSED_CHECKS/$TOTAL_CHECKS)                    ║${NC}"
     echo -e "${GREEN}║                                                        ║${NC}"
-    echo -e "${GREEN}║  Ready to push to remote!                             ║${NC}"
+    echo -e "${GREEN}║  Ready for review.                             ║${NC}"
     echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo "Next steps:"
     echo "  1. Review your changes: git diff --cached"
-    echo "  2. Push to remote: git push origin <branch>"
+    echo "  2. Open/update your PR through normal workflow"
     echo "  3. Watch CI: https://github.com/dawsonblock/CODEX/actions"
     exit 0
 else
