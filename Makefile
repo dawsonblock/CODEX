@@ -84,7 +84,7 @@ test:
 test-all:
 	@echo "🧪 Running all tests (unit + integration)..."
 	cd $(RUST_DIR) && cargo test --workspace --all-targets --all-features
-	@echo "✅ All tests passed"
+	@echo "✅ Test command completed"
 
 test-oracle:
 	@echo "🛡️  Running oracle guard tests..."
@@ -123,9 +123,9 @@ proof-strict:
 # ============================================================================
 
 validate:
-	@echo "✅ Running full validation suite..."
+	@echo "🔎 Running validation suite..."
 	@bash scripts/validate_codex_36.sh
-	@echo "✅ All validations passed"
+	@echo "Validation suite completed"
 
 pre-commit:
 	@echo "🔒 Running pre-commit checks..."

@@ -1,133 +1,59 @@
 # STATUS.md
 
-Last updated: 2026-05-15 (claim-guard verified)
+Last updated: 2026-05-15
 Codename: CODEX-main 36
-Status: ✅ CODEX-main 36 Hardening Candidate — Claim-Clean & Proof-Consistent
+Status: CODEX-main 36 hardening candidate (controlled validation/review scope)
 
-CODEX-main 36 is a hardening candidate scaffold, suitable for controlled validation and review. It is not production-ready, not AGI, not sentient, and not fully verified for operational use.
+CODEX-main 36 is a bounded Rust-authoritative cognitive-runtime scaffold.
+It is not AGI, not sentient, not autonomous, not production-ready, not deployment-ready, not release-ready, and not fully verified.
 
-Phase 9 completed: UI instrumentation + observability modules; proof report expansion; EventEnvelope
-lifecycle completion; extended MemoryProvider query policy flags; answer basis item display; 
-UI component render timing (5 components, 76 tests passing); tracing infrastructure with threshold warnings;
-all workspace architecture guards PASSING.
+## Fresh checks in this environment
 
-Reasons for Integration Proof Candidate status:
-- Local provider support exists only behind an experimental feature flag.
-- Provider counters are live, runtime-event-loop backed counters.
-- NL benchmark is diagnostic routing, not broad natural-language reasoning.
-- Contradiction handling is structured/deduped, not semantic truth reasoning.
-- Evidence-backed claim linkage is strong for proof-known structured sources, not arbitrary real-world data.
-
-See artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md for full limitations.
-
-Official proof command:
-
-cargo run -p runtime-cli -- proof --strict --long-horizon --nl --out ../artifacts/proof/current
-
-## Current Verification Snapshot
-
-**Claim Guard (Primary Blocker)**: ✅ PASS (227 files checked, 0 overclaiming phrases detected)
-
-Python verification:
-- check_sentience_claims: ✅ pass
-- check_action_types: pass
-- check_no_mv2: pass
-- check_resource_recovery: pass
-- check_proof_manifest_consistency: ✅ pass
+- generated-artifact checks: pass
 - pytest: 35 passed
-- architecture guards: pass
+- architecture guard: pass
+- proof manifest consistency: pass
+- action-types guard: pass
+- claim guard: pass
+- no-mv2 guard: pass
+- resource recovery guard: pass
 
-Rust verification:
-- cargo fmt --all -- --check: pass
-- cargo clippy --workspace --all-targets --all-features -- -D warnings: pass
-- cargo test --workspace --all-targets --all-features: pass
-- strict proof command: pass
+## Packaged Rust/UI verification evidence (unless rerun)
 
-## Current Proof Metrics
+- Rust tests: 274 passed, 0 failed, 0 ignored
+- UI default tests: 76 passed, 0 failed, 6 ignored
+- UI provider-feature tests: 75 passed, 0 failed, 6 ignored
+- UI warnings remain present in packaged logs
 
-- SimWorld cycles: 15
-- resource_survival: 0.9740
-- unsafe_action_count: 0
-- mean_total_score: 0.6433333333
-- action_match_rate: 1.0 (informational)
+## Current proof metrics
+
 - replay event_count: 589
-- replay_passes: true
-- evidence_entries: 96
-- claims_asserted: 17
-- claims_retrieved: 17
-- claims_with_evidence_links: 17
-- contradictions_checked: 3
+- replay total_cycles: 15
+- long_horizon total_cycles: 150
+- long_horizon episodes: 3
 - contradictions_detected: 1
-- raw_contradictions_detected: 1
-- unique_contradictions_detected: 1
-- duplicate_contradictions_suppressed: 0
-- pressure_updates: 39
-- policy_bias_applications: 16
-- reasoning_audits: 33
-- audits_with_claim_refs: 18
-- tool_requests: 2
 - tool_dry_runs: 1
-- tool_scaffold_executed: 1
 - tools_blocked: 1
 - real_external_executions: 0
-- default_provider_attempt_tested: true
 - local_provider_disabled_blocks: 1
-
-Governed-memory integration snapshot:
-- runtime_integrated: true
-- live_admission_hook_enabled: true
-- retroactive_evaluations: 17
-- live_admission_decisions: 17
-- candidates_evaluated: 34
-- evidence_backed_promotion_recommendations: 34
-- claimstore_writes_approved_after_governed_memory: 17
-- claimstore_writes_blocked_by_governed_memory: 0
-- claimstore_writes_overrode_governed_memory: 0
-- claimstore_writes_performed_by_codex: 17
-- claimstore_writes_performed_by_governed_memory: 0
-- audits_with_governed_memory_reason_codes: 17
-- retrieval_plans_generated: 15
-- role: advisory
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
 - held_out: 59 scenarios, action_match_rate 0.9152542372881356 (5 failures)
 - adversarial: 2 scenarios, action_match_rate 1.00
-- scenario_categories: 12 (added ToolRequestWithoutApproval, EvidenceGap,
-  ContradictionDisputedClaim, InternalDiagnosticTrigger, SpoofingTest)
 
-## Expanded Proof Artifacts
+## Provider/tool boundaries
 
-The official proof command now generates:
+- local_provider_requests: 0
+- cloud_provider_requests: 0
+- external_provider_requests: 0
+- api_key_storage_enabled: false
+- provider_can_execute_tools: false
+- provider_can_write_memory: false
+- provider_can_override_codex_action: false
 
-- simworld_summary.json
-- replay_report.json
-- evidence_integrity_report.json
-- nl_benchmark_report.json
-- long_horizon_report.json
-- evidence_claim_link_report.json
-- claim_retrieval_report.json
-- contradiction_integration_report.json
-- pressure_replay_report.json
-- reasoning_audit_report.json
-- tool_policy_report.json
-- provider_policy_report.json
-- provider_storage_boundary_report.json
-- governed_memory_integration_report.json
-- answer_basis_integration_report.json
-- event_envelope_report.json
+## Retrieval/Event/Metadata status
 
-## Boundaries
-
-- 10-action schema remains unchanged.
-- Rust remains authoritative.
-- No real autonomous external tool execution or external cloud provider API execution is enabled.
-- Local provider execution (Ollama/Turboquant via localhost) requires the `ui-local-providers` Cargo feature.
-  Default builds contain zero provider HTTP code paths.
-- When `ui-local-providers` is active, provider calls are localhost-only, approval-gated, and non-authoritative.
-  Provider output cannot execute tools, write memory, or override CODEX selected_action.
-- Contradiction handling remains structured, not semantic truth reasoning.
-- NL benchmark remains diagnostic routing over 76 scenarios (15 curated + 59 held-out + 2 adversarial) across 12 categories, not broad reasoning proof.
-- Evidence-backed claim linkage improved for proof-known evaluator evidence and remains bounded to structured sources.
-
-This system is a broad Rust-authoritative cognitive-runtime scaffold. It is not sentient, not conscious, not AGI, not production-ready, not a safe autonomous external tool executor, and not a complete evidence-grounded cognitive agent.
+- retrieval policy routing exists; enforcement remains advisory/partial in current code paths
+- AnswerBuilder/UI citation metadata is available on primary paths; fallback paths may have empty citation fields
+- EventOrigin enum/EventEnvelope expanded; call-site origin attribution remains partial and some events still default to RuntimeLoop

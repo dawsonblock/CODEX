@@ -1,7 +1,7 @@
 #!/bin/bash
 # CODEX-main 36 Pre-commit Hook
 # Installed at: .git/hooks/pre-commit
-# Runs validation checks before allowing commit
+# Runs validation checks before allowing commit (not a deployment certification)
 
 set -e
 
