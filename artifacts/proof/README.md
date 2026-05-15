@@ -44,7 +44,7 @@ Governance artifacts:
 - action_match_rate: 1.0 (informational)
 - replay event_count: 589
 - held_out scenario_count: 59
-- held_out action_match_rate: 0.8983050847457628 (6 failures)
+- held_out action_match_rate: 0.9152542372881356 (5 failures)
 - raw_contradictions_detected: 1
 - unique_contradictions_detected: 1
 - duplicate_contradictions_suppressed: 0

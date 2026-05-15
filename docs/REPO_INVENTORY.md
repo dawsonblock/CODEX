@@ -46,9 +46,21 @@
   - `claim_retrieval_report.json` — Claim retrieval verification
   - `pressure_replay_report.json` — Operational pressure state
   - `governed_memory_integration_report.json` — Governed-memory integration verification
-  - `provider_storage_boundary_report.json` — Provider storage boundary invariants (supplemental)
-  - `nl_benchmark_report.json` — NL scenario routing (63 scenarios)
+  - `governed_memory_retrieval_routing_report.json` — Memory retrieval routing verification
+  - `provider_storage_boundary_report.json` — Provider storage boundary invariants
+  - `nl_benchmark_report.json` — NL scenario routing (76 scenarios: 15 curated + 59 held_out + 2 adversarial)
   - `long_horizon_report.json` — Multi-episode determinism check
+  - `answer_basis_integration_report.json` — Answer builder integration (Phase 6)
+  - `answer_quality_report.json` — Answer metadata quality verification
+  - `event_envelope_report.json` — Event envelope provenance tracking
+  - `event_log_sequence_report.json` — Event log monotonicity
+  - `memory_schema_reconciliation_report.json` — Memory schema consistency
+  - `retrieval_policy_enforcement_report.json` — Retrieval policy enforcement
+  - `ui_integration_report.json` — UI bridge citation metadata exposure
+  - `replay_report.json` — Proof replay verification
+  - `simworld_summary.json` — SimWorld metric summary
+
+**Total**: 22 verified proof artifact JSON files
 
 - `artifacts/proof/verification/` — Verification logs and manifest
   - `FINAL_VERIFICATION_REPORT.md` — Comprehensive limitations and status

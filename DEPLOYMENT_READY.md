@@ -275,9 +275,9 @@ pub enum EventOrigin {
 
 ## Conclusion
 
-**CODEX-main 36 is production-ready** for immediate deployment. All 14 hardening phases have been implemented, comprehensively documented, and validated. The system transforms from an inconsistent, overclaiming runtime to a consistent, honest, reproducible system with full citation traceability and security controls.
+All 14 CODEX-main 36 hardening phases have been implemented, comprehensively documented, and validated. The system transforms from an inconsistent, overclaiming runtime to a consistent, honest, reproducible system with full citation traceability and security controls. Deployment eligibility depends on organizational requirements and operational context.
 
-**Status**: ✅ **APPROVED FOR DEPLOYMENT**
+**Status**: ✅ **VALIDATION COMPLETE** (deployment decisions require ops review)
 
 ---
 

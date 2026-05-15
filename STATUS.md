@@ -88,7 +88,7 @@ Governed-memory integration snapshot:
 
 NL benchmark snapshot:
 - curated: 15 scenarios, action_match_rate 1.00
-- held_out: 59 scenarios, action_match_rate 0.8983050847457628 (53/59)
+- held_out: 59 scenarios, action_match_rate 0.9152542372881356 (5 failures)
 - adversarial: 2 scenarios, action_match_rate 1.00
 - scenario_categories: 12 (added ToolRequestWithoutApproval, EvidenceGap,
   ContradictionDisputedClaim, InternalDiagnosticTrigger, SpoofingTest)
