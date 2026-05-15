@@ -1,10 +1,12 @@
 use crate::bridge::state_provider::use_ui_runtime_state;
+use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Long-horizon trace viewer for detailed per-cycle analysis
 /// Now integrated with UIRuntimeState for live cycle data
 #[component]
 pub fn LongHorizonTraceViewer(#[props(default)] current_cycle: Option<usize>) -> Element {
+    let timer = start_component_render_timer();
     // Get state from context
     let state = use_ui_runtime_state();
     let state_cycle = *state.read().current_cycle.read() as usize;
@@ -39,7 +41,7 @@ pub fn LongHorizonTraceViewer(#[props(default)] current_cycle: Option<usize>) ->
     };
     let confidence = 0.75 + (selected_val as f64 * 0.01);
 
-    rsx! {
+    let element = rsx! {
         section { class: "card",
             h3 { "Long-Horizon Trace Viewer (Live)" }
             p { class: "muted small", "Detailed breakdown of selected cycle (Current: {state_cycle})" }
@@ -133,7 +135,10 @@ pub fn LongHorizonTraceViewer(#[props(default)] current_cycle: Option<usize>) ->
                 }
             }
         }
-    }
+    };
+    
+    end_component_render_timer("LongHorizonTraceViewer", timer);
+    element
 }
 
 // Test module disabled - Dioxus 0.7 rendering API has changed

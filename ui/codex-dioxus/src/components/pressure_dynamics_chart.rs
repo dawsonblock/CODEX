@@ -1,10 +1,12 @@
 use crate::bridge::state_provider::use_ui_runtime_state;
+use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Pressure dynamics display showing action score trends across cycles
 /// Now integrated with UIRuntimeState for live pressure metrics
 #[component]
 pub fn PressureDynamicsChart(#[props(default)] cycle_count: Option<u8>) -> Element {
+    let timer = start_component_render_timer();
     // Get live state
     let state = use_ui_runtime_state();
     let pressure_metrics = state.read().pressure_metrics.read().clone();
@@ -35,7 +37,7 @@ pub fn PressureDynamicsChart(#[props(default)] cycle_count: Option<u8>) -> Eleme
 
     let min_pressure = pressure_data.iter().copied().fold(f64::INFINITY, f64::min);
 
-    rsx! {
+    let element = rsx! {
         section { class: "card",
             h3 { "Pressure Dynamics (Live)" }
             p { class: "muted small",
@@ -126,7 +128,10 @@ pub fn PressureDynamicsChart(#[props(default)] cycle_count: Option<u8>) -> Eleme
                 "Green bars show confident behavior (high regulation), red shows deferring behavior (high pressure)"
             }
         }
-    }
+    };
+    
+    end_component_render_timer("PressureDynamicsChart", timer);
+    element
 }
 
 // Test module disabled - Dioxus 0.7 rendering API has changed

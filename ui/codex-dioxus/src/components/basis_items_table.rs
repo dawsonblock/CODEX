@@ -1,5 +1,6 @@
 use crate::bridge::state_provider::use_ui_runtime_state;
 use crate::bridge::types::BasisItemSummary;
+use crate::bridge::instrumentation::{start_component_render_timer, end_component_render_timer};
 use dioxus::prelude::*;
 
 /// Renders an answer basis items table showing claims and evidence backing
@@ -10,20 +11,13 @@ pub fn BasisItemsTable(
     #[props(default)] warnings: Vec<String>,
     #[props(default)] show_warnings: bool,
 ) -> Element {
+    let timer = start_component_render_timer();
     // Get live state
     let state = use_ui_runtime_state();
     let live_evidence = state.read().evidence.read().clone();
 
     // Use passed basis_items if provided, otherwise use live evidence count
     let has_items = !basis_items.is_empty() || !live_evidence.is_empty();
-
-    if !has_items && (warnings.is_empty() || !show_warnings) {
-        return rsx! {
-            div { class: "basis-items-empty",
-                "(no basis items)"
-            }
-        };
-    }
 
     let confidence_class = |conf: u8| -> &'static str {
         match conf {
@@ -34,14 +28,21 @@ pub fn BasisItemsTable(
         }
     };
 
-    rsx! {
-        div { class: "basis-items-container",
-            if !basis_items.is_empty() {
-                div { class: "basis-header",
-                    span { class: "basis-label", "✓ Grounded Answer" }
-                    span { class: "basis-count", "{basis_items.len()} claim(s)" }
-                }
-                table { class: "basis-table",
+    let element = if !has_items && (warnings.is_empty() || !show_warnings) {
+        rsx! {
+            div { class: "basis-items-empty",
+                "(no basis items)"
+            }
+        }
+    } else {
+        rsx! {
+            div { class: "basis-items-container",
+                if !basis_items.is_empty() {
+                    div { class: "basis-header",
+                        span { class: "basis-label", "✓ Grounded Answer" }
+                        span { class: "basis-count", "{basis_items.len()} claim(s)" }
+                    }
+                    table { class: "basis-table",
                     thead {
                         tr {
                             th { "Claim" }
@@ -89,6 +90,7 @@ pub fn BasisItemsTable(
                             }
                         }
                     }
+                    }
                 }
             }
 
@@ -105,7 +107,10 @@ pub fn BasisItemsTable(
                 }
             }
         }
-    }
+    };
+    
+    end_component_render_timer("BasisItemsTable", timer);
+    element
 }
 
 // Test module disabled - Dioxus 0.7 rendering API has changed

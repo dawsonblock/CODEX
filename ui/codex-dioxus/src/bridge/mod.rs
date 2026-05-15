@@ -1,6 +1,7 @@
 pub mod live_claim_store_bridge;
 pub mod live_event_bridge;
 pub mod live_evidence_vault_bridge;
+pub mod instrumentation;
 pub mod metrics;
 pub mod pressure_metrics_bridge;
 pub mod proof_reader;
