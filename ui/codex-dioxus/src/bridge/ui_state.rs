@@ -1,7 +1,5 @@
+use crate::bridge::types::{EvidenceDisplay, LiveClaimDisplay, PressureMetrics, TimelineEvent};
 use dioxus::prelude::*;
-use crate::bridge::types::{
-    TimelineEvent, LiveClaimDisplay, EvidenceDisplay, PressureMetrics,
-};
 use std::collections::HashMap;
 
 /// Global state for bridging runtime events to Dioxus UI components.
@@ -9,19 +7,19 @@ use std::collections::HashMap;
 pub struct UIRuntimeState {
     /// Timeline events from the runtime.
     pub timeline_events: Signal<Vec<TimelineEvent>>,
-    
+
     /// All claims with grounding status.
     pub claims: Signal<Vec<LiveClaimDisplay>>,
     pub claims_by_id: Signal<HashMap<String, LiveClaimDisplay>>,
-    
+
     /// All evidence with provenance.
     pub evidence: Signal<Vec<EvidenceDisplay>>,
     pub evidence_by_id: Signal<HashMap<String, EvidenceDisplay>>,
-    
+
     /// Pressure metrics history.
     pub pressure_metrics: Signal<Vec<PressureMetrics>>,
     pub current_pressure: Signal<Option<PressureMetrics>>,
-    
+
     /// Current cycle and metadata.
     pub current_cycle: Signal<usize>,
     pub last_update: Signal<String>,
@@ -131,7 +129,8 @@ impl UIRuntimeState {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default();
-        self.last_update.set(format!("{:.0}s", now.as_secs_f64() % 86400.0));
+        self.last_update
+            .set(format!("{:.0}s", now.as_secs_f64() % 86400.0));
     }
 
     /// Clear all data.
@@ -199,11 +198,11 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]  // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
+    #[ignore] // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
     fn test_state_initialization() {
         let state = UIRuntimeState::new();
         let summary = state.get_summary();
-        
+
         assert_eq!(summary.timeline_event_count, 0);
         assert_eq!(summary.claim_count, 0);
         assert_eq!(summary.evidence_count, 0);
@@ -214,23 +213,21 @@ mod tests {
     }
 
     #[test]
-    #[ignore]  // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
+    #[ignore] // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
     fn test_claim_indexing() {
         let mut state = UIRuntimeState::new();
-        let claims = vec![
-            LiveClaimDisplay {
-                claim_id: "cl-001".to_string(),
-                subject: "Test".to_string(),
-                predicate: "property".to_string(),
-                object: None,
-                grounding_status: crate::bridge::types::GroundingStatus::Unverified,
-                evidence_count: 0,
-                contradiction_count: 0,
-                confidence_pct: 50,
-                evidence_ids: Vec::new(),
-            },
-        ];
-        
+        let claims = vec![LiveClaimDisplay {
+            claim_id: "cl-001".to_string(),
+            subject: "Test".to_string(),
+            predicate: "property".to_string(),
+            object: None,
+            grounding_status: crate::bridge::types::GroundingStatus::Unverified,
+            evidence_count: 0,
+            contradiction_count: 0,
+            confidence_pct: 50,
+            evidence_ids: Vec::new(),
+        }];
+
         state.set_claims(claims);
         let retrieved = state.get_claim("cl-001");
         assert!(retrieved.is_some());
@@ -238,29 +235,26 @@ mod tests {
     }
 
     #[test]
-    #[ignore]  // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
+    #[ignore] // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
     fn test_error_handling() {
         let mut state = UIRuntimeState::new();
         assert!(state.error_message.read().is_none());
-        
+
         state.set_error(Some("Test error".to_string()));
         assert!(state.error_message.read().is_some());
-        assert_eq!(
-            state.error_message.read().as_ref().unwrap(),
-            "Test error"
-        );
+        assert_eq!(state.error_message.read().as_ref().unwrap(), "Test error");
     }
 
     #[test]
-    #[ignore]  // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
+    #[ignore] // Requires Dioxus runtime - Signals cannot be created in unit tests. Test in UI context instead.
     fn test_reset() {
         let mut state = UIRuntimeState::new();
         state.set_current_cycle(5);
         state.set_loading(true);
         state.set_error(Some("Error".to_string()));
-        
+
         state.reset();
-        
+
         let summary = state.get_summary();
         assert_eq!(summary.current_cycle, 0);
         assert!(!summary.is_loading);

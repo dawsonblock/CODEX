@@ -130,9 +130,9 @@ mod tests {
     // Note: Tests for TestStateBuilder require Dioxus runtime context
     // The builder can be used from within component/UI test code that runs
     // within the Dioxus desktop environment
-    
+
     #[test]
-    #[ignore]  // Requires Dioxus runtime - TestStateBuilder creates UIRuntimeState with Signals. Test in UI context instead.
+    #[ignore] // Requires Dioxus runtime - TestStateBuilder creates UIRuntimeState with Signals. Test in UI context instead.
     fn test_builder_construction() {
         // Builder can be constructed without runtime
         let _ = TestStateBuilder::new();

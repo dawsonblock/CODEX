@@ -1,8 +1,8 @@
 /// E2E Component Integration Tests
-/// 
+///
 /// Note: Dioxus Signal-based state cannot be tested directly in unit tests
 /// without a Dioxus runtime context. These tests are intentionally skipped.
-/// 
+///
 /// Component integration is verified via:
 /// 1. Compilation without errors (Signal types match component props)
 /// 2. State provider wiring in state_provider.rs
@@ -11,7 +11,9 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::bridge::types::{EvidenceDisplay, GroundingStatus, LiveClaimDisplay, PressureMetrics, TimelineEvent};
+    use crate::bridge::types::{
+        EvidenceDisplay, GroundingStatus, LiveClaimDisplay, PressureMetrics, TimelineEvent,
+    };
     use crate::bridge::ui_state::UIRuntimeState;
     use dioxus::prelude::ReadableExt;
 
