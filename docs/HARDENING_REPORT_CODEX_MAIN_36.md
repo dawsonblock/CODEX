@@ -146,7 +146,7 @@ This is **CODEX-main 36**, a bounded Rust-authoritative cognitive-runtime scaffo
 - `cited_evidence_ids: Vec<String>` — evidence for those claims
 - `rejected_action_summary: Option<String>` — actions considered
 
-**Test coverage**: ✅ 76 UI tests passing; feature-gated provider bridge tests included.
+**Test coverage**: ✅ 76 UI component tests passing in current environment; feature-gated provider tests not run in this verification cycle (requires full Rust/cargo environment).
 
 ### ✅ Retrieval Policy Advisory
 
@@ -247,13 +247,34 @@ This is a bounded research scaffold.
 | Validation scripts don't claim deployment readiness | ✅ | validate_codex_36.sh output updated |
 | Proof manifest consistency still passes | ✅ | `PASS: All checked fields are consistent` |
 | NL benchmark values honest | ✅ | 59 held-out, 0.9153 rate, 5 failures (unchanged) |
-| UI provider-feature tests documented | ✅ | 76 tests logged; feature gates verified |
+| UI provider-feature tests | ⚠️ | Feature gates exist in code; full feature-enabled test run not executed in this verification cycle (requires Rust/cargo environment) |
 | Governance_only is advisory (no false enforcement) | ✅ | Documented as non-binding; no suspicious `\|\| true` patterns |
 | AnswerBuilder/UI metadata verified | ✅ | Implemented & tested end-to-end |
 | EventOrigin/callsite claims accurate | ✅ | Enum expanded; adoption state documented as partial |
 | Generated-artifact cleanup passes | ✅ | 0 artifacts detected after clean |
 | Provider/tool execution disabled by default | ✅ | 0 real external executions in default build |
 | Final hardening report honest and complete | ✅ | This document |
+
+---
+
+## Verification Scope & Limitations
+
+### What Was Verified ✅
+- **Claim Guard** (primary blocker): 227 files scanned, 0 overclaiming phrases
+- **Python Guards**: 8 checks pass (pytest, proof-manifest, action-types, no-mv2, resource-recovery, architecture)
+- **Proof Manifest Consistency**: NL benchmark values reconciled and verified honest
+- **Documentation Rewrite**: 6 files sanitized of positive deployment/production claims
+- **Generated Artifacts**: Clean (0 artifacts after validation cleanup)
+
+### What Was NOT Verified (Requires Rust/Cargo Environment)
+- ⚠️ **Rust compilation & tests** — Code changes were documentation/configuration only; no fresh `cargo test` run performed
+- ⚠️ **UI provider-feature tests** — `cargo test --all-targets --features ui-local-providers` not run; feature gates exist in code but feature-enabled test logs not generated
+- ⚠️ **Proof regeneration** — Fresh `cargo run -p runtime-cli -- proof --strict --long-horizon --nl` not executed; using packaged proof artifacts from prior runs
+
+### Impact
+The claim-clean focus was narrowly scoped to **documentation only**. Code improvements (AnswerBuilder metadata, EventOrigin expansion, UI bridge) were implemented in CODEX-main 18 prior work and remain in place but have not been re-verified with fresh Rust builds in this fix cycle.
+
+For production-readiness or operational deployment, **full re-verification including Rust test suite and proof regeneration would be required**.
 
 ---
 
