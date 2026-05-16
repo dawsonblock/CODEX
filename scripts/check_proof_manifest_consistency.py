@@ -905,8 +905,8 @@ def main() -> int:
         "retains 5 failures",
         "6 failures remain",
         "held_out.*failures.*5",
-        "failures: 5",
-        "failures 5",
+        r"\bfailures:\s*5\b",
+        r"\bfailures\s+5\b",
     ]
     benchmark_docs = [
         REPO_ROOT / "artifacts/proof/current/ALL_PHASES_COMPLETE_FINAL_REPORT.md",
