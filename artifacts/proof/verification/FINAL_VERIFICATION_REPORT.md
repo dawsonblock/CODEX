@@ -3,7 +3,7 @@
 ## Package Identity
 
 - Package label: **CODEX-main 36 hardening candidate**
-- Current package SHA-256: `44d56855d242ced21286841ce1f42b65b8924794f486b699ec32d73f8123ddca`
+- Current package SHA-256: `582c25e54b6219e17f0a7a2af049e7f10ef9a7aa681e5f7b79f86f51740d4f33`
 - Classification: bounded Rust-authoritative cognitive-runtime scaffold
 
 This package is **not AGI, not sentient, not autonomous, not production-ready, not deployment-ready, not release-ready, and not fully verified**.
@@ -25,7 +25,7 @@ This package is **not AGI, not sentient, not autonomous, not production-ready, n
 
 - `cargo fmt --check`: **pass**
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`: **pass**
-- `cargo test --workspace --all-targets --all-features`: **274 passed, 0 failed, 0 ignored**
+- `cargo test --workspace --all-targets --all-features`: **289 passed, 0 failed, 0 ignored**
 
 ### UI verification status
 
@@ -83,6 +83,6 @@ Retrieval routing/inspection exists. Enforcement is partial: some provider paths
 
 ## Skipped verification / caveats
 
-- UI commands were not fully rerun as part of this cleanup in this environment.
-- UI statements above are packaged verification evidence unless rerun.
+- UI commands were not rerun in this environment; UI statuses are packaged verification evidence.
+- Rust tests were freshly regenerated in this environment (289 passed, 0 failed, 0 ignored), including new runtime-core tests for spoofed/credential prompt handling, internal diagnostic mode gating, and contradiction clarification routing.
 - Operational deployment requires separate engineering, security, legal, and safety review.

@@ -382,7 +382,7 @@ cd ui/codex-dioxus && dx build --release
 | `reasoning_audit_report.json` | Audit event generation | events_emitted: 33 |
 | `claim_retrieval_report.json` | Claim retrieval signal | retrieved: 17 |
 | `pressure_replay_report.json` | Pressure state tracking | resource_survival: 0.974 |
-| `nl_benchmark_report.json` | NL diagnostic benchmark | action_match_rate: 0.8983050847457628 (held-out, 59 scenarios, 6 failures) |
+| `nl_benchmark_report.json` | NL diagnostic benchmark | action_match_rate: 1.0 (held-out, 59 scenarios, 0 failures) |
 | `long_horizon_report.json` | Multi-episode stability | cycles: 150, stable: true |
 
 ---

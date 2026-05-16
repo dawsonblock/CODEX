@@ -6,7 +6,7 @@ Phase 15 documentation cleanup is complete for this patch scope.
 
 - Registered packaged UI provider-feature verification evidence in proof manifest metadata.
 - Reconciled validation language to avoid unsupported claims like zero warnings or universal completion.
-- Preserved honest benchmark values (15 curated / 59 held-out / 2 adversarial; held_out rate 0.9152542372881356; failures 5).
+- Updated benchmark values (15 curated / 59 held-out / 2 adversarial; held_out action_match_rate 1.0; 0 failures; all previously failing held-out scenarios nl_h54–nl_h59 resolved).
 - Kept retrieval-policy language advisory/partial where code remains advisory.
 - Kept AnswerBuilder/UI/EventOrigin claims bounded to current implementation.
 
@@ -25,7 +25,7 @@ Fresh checks run in this environment:
 
 Packaged verification evidence (unless rerun locally):
 
-- Rust tests: 274 passed, 0 failed, 0 ignored
+- Rust tests: 289 passed, 0 failed, 0 ignored
 - UI default tests: 76 passed, 0 failed, 6 ignored
 - UI provider-feature tests: 75 passed, 0 failed, 6 ignored
 

@@ -1,6 +1,6 @@
 # STATUS.md
 
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 Codename: CODEX-main 36
 Status: CODEX-main 36 hardening candidate (controlled validation/review scope)
 
@@ -18,9 +18,21 @@ It is not AGI, not sentient, not autonomous, not production-ready, not deploymen
 - no-mv2 guard: pass
 - resource recovery guard: pass
 
-## Packaged Rust/UI verification evidence (unless rerun)
+## Fresh Rust verification (this environment)
 
-- Rust tests: 274 passed, 0 failed, 0 ignored
+- `cargo fmt --check`: pass
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`: pass
+- `cargo test --workspace --all-targets --all-features`: 289 passed, 0 failed, 0 ignored
+
+New runtime-core tests included:
+- `runtime_loop::tests::spoofed_override_prompt_refuses`
+- `runtime_loop::tests::root_credentials_prompt_refuses`
+- `runtime_loop::tests::internal_diagnostic_prompt_without_mode_uses_safe_memory_lookup`
+- `runtime_loop::tests::internal_diagnostic_available_in_explicit_mode`
+- `runtime_loop::tests::contradiction_prompt_prefers_clarification`
+
+## UI verification evidence (packaged)
+
 - UI default tests: 76 passed, 0 failed, 6 ignored
 - UI provider-feature tests: 75 passed, 0 failed, 6 ignored
 - UI warnings remain present in packaged logs

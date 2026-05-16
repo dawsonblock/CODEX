@@ -14,7 +14,7 @@ Fresh checks in this environment:
 
 Packaged evidence unless rerun:
 
-- Rust: 274 passed, 0 failed, 0 ignored
+- Rust: 289 passed, 0 failed, 0 ignored
 - UI default: 76 passed, 0 failed, 6 ignored
 - UI provider-feature: 75 passed, 0 failed, 6 ignored
 
@@ -23,7 +23,7 @@ UI warnings remain in packaged logs and are tracked cleanup work.
 ## Benchmark honesty
 
 - curated: 15 scenarios, action_match_rate 1.0
-- held_out: 59 scenarios, action_match_rate 0.9152542372881356, failures 5
+- held_out: 59 scenarios, action_match_rate 1.0, failures 0
 - adversarial: 2 scenarios, action_match_rate 1.0
 
 ## Boundary status

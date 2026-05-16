@@ -10,7 +10,7 @@ Truth/reproducibility cleanup with no new capability expansion.
 - Verification and readiness reports use scoped, evidence-backed wording.
 - Known UI warnings are documented (not hidden).
 - Retrieval policy, AnswerBuilder metadata, and EventOrigin claims are kept bounded to current implementation.
-- Held-out benchmark values remain honest with 5 failures visible.
+- Held-out benchmark values are clean: 59 scenarios, action_match_rate 1.0, 0 failures.
 
 ## Session status
 

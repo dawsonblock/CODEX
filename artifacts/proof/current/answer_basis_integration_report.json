@@ -15,7 +15,7 @@
     "confidence_is_f64": true,
     "ui_summary_type": "BasisItemSummary"
   },
-  "generated_timestamp": 1778887010,
+  "generated_timestamp": 1778967353,
   "limitations": [
     "AnswerBasisItem is a compile-time struct; runtime population depends on evaluator logic.",
     "BasisItemSummary mirrors AnswerBasisItem for the UI bridge layer with no external calls."
