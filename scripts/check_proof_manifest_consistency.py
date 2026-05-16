@@ -54,9 +54,17 @@ STALE_MARKERS = [
     "held_out: 46 scenarios",
     "match_rate 1.0000",
 ]
-# Words that indicate a context is historical/non-current, used to allow old values in historical sections.
+# Explicit markers that indicate a context is intentionally historical/non-current.
+# Keep this list narrowly scoped so ordinary phrasing in current-status docs does not
+# accidentally allow stale values to pass validation.
 HISTORICAL_CONTEXT_MARKERS = {
-    "historical", "previous", "prior", "old package", "superseded", "comparison", "earlier",
+    "historical:",
+    "historical section",
+    "superseded:",
+    "superseded by",
+    "archived:",
+    "obsolete:",
+    "<!-- historical -->",
 }
 
 
