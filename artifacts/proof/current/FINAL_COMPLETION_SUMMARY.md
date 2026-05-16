@@ -11,14 +11,14 @@
 
 Fresh checks run here: pytest (35 passed), architecture guard pass, proof-manifest consistency pass, action/claim/no-mv2/resource guards pass, generated-artifact checks pass.
 
-Packaged evidence unless rerun: Rust 274 passed; UI default 76 passed/6 ignored; UI provider-feature 75 passed/6 ignored.
+Packaged evidence unless rerun: Rust 289 passed; UI default 76 passed/6 ignored; UI provider-feature 75 passed/6 ignored.
 
 ## Known limitations retained
 
 - UI warnings remain in packaged logs.
 - Retrieval policy remains advisory/partial.
 - EventOrigin call-site adoption remains partial.
-- Held-out benchmark retains 5 failures.
+- Held-out benchmark resolved: 0 failures (59 scenarios, action_match_rate 1.0).
 
 ## Status
 

@@ -19,7 +19,7 @@ Regenerated proof artifacts: packaged current set under `artifacts/proof/current
 ## Rust/UI verification evidence
 
 - Rust checks rerun in this environment: cargo fmt --check, cargo clippy --workspace --all-targets --all-features -- -D warnings, cargo test --workspace --all-targets --all-features
-- Rust test result: 274 passed, 0 failed, 0 ignored
+- Rust test result: 289 passed, 0 failed, 0 ignored (fresh run; includes new runtime-core safety tests: spoofed_override_prompt_refuses, root_credentials_prompt_refuses, internal_diagnostic_available_in_explicit_mode, contradiction_prompt_prefers_clarification)
 - UI default packaged log: 76 passed, 0 failed, 6 ignored
 - UI provider-feature packaged log: 75 passed, 0 failed, 6 ignored
 - Caveat: UI values are packaged evidence unless rerun locally

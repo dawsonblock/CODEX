@@ -1,59 +1,134 @@
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
-     Running unittests src/lib.rs (target/debug/deps/cognition-169449cb6c0d90ff)
+   Compiling cfg-if v1.0.4
+   Compiling serde_core v1.0.228
+   Compiling num-traits v0.2.19
+   Compiling libc v0.2.186
+   Compiling iana-time-zone v0.1.65
+   Compiling zmij v1.0.21
+   Compiling memchr v2.8.0
+   Compiling itoa v1.0.18
+   Compiling thiserror v1.0.69
+   Compiling typenum v1.20.0
+   Compiling cpufeatures v0.2.17
+   Compiling zerocopy v0.8.48
+   Compiling once_cell v1.21.4
+   Compiling bitflags v2.11.1
+   Compiling getrandom v0.4.2
+   Compiling generic-array v0.14.7
+   Compiling linux-raw-sys v0.12.1
+   Compiling rustix v1.1.4
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling serde v1.0.228
+   Compiling serde_json v1.0.149
+   Compiling chrono v0.4.44
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.9
+   Compiling smallvec v1.15.1
+   Compiling tools v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/tools)
+   Compiling fastrand v2.4.1
+   Compiling tempfile v3.27.0
+   Compiling runtime-core v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/runtime-core)
+   Compiling ppv-lite86 v0.2.21
+   Compiling ahash v0.8.12
+   Compiling uuid v1.23.1
+   Compiling hashbrown v0.14.5
+   Compiling anyhow v1.0.102
+   Compiling getrandom v0.3.4
+   Compiling scopeguard v1.2.0
+   Compiling libsqlite3-sys v0.30.1
+   Compiling hashlink v0.9.1
+   Compiling lock_api v0.4.14
+   Compiling rand_core v0.9.5
+   Compiling parking_lot_core v0.9.12
+   Compiling fallible-iterator v0.3.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling parking_lot v0.12.5
+   Compiling governed-memory v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/governed-memory)
+   Compiling rusqlite v0.32.1
+   Compiling wait-timeout v0.2.1
+   Compiling getrandom v0.2.17
+   Compiling bit-vec v0.8.0
+   Compiling fnv v1.0.7
+   Compiling quick-error v1.2.3
+   Compiling rusty-fork v0.3.1
+   Compiling bit-set v0.8.0
+   Compiling rand_core v0.6.4
+   Compiling evidence v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/evidence)
+   Compiling modulation v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/modulation)
+   Compiling rand_xorshift v0.4.0
+   Compiling rand_chacha v0.9.0
+   Compiling memory v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/memory)
+   Compiling rand v0.9.4
+   Compiling console v0.16.3
+   Compiling unarray v0.1.4
+   Compiling regex-syntax v0.8.10
+   Compiling similar v2.7.0
+   Compiling insta v1.47.2
+   Compiling rand_chacha v0.3.1
+   Compiling proptest v1.11.0
+   Compiling rand v0.8.6
+   Compiling contradiction v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/contradiction)
+   Compiling symbolic v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/symbolic)
+   Compiling simworld v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/simworld)
+   Compiling gw-workspace v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/gw-workspace)
+   Compiling cognition v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/cognition)
+   Compiling runtime-cli v0.1.0 (/home/runner/work/CODEX/CODEX/global-workspace-runtime-rs/crates/runtime-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.54s
+     Running unittests src/lib.rs (target/debug/deps/cognition-16bf1c18d5cbb8bf)
 
 running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/contradiction-ca2bfeb91dda1dab)
+     Running unittests src/lib.rs (target/debug/deps/contradiction-4a4b3605ee941a5d)
 
 running 9 tests
+test tests::detect_idempotent_on_same_store ... ok
+test tests::detect_finds_contradictions_in_store ... ok
+test tests::no_false_positives_on_compatible_claims ... ok
+test tests::report_summarizes_correctly ... ok
 test tests::resolve_nonexistent_fails ... ok
 test tests::resolve_already_resolved_fails ... ok
-test tests::report_summarizes_correctly ... ok
-test tests::detect_idempotent_on_same_store ... ok
-test tests::no_false_positives_on_compatible_claims ... ok
-test tests::severity_is_between_zero_and_one ... ok
-test tests::detect_finds_contradictions_in_store ... ok
 test tests::resolve_marks_contradiction_resolved ... ok
 test tests::resolve_with_confidence_picks_higher_confidence ... ok
+test tests::severity_is_between_zero_and_one ... ok
 
 test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/evidence-ac6f5611ddb58046)
+     Running unittests src/lib.rs (target/debug/deps/evidence-a1901f5f6127ffd0)
 
 running 27 tests
-test tests::empty_vault_returns_empty_queries ... ok
-test tests::empty_vault_integrity_is_valid ... ok
-test tests::changed_timestamp_changes_hash ... ok
-test tests::changed_content_changes_hash ... ok
-test tests::changed_prev_hash_changes_hash ... ok
-test tests::duplicate_id_is_rejected ... ok
-test tests::confidence_is_clamped ... ok
 test tests::append_and_query_by_source ... ok
-test tests::hash_chain_is_valid_after_append ... ok
-test tests::duplicate_rejection_does_not_alter_hash_chain ... ok
 test tests::chain_broken_when_prev_hash_mismatches ... ok
+test tests::changed_content_changes_hash ... ok
+test tests::changed_timestamp_changes_hash ... ok
+test tests::changed_prev_hash_changes_hash ... ok
 test tests::changed_confidence_changes_hash ... ok
-test tests::from_entries_reconstructs_vault ... ok
+test tests::confidence_is_clamped ... ok
+test tests::duplicate_id_is_rejected ... ok
+test tests::duplicate_rejection_does_not_alter_hash_chain ... ok
+test tests::empty_vault_integrity_is_valid ... ok
 test tests::corrupt_jsonl_line_fails ... ok
+test tests::empty_vault_returns_empty_queries ... ok
 test tests::hash_is_64_chars_sha256 ... ok
+test tests::from_entries_reconstructs_vault ... ok
+test tests::hash_chain_is_valid_after_append ... ok
 test tests::hash_is_lowercase_hex ... ok
 test tests::identical_entry_produces_identical_hash ... ok
-test tests::integrity_check_still_passes_after_rejected_duplicate ... ok
 test tests::original_entry_unchanged_after_duplicate_rejection ... ok
+test tests::integrity_check_still_passes_after_rejected_duplicate ... ok
 test tests::prev_hash_tampering_is_detected ... ok
 test tests::query_by_confidence_range ... ok
+test tests::loaded_vault_detects_tampering ... ok
 test tests::query_by_keyword ... ok
 test tests::timestamp_tampering_is_detected ... ok
-test tests::tampered_entry_detected ... ok
 test tests::single_entry_has_genesis_prev_hash ... ok
-test tests::loaded_vault_detects_tampering ... ok
+test tests::tampered_entry_detected ... ok
 test tests::save_and_load_roundtrip ... ok
 
 test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/governed_memory-6791fd3b174c588c)
+     Running unittests src/lib.rs (target/debug/deps/governed_memory-6d41e9ed7e668dae)
 
 running 30 tests
 test admission::tests::test_admission_low_confidence_survey ... ok
@@ -74,96 +149,100 @@ test policy::tests::test_retrieval_policy_high_stakes ... ok
 test proof_bridge::tests::test_tracker_counts_unverified_rejection ... ok
 test proof_bridge::tests::test_tracker_counts_verified_evidence_candidate ... ok
 test proof_bridge::tests::test_tracker_records_audit_and_retrieval_counts ... ok
-test proof_bridge::tests::test_tracker_records_codex_writes ... ok
 test retrieval_intent::tests::test_route_memory_lookup ... ok
+test proof_bridge::tests::test_tracker_records_codex_writes ... ok
 test retrieval_intent::tests::test_route_provider_gated ... ok
 test retrieval_intent::tests::test_route_unsupported_factual ... ok
 test retrieval_planner::tests::test_plan_exact_match ... ok
 test retrieval_planner::tests::test_plan_semantic_with_context ... ok
-test source_trust::tests::test_aggregate_confidence ... ok
 test source_trust::tests::test_aggregate_confidence_empty ... ok
-test source_trust::tests::test_confidence_scores ... ok
 test source_trust::tests::test_source_trusted_for_admission ... ok
+test source_trust::tests::test_aggregate_confidence ... ok
 test source_trust::tests::test_unverified_is_not_verified ... ok
+test source_trust::tests::test_confidence_scores ... ok
 test source_trust::tests::test_verified_evidence_is_verified ... ok
 
 test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/admission_tests.rs (target/debug/deps/admission_tests-99939938cf479440)
+     Running tests/admission_tests.rs (target/debug/deps/admission_tests-94b3d3b53765f9c0)
 
 running 5 tests
-test tests::test_admission_unsupported_raw_text_rejected ... ok
 test tests::test_admission_low_trust_stores_evidence_only ... ok
-test tests::test_source_trust_affects_confidence_not_truth ... ok
-test tests::test_admission_verified_evidence_promotes_claim ... ok
+test tests::test_admission_unsupported_raw_text_rejected ... ok
 test tests::test_admission_reason_codes_populated ... ok
+test tests::test_admission_verified_evidence_promotes_claim ... ok
+test tests::test_source_trust_affects_confidence_not_truth ... ok
 
 test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/codex_adapter_tests.rs (target/debug/deps/codex_adapter_tests-c8a9f8e06fb1183a)
+     Running tests/codex_adapter_tests.rs (target/debug/deps/codex_adapter_tests-0c47f3af3abf87e1)
 
 running 7 tests
-test tests::test_adapter_claim_to_governed_record_includes_audit_codes ... ok
-test tests::test_adapter_evidence_to_candidate_preserves_hash ... ok
-test tests::test_adapter_reasoning_audit_to_governed_record ... ok
-test tests::test_adapter_contradiction_to_conflict_metadata ... ok
-test tests::test_adapter_retrieval_result_to_hits_preserves_links ... ok
 test tests::test_adapter_candidate_to_claim_validates_evidence_exists ... ok
+test tests::test_adapter_contradiction_to_conflict_metadata ... ok
+test tests::test_adapter_claim_to_governed_record_includes_audit_codes ... ok
+test tests::test_adapter_reasoning_audit_to_governed_record ... ok
 test tests::test_adapter_no_provider_metadata_in_conversion ... ok
+test tests::test_adapter_evidence_to_candidate_preserves_hash ... ok
+test tests::test_adapter_retrieval_result_to_hits_preserves_links ... ok
 
 test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/retrieval_intent_tests.rs (target/debug/deps/retrieval_intent_tests-55b6f4aa4734d62d)
+     Running tests/retrieval_intent_tests.rs (target/debug/deps/retrieval_intent_tests-7885ecd7382a7837)
 
 running 6 tests
 test tests::test_retrieval_intent_ambiguous_routes ... ok
-test tests::test_retrieval_intent_high_stakes_low_evidence_routes ... ok
-test tests::test_retrieval_intent_provider_gated_routes ... ok
 test tests::test_retrieval_intent_memory_lookup_routes ... ok
+test tests::test_retrieval_intent_provider_gated_routes ... ok
 test tests::test_retrieval_intent_unsupported_factual_routes ... ok
 test tests::test_retrieval_router_produces_reason_codes ... ok
+test tests::test_retrieval_intent_high_stakes_low_evidence_routes ... ok
 
 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/source_trust_tests.rs (target/debug/deps/source_trust_tests-ccfce5723872c8c2)
+     Running tests/source_trust_tests.rs (target/debug/deps/source_trust_tests-0f7bae76c10b3398)
 
 running 9 tests
 test tests::test_aggregate_confidence_multiple_sources ... ok
 test tests::test_aggregate_confidence_uses_average_not_max ... ok
 test tests::test_is_source_trusted_for_active_admission ... ok
-test tests::test_source_trust_trusted_user_medium_confidence ... ok
 test tests::test_source_trust_affects_confidence_not_truth ... ok
-test tests::test_source_trust_low_confidence_survey_low ... ok
+test tests::test_source_trust_trusted_user_medium_confidence ... ok
 test tests::test_source_trust_verified_evidence_high_confidence ... ok
-test tests::test_source_trust_unverified_zero_confidence ... ok
 test tests::test_source_trust_verified_flag ... ok
+test tests::test_source_trust_low_confidence_survey_low ... ok
+test tests::test_source_trust_unverified_zero_confidence ... ok
 
 test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/gw_workspace-784b630f40eeb938)
+     Running unittests src/lib.rs (target/debug/deps/gw_workspace-ea1faea9edbe051d)
 
 running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/memory-b2d4593d67a21d5f)
+     Running unittests src/lib.rs (target/debug/deps/memory-9a1f3b9a792c6a80)
 
-running 87 tests
+running 91 tests
 test answer_builder::tests::basis_items_empty_when_no_active_claims ... ok
-test answer_builder::tests::basis_items_populated_for_active_claims ... ok
 test answer_builder::tests::basis_item_carries_evidence_ids_from_claim ... ok
 test answer_builder::tests::basis_items_excludes_contradicted_claims ... ok
-test answer_builder::tests::basis_items_multiple_active_claims_ordered ... ok
+test answer_builder::tests::basis_items_populated_for_active_claims ... ok
 test answer_builder::tests::build_with_context_sets_action_and_evidence ... ok
-test answer_builder::tests::contradicted_claims_emit_warning_only ... ok
-test answer_builder::tests::superseded_and_unverified_excluded_from_answer_body ... ok
+test answer_builder::tests::cited_evidence_ids_excludes_contradicted_claims ... ok
+test answer_builder::tests::cited_evidence_ids_extracted_from_active_claims ... ok
+test answer_builder::tests::basis_items_multiple_active_claims_ordered ... ok
 test answer_builder::tests::confidence_averages_only_active_claims ... ok
+test answer_builder::tests::contradicted_claims_emit_warning_only ... ok
 test answer_builder::tests::includes_active_claim_citations ... ok
+test answer_builder::tests::rejected_action_summary_none_when_empty ... ok
+test answer_builder::tests::rejected_action_summary_populated_from_context ... ok
+test answer_builder::tests::superseded_and_unverified_excluded_from_answer_body ... ok
 test claim_store::tests::assert_creates_unverified_claim ... ok
-test claim_store::tests::assert_from_structured_evidence_creates_linked_claim ... ok
 test claim_store::tests::assert_from_evidence_deduplicates_same_evidence ... ok
-test claim_store::tests::confidence_is_stored_and_clamped ... ok
 test claim_store::tests::audit_trail_records_validate_contradict_and_supersede ... ok
+test claim_store::tests::assert_from_structured_evidence_creates_linked_claim ... ok
+test claim_store::tests::confidence_is_stored_and_clamped ... ok
 test claim_store::tests::confidence_survives_contradiction ... ok
 test claim_store::tests::confidence_survives_validation ... ok
 test claim_store::tests::contradict_moves_both_to_contradicted ... ok
@@ -171,92 +250,92 @@ test claim_store::tests::contradict_requires_both_active ... ok
 test claim_store::tests::detect_conflicts_finds_same_subject_different_predicate ... ok
 test claim_store::tests::detect_conflicts_no_false_positive_on_compatible_claims ... ok
 test claim_store::tests::detect_conflicts_only_checks_active_claims ... ok
+test claim_store::tests::detect_object_conflicts_no_false_positive_on_compatible_objects ... ok
 test claim_store::tests::detect_object_conflicts_same_subject_predicate_different_object ... ok
 test claim_store::tests::duplicate_claim_id_is_rejected ... ok
-test claim_store::tests::detect_object_conflicts_no_false_positive_on_compatible_objects ... ok
-test claim_store::tests::evidence_links_are_preserved_through_lifecycle ... ok
 test claim_store::tests::query_by_status_filters_correctly ... ok
 test claim_store::tests::query_by_subject_returns_matching_claims ... ok
 test claim_store::tests::retract_appends_retracted_event_on_returned_claim ... ok
+test claim_store::tests::evidence_links_are_preserved_through_lifecycle ... ok
 test claim_store::tests::retract_nonexistent_fails ... ok
 test claim_store::tests::retract_removes_claim ... ok
 test claim_store::tests::self_contradiction_is_rejected ... ok
-test claim_store::tests::retrieve_for_observation_prefers_evidence_backed_active_claims ... ok
 test claim_store::tests::status_counts_are_accurate ... ok
-test claim_store::tests::supersede_moves_old_to_superseded_and_creates_new_active ... ok
 test claim_store::tests::supersede_rejects_duplicate_new_id ... ok
+test claim_store::tests::retrieve_for_observation_prefers_evidence_backed_active_claims ... ok
+test claim_store::tests::supersede_moves_old_to_superseded_and_creates_new_active ... ok
 test claim_store::tests::supersede_requires_old_to_be_active ... ok
 test claim_store::tests::validate_moves_unverified_to_active ... ok
-test claim_store::tests::unsupported_evidence_payload_is_rejected ... ok
 test claim_store::tests::validate_nonexistent_claim_fails ... ok
+test claim_store::tests::unsupported_evidence_payload_is_rejected ... ok
 test claim_store::tests::validate_requires_unverified_status ... ok
+test durable_memory_provider::tests::test_delete_record_not_found_is_ok ... ok
+test durable_memory_provider::tests::test_delete_record ... ok
+test durable_memory_provider::tests::get_by_status_filters_rejected_stale_disputed_superseded ... ok
+test durable_memory_provider::tests::get_by_status_returns_ordered_by_confidence_desc ... ok
 test durable_memory_provider::tests::test_get_by_kind_empty ... ok
 test durable_memory_provider::tests::test_get_by_kind_contextual ... ok
-test durable_memory_provider::tests::test_delete_record ... ok
-test durable_memory_provider::tests::get_by_status_returns_ordered_by_confidence_desc ... ok
-test durable_memory_provider::tests::test_get_by_subject_no_match ... ok
-test durable_memory_provider::tests::test_delete_record_not_found_is_ok ... ok
 test durable_memory_provider::tests::test_get_by_kind_episodic ... ok
-test durable_memory_provider::tests::test_get_by_kind_semantic ... ok
-test durable_memory_provider::tests::test_get_by_kind_procedural ... ok
-test durable_memory_provider::tests::get_by_status_filters_rejected_stale_disputed_superseded ... ok
-test durable_memory_provider::tests::test_get_by_subject_exact_match ... ok
 test durable_memory_provider::tests::test_get_by_kind_factual ... ok
+test durable_memory_provider::tests::test_get_by_kind_procedural ... ok
+test durable_memory_provider::tests::test_get_by_kind_semantic ... ok
+test durable_memory_provider::tests::test_get_by_subject_exact_match ... ok
+test durable_memory_provider::tests::test_get_by_subject_no_match ... ok
 test durable_memory_provider::tests::test_insert_record_basic ... ok
-test durable_memory_provider::tests::test_link_evidence_and_get_linked ... ok
 test durable_memory_provider::tests::test_link_evidence_duplicate_ignored ... ok
+test durable_memory_provider::tests::test_link_evidence_and_get_linked ... ok
+test durable_memory_provider::tests::test_open_and_assert ... ok
+test durable_memory_provider::tests::test_search_by_predicate ... ok
+test durable_memory_provider::tests::test_search_by_predicate_no_match ... ok
+test memory_provider::tests::durable_query_confidence_range ... ok
+test durable_memory_provider::tests::test_update_record_status ... ok
+test memory_provider::tests::durable_query_empty_observation_returns_all ... ok
+test memory_provider::tests::durable_query_kind_filter ... ok
+test memory_provider::tests::durable_query_object_filter ... ok
 test memory_provider::tests::evidence_id_filter_returns_only_linked ... ok
-test memory_provider::tests::include_evidence_ids_false_strips_list ... ok
+test memory_provider::tests::durable_query_predicate_filter ... ok
 test memory_provider::tests::max_confidence_excludes_high_confidence ... ok
+test memory_provider::tests::include_evidence_ids_false_strips_list ... ok
 test memory_provider::tests::object_filter_narrows_results ... ok
 test memory_provider::tests::offset_paginates_results ... ok
-test memory_provider::tests::predicate_filter_narrows_results ... ok
 test memory_provider::tests::subject_filter_narrows_results ... ok
+test memory_provider::tests::predicate_filter_narrows_results ... ok
 test status_mapping::tests::canonical_all_durable_variants_covered ... ok
 test status_mapping::tests::disputed_remains_disputed ... ok
 test status_mapping::tests::durable_to_memory_mapping_is_explicit ... ok
-test status_mapping::tests::memory_to_durable_mapping_is_explicit ... ok
 test status_mapping::tests::rejected_remains_rejected ... ok
-test status_mapping::tests::stale_remains_stale ... ok
+test status_mapping::tests::memory_to_durable_mapping_is_explicit ... ok
 test status_mapping::tests::superseded_remains_superseded ... ok
+test status_mapping::tests::stale_remains_stale ... ok
 test status_mapping::tests::unknown_remains_unknown ... ok
 test tests::contradicted_memory_not_clean_truth ... ok
 test tests::jsonl_archive_rejects_mv2_extension ... ok
-test tests::jsonl_archive_roundtrip ... ok
 test tests::memvid_backend_stub_fails_loudly ... ok
 test tests::newer_evidence_supersedes_old_claim ... ok
-test memory_provider::tests::durable_query_confidence_range ... ok
-test durable_memory_provider::tests::test_search_by_predicate_no_match ... ok
-test durable_memory_provider::tests::test_open_and_assert ... ok
-test memory_provider::tests::durable_query_object_filter ... ok
-test durable_memory_provider::tests::test_update_record_status ... ok
+test tests::jsonl_archive_roundtrip ... ok
 test memory_provider::tests::durable_query_returns_real_subject_predicate_object ... ok
 test memory_provider::tests::durable_query_subject_filter ... ok
-test memory_provider::tests::durable_query_kind_filter ... ok
-test memory_provider::tests::durable_query_predicate_filter ... ok
-test durable_memory_provider::tests::test_search_by_predicate ... ok
-test memory_provider::tests::durable_query_empty_observation_returns_all ... ok
 
-test result: ok. 87 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+test result: ok. 91 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
 
-     Running unittests src/lib.rs (target/debug/deps/modulation-f7c9782b53ee8464)
+     Running unittests src/lib.rs (target/debug/deps/modulation-74c4a849c0acfd1e)
 
 running 19 tests
 test pressure::tests::decay_reduces_values ... ok
+test pressure::tests::deepseek_block_does_not_imply_emotion ... ok
+test pressure::tests::deepseek_block_includes_all_fields ... ok
 test pressure::tests::dominant_pressures_sorted_by_value ... ok
 test pressure::tests::evidence_gap_boosts_retrieve_memory ... ok
-test pressure::tests::deepseek_block_includes_boundary ... ok
-test pressure::tests::deepseek_block_includes_all_fields ... ok
-test pressure::tests::deepseek_block_does_not_imply_emotion ... ok
 test pressure::tests::max_pressure_returns_highest ... ok
+test pressure::tests::deepseek_block_includes_boundary ... ok
 test pressure::tests::pressure_values_clamp_to_range ... ok
 test pressure::tests::resource_pressure_boosts_no_op ... ok
 test pressure::tests::safety_overrides_urgency ... ok
-test pressure::tests::safety_pressure_boosts_refuse_unsafe ... ok
 test pressure::tests::tool_risk_suppresses_execute_bounded_tool ... ok
 test pressure::tests::tui_render_includes_all_fields ... ok
-test pressure::tests::uncertainty_boosts_ask_clarification ... ok
 test pressure::tests::tui_render_includes_boundary_warning ... ok
+test pressure::tests::safety_pressure_boosts_refuse_unsafe ... ok
+test pressure::tests::uncertainty_boosts_ask_clarification ... ok
 test self_model::tests::known_unknowns_are_queryable ... ok
 test self_model::tests::mode_changes_reflected ... ok
 test self_model::tests::records_actions_with_bounded_buffer ... ok
@@ -264,7 +343,7 @@ test self_model::tests::snapshot_serializes ... ok
 
 test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/main.rs (target/debug/deps/runtime_cli-eedcabba57f21f16)
+     Running unittests src/main.rs (target/debug/deps/runtime_cli-c819dbaa08db6212)
 
 running 2 tests
 test tests::proof_audit_claim_ids_empty_when_none_retrieved ... ok
@@ -272,7 +351,7 @@ test tests::proof_audit_claim_ids_preserve_order_and_dedupe ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/cli_tests.rs (target/debug/deps/cli_tests-8f1985c7274267fd)
+     Running tests/cli_tests.rs (target/debug/deps/cli_tests-7de185d9a107fadc)
 
 running 3 tests
 test action_schema_matches_json ... ok
@@ -457,7 +536,7 @@ test cli_simworld_outputs_json ... ok
     }
   },
   "command": "proof",
-  "output_dir": "/var/folders/xt/jh84t2kj6hl26tk5qx3m_28h0000gn/T/runtime_cli_proof_1778792930438",
+  "output_dir": "/tmp/runtime_cli_proof_1778967299254",
   "overall_status": "pass",
   "strict": true,
   "thresholds": {
@@ -469,59 +548,70 @@ test cli_simworld_outputs_json ... ok
 }
 test proof_reports_audit_claim_refs_when_claims_are_retrieved ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
 
-     Running unittests src/lib.rs (target/debug/deps/runtime_core-721f08af0b09a5e3)
+     Running unittests src/lib.rs (target/debug/deps/runtime_core-e232da4673f1c02b)
 
-running 29 tests
+running 38 tests
 test event::tests::event_envelope_carries_sequence_and_origin ... ok
-test event::tests::event_envelope_mode_changed_has_no_cycle_id ... ok
 test event::tests::event_envelope_cycle_id_delegates_to_inner_event ... ok
+test event::tests::event_envelope_mode_changed_has_no_cycle_id ... ok
 test event::tests::event_envelope_timestamp_is_utc ... ok
+test event::tests::event_envelope_roundtrips_json ... ok
 test observation::tests::ambiguous_request_raises_uncertainty ... ok
+test observation::tests::contradiction_trust_prompt_maps_to_ambiguous ... ok
+test observation::tests::diagnostic_trigger_maps_to_internal_diagnostic ... ok
 test observation::tests::factual_query_is_low_threat ... ok
-test observation::tests::memory_lookup_raises_memory_need ... ok
 test observation::tests::live_status_query_maps_to_insufficient_context ... ok
+test observation::tests::memory_lookup_raises_memory_need ... ok
+test observation::tests::root_credentials_prompt_maps_to_unsafe ... ok
 test observation::tests::spoofed_action_prompt_maps_to_ambiguous ... ok
+test observation::tests::spoofed_override_prompt_maps_to_unsafe ... ok
 test observation::tests::state_application_updates_internal_state ... ok
 test observation::tests::unsafe_request_raises_threat ... ok
-test event::tests::event_envelope_roundtrips_json ... ok
 test reasoning_audit::tests::audit_produces_human_readable_text ... ok
 test reasoning_audit::tests::audit_report_collects_all ... ok
 test reasoning_audit::tests::empty_rationale_still_produces_text ... ok
-test replay_verifier::tests::verify_replay_on_empty_log ... ok
 test replay_verifier::tests::verify_replay_with_events ... ok
+test replay_verifier::tests::verify_replay_on_empty_log ... ok
+test runtime_loop::tests::contradiction_prompt_prefers_clarification ... ok
+test runtime_loop::tests::internal_diagnostic_available_in_explicit_mode ... ok
 test runtime_loop::tests::factual_query_yields_answer ... ok
+test runtime_loop::tests::internal_diagnostic_prompt_without_mode_uses_safe_memory_lookup ... ok
 test runtime_loop::tests::internal_diagnostic_never_selected ... ok
 test runtime_loop::tests::memory_lookup_yields_retrieve_memory ... ok
-test runtime_loop::tests::planning_request_yields_plan ... ok
-test symbolic_activator::tests::planning_request_activates_plan_symbol ... ok
-test symbolic_activator::tests::factual_query_activates_answer_symbol ... ok
+test runtime_loop::tests::memory_returns_hits_for_memory_lookup ... ok
 test runtime_loop::tests::low_confidence_factual_query_prefers_defer ... ok
+test runtime_loop::tests::planning_request_yields_plan ... ok
+test runtime_loop::tests::spoofed_action_prompt_prefers_clarification ... ok
+test runtime_loop::tests::root_credentials_prompt_refuses ... ok
+test symbolic_activator::tests::factual_query_activates_answer_symbol ... ok
+test runtime_loop::tests::unsafe_observation_yields_refuse ... ok
 test runtime_loop::tests::symbolic_activations_are_populated ... ok
 test symbolic_activator::tests::unsafe_request_activates_refuse_symbol ... ok
-test runtime_loop::tests::unsafe_observation_yields_refuse ... ok
-test runtime_loop::tests::memory_returns_hits_for_memory_lookup ... ok
-test runtime_loop::tests::spoofed_action_prompt_prefers_clarification ... ok
+test symbolic_activator::tests::planning_request_activates_plan_symbol ... ok
+test runtime_loop::tests::spoofed_override_prompt_refuses ... ok
 
-test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/integration_tests.rs (target/debug/deps/integration_tests-1963a13c360e659a)
+     Running tests/integration_tests.rs (target/debug/deps/integration_tests-65d9bc2d5fe02578)
 
-running 9 tests
+running 11 tests
+test tests::candidate_rejected_cannot_be_selected ... ok
 test tests::policy_bias_applications_counter_increments ... ok
 test tests::replay_reconstructs_final_state ... ok
-test tests::candidate_rejected_cannot_be_selected ... ok
 test tests::replay_tracks_claim_retrieval_pressure_and_audit_references ... ok
 test tests::claim_retrieved_event_content_fields_are_preserved ... ok
+test tests::retrieval_policy_enforcement_is_tracked_in_replay ... ok
+test tests::retrieval_policy_enforcement_event_serialization ... ok
 test tests::runtime_event_roundtrip ... ok
-test tests::tool_gate_allowlist_bypasses_policy_check ... ok
 test tests::tool_gate_blocks_unregistered_tool ... ok
 test tests::tool_request_without_gate_is_not_satisfied ... ok
+test tests::tool_gate_allowlist_bypasses_policy_check ... ok
 
-test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/replay_durability.rs (target/debug/deps/replay_durability-9437731517bb2d2b)
+     Running tests/replay_durability.rs (target/debug/deps/replay_durability-9100ee59a1558425)
 
 running 3 tests
 test event_log_replay_reconstructs_runtime_state ... ok
@@ -530,33 +620,33 @@ test corrupt_event_log_fails_loudly ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/simworld-e38ca3b4516a3dc4)
+     Running unittests src/lib.rs (target/debug/deps/simworld-747e65e946e5e9cb)
 
 running 10 tests
-test nl_scenarios::tests::curated_set_has_scenarios ... ok
-test scenario::tests::seeded_generation_changes_with_different_seed ... ok
 test nl_scenarios::tests::adversarial_tests_safety ... ok
 test nl_scenarios::tests::all_actions_in_ten_action_vocabulary ... ok
-test nl_scenarios::tests::held_out_separate_from_curated ... ok
-test scenario::tests::seeded_generation_is_deterministic_for_same_seed ... ok
+test nl_scenarios::tests::curated_set_has_scenarios ... ok
 test nl_scenarios::tests::held_out_includes_spoofing_prompts ... ok
-test long_horizon::tests::action_diversity_is_between_zero_and_one ... ok
+test nl_scenarios::tests::held_out_separate_from_curated ... ok
+test scenario::tests::seeded_generation_changes_with_different_seed ... ok
+test scenario::tests::seeded_generation_is_deterministic_for_same_seed ... ok
 test long_horizon::tests::larger_run_still_completes ... ok
+test long_horizon::tests::action_diversity_is_between_zero_and_one ... ok
 test long_horizon::tests::long_horizon_run_completes_without_panics ... ok
 
-test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
 
-     Running tests/integration_tests.rs (target/debug/deps/integration_tests-436cd5387380b758)
+     Running tests/integration_tests.rs (target/debug/deps/integration_tests-de6b750f96f977b8)
 
 running 4 tests
-test tests::simworld_seed_5_25_resources_above_025 ... ok
 test tests::action_match_alone_is_not_enough ... ok
+test tests::simworld_seed_5_25_resources_above_025 ... ok
 test tests::simworld_seed_5_25_resources_above_070_target ... ok
 test tests::internal_diagnostic_never_user_facing ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-     Running tests/oracle_guard.rs (target/debug/deps/oracle_guard-dcb62169744626a5)
+     Running tests/oracle_guard.rs (target/debug/deps/oracle_guard-dcc4b50d7fb061e1)
 
 running 3 tests
 test traces_contain_minimum_required_fields ... ok
@@ -565,99 +655,33 @@ test internal_diagnostic_never_selected_by_runtime ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-     Running unittests src/lib.rs (target/debug/deps/symbolic-09c24c518fc10eb4)
+     Running unittests src/lib.rs (target/debug/deps/symbolic-8c244151bd913dc5)
 
 running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/integration_tests.rs (target/debug/deps/integration_tests-fc36b61ade07df01)
+     Running tests/integration_tests.rs (target/debug/deps/integration_tests-2ef8f53b39a63936)
 
 running 4 tests
+test tests::concept_blend_is_speculative ... ok
 test tests::no_fake_mv2_scan ... ok
 test tests::symbolic_resonance_cannot_override_safety ... ok
-test tests::concept_blend_is_speculative ... ok
 test tests::symbolic_trace_serializes_losslessly ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src/lib.rs (target/debug/deps/tools-d2d2eab76829968f)
+     Running unittests src/lib.rs (target/debug/deps/tools-31b83732291f60c6)
 
 running 8 tests
 test tests::disallowed_action_is_blocked ... ok
-test tests::missing_confirmation_is_blocked ... ok
-test tests::missing_sandbox_is_blocked ... ok
 test tests::max_consecutive_enforced ... ok
+test tests::missing_sandbox_is_blocked ... ok
+test tests::missing_confirmation_is_blocked ... ok
 test tests::registered_policy_permits_tool ... ok
 test tests::unregistered_tool_is_blocked_mut ... ok
-test tests::valid_request_allowed ... ok
 test tests::violations_are_recorded ... ok
+test tests::valid_request_allowed ... ok
 
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests cognition
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests contradiction
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests evidence
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests governed_memory
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests gw_workspace
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests memory
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests modulation
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests runtime_core
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests simworld
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests symbolic
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests tools
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 

@@ -5,7 +5,7 @@
 ## Current identity
 
 - Label: **CODEX-main 36 hardening candidate**
-- Current package SHA-256: `44d56855d242ced21286841ce1f42b65b8924794f486b699ec32d73f8123ddca`
+- Current package SHA-256: `582c25e54b6219e17f0a7a2af049e7f10ef9a7aa681e5f7b79f86f51740d4f33`
 - Classification: bounded Rust-authoritative cognitive-runtime scaffold
 
 ## Evidence-backed verification status
@@ -23,7 +23,7 @@ Fresh checks run in this environment:
 
 Packaged evidence (unless rerun locally):
 
-- Rust tests: 274 passed, 0 failed, 0 ignored
+- Rust tests: 289 passed, 0 failed, 0 ignored
 - UI default tests: 76 passed, 0 failed, 6 ignored
 - UI provider-feature tests: 75 passed, 0 failed, 6 ignored
 

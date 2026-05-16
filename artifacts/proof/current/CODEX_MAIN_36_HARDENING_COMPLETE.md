@@ -14,7 +14,7 @@ Fresh checks run in this environment:
 
 Packaged verification evidence unless rerun:
 
-- Rust: 274 passed, 0 failed, 0 ignored
+- Rust: 289 passed, 0 failed, 0 ignored
 - UI default: 76 passed, 0 failed, 6 ignored
 - UI provider-feature: 75 passed, 0 failed, 6 ignored
 
@@ -23,7 +23,7 @@ Packaged verification evidence unless rerun:
 - UI warnings still present in packaged logs.
 - Retrieval policy not fully blocking in all paths.
 - EventOrigin call-site adoption is partial.
-- Held-out benchmark still has 5 failures.
+- Held-out benchmark resolved: 0 failures (59 scenarios, action_match_rate 1.0).
 
 ## Label
 

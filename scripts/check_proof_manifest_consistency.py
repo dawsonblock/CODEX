@@ -844,6 +844,130 @@ def main() -> int:
         else:
             print(f"  OK  {report_name} registered in manifest")
 
+    # Phase J: Stale SHA check in current-status docs
+    print("\nPhase J: Checking for stale package SHA in current-status docs ...")
+    STALE_SHA = "44d56855d242ced21286841ce1f42b65b8924794f486b699ec32d73f8123ddca"
+    CURRENT_SHA = "582c25e54b6219e17f0a7a2af049e7f10ef9a7aa681e5f7b79f86f51740d4f33"
+    HISTORICAL_MARKERS = {"historical", "previous", "prior", "old package", "superseded", "comparison", "earlier"}
+    current_status_docs = [
+        REPO_ROOT / "VALIDATION_READINESS.md",
+        REPO_ROOT / "artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md",
+        REPO_ROOT / "docs/HARDENING_REPORT_CODEX_MAIN_36.md",
+        REPO_ROOT / "STATUS.md",
+        REPO_ROOT / "README.md",
+        REPO_ROOT / "artifacts/proof/CURRENT_PROOF_SUMMARY.md",
+        REPO_ROOT / "artifacts/proof/current/ALL_PHASES_COMPLETE_FINAL_REPORT.md",
+        REPO_ROOT / "artifacts/proof/current/CODEX_MAIN_36_HARDENING_COMPLETE.md",
+        REPO_ROOT / "artifacts/proof/current/FINAL_COMPLETION_SUMMARY.md",
+        REPO_ROOT / "artifacts/proof/current/SESSION_FINAL_REPORT.md",
+        REPO_ROOT / "docs/REPO_INVENTORY.md",
+    ]
+    for doc_path in current_status_docs:
+        if not doc_path.exists():
+            continue
+        text = doc_path.read_text()
+        if STALE_SHA in text:
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                if STALE_SHA in line:
+                    ctx_start = max(0, i - 4)
+                    ctx_end = min(len(lines), i + 5)
+                    context = '\n'.join(lines[ctx_start:ctx_end]).lower()
+                    is_historical = any(m in context for m in HISTORICAL_MARKERS)
+                    if not is_historical:
+                        failures.append(
+                            f"STALE_SHA_FOUND: {doc_path.name} line {i+1} contains old SHA {STALE_SHA[:16]}... in non-historical context"
+                        )
+                    else:
+                        print(f"  OK  {doc_path.name} line {i+1}: old SHA in historical context")
+        else:
+            print(f"  OK  {doc_path.name}: no stale SHA found")
+
+    # Phase K: Stale held-out benchmark text in current-status docs
+    print("\nPhase K: Checking for stale held-out benchmark values in current-status docs ...")
+    STALE_BENCHMARK_PATTERNS = [
+        ("0.9152542372881356", "held_out action_match_rate 0.9152542372881356"),
+        ("0.8983050847457628", "held_out action_match_rate 0.8983050847457628"),
+    ]
+    STALE_FAILURE_PHRASES = [
+        "held-out benchmark still has 5 failures",
+        "retains 5 failures",
+        "6 failures remain",
+        "held_out.*failures.*5",
+        "failures: 5",
+        "failures 5",
+    ]
+    import re as _re
+    benchmark_docs = [
+        REPO_ROOT / "artifacts/proof/current/ALL_PHASES_COMPLETE_FINAL_REPORT.md",
+        REPO_ROOT / "artifacts/proof/current/CODEX_MAIN_36_HARDENING_COMPLETE.md",
+        REPO_ROOT / "artifacts/proof/current/FINAL_COMPLETION_SUMMARY.md",
+        REPO_ROOT / "artifacts/proof/current/SESSION_FINAL_REPORT.md",
+        REPO_ROOT / "docs/REPO_INVENTORY.md",
+        REPO_ROOT / "PHASE_15_IMPLEMENTATION_COMPLETE.md",
+        REPO_ROOT / "STATUS.md",
+        REPO_ROOT / "README.md",
+        REPO_ROOT / "artifacts/proof/CURRENT_PROOF_SUMMARY.md",
+    ]
+    for doc_path in benchmark_docs:
+        if not doc_path.exists():
+            continue
+        text = doc_path.read_text()
+        doc_ok = True
+        for stale_val, label in STALE_BENCHMARK_PATTERNS:
+            if stale_val in text:
+                lines = text.split('\n')
+                for i, line in enumerate(lines):
+                    if stale_val in line:
+                        ctx_start = max(0, i - 4)
+                        ctx_end = min(len(lines), i + 5)
+                        context = '\n'.join(lines[ctx_start:ctx_end]).lower()
+                        is_historical = any(m in context for m in HISTORICAL_MARKERS)
+                        if not is_historical:
+                            failures.append(
+                                f"STALE_BENCHMARK: {doc_path.name} line {i+1} contains stale value {stale_val} in non-historical context"
+                            )
+                            doc_ok = False
+                        else:
+                            print(f"  OK  {doc_path.name} line {i+1}: stale value {stale_val} in historical context")
+        for phrase in STALE_FAILURE_PHRASES:
+            if _re.search(phrase, text, _re.IGNORECASE):
+                lines = text.split('\n')
+                for i, line in enumerate(lines):
+                    if _re.search(phrase, line, _re.IGNORECASE):
+                        ctx_start = max(0, i - 4)
+                        ctx_end = min(len(lines), i + 5)
+                        context = '\n'.join(lines[ctx_start:ctx_end]).lower()
+                        is_historical = any(m in context for m in HISTORICAL_MARKERS)
+                        if not is_historical:
+                            failures.append(
+                                f"STALE_FAILURE_PHRASE: {doc_path.name} line {i+1} contains stale failure phrase: {line.strip()[:80]}"
+                            )
+                            doc_ok = False
+        if doc_ok:
+            print(f"  OK  {doc_path.name}: no stale benchmark values")
+
+    # Phase L: Fixture directory clarity check
+    print("\nPhase L: Checking artifacts/proof/test fixture labeling ...")
+    test_dir = REPO_ROOT / "artifacts/proof/test"
+    if test_dir.exists():
+        test_readme = test_dir / "README.md"
+        if not test_readme.exists():
+            failures.append(
+                "FIXTURE_UNLABELED: artifacts/proof/test/ exists but has no README.md fixture marker. "
+                "Add a README.md clearly stating this is non-authoritative fixture data."
+            )
+        else:
+            readme_content = test_readme.read_text().lower()
+            if "fixture" not in readme_content and "non-authoritative" not in readme_content:
+                failures.append(
+                    "FIXTURE_README_INCOMPLETE: artifacts/proof/test/README.md exists but does not clearly label as fixture/non-authoritative."
+                )
+            else:
+                print("  OK  artifacts/proof/test/README.md exists and labels as fixture/non-authoritative")
+    else:
+        print("  OK  artifacts/proof/test/ does not exist (no fixture confusion)")
+
     # Phase I: Active codename identity drift check
     manifest_codename = manifest.get("codename", "UNKNOWN")
     check_active_codename_identity(failures, manifest_codename)
