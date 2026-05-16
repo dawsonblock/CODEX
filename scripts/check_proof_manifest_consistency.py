@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,10 @@ STALE_MARKERS = [
     "held_out: 46 scenarios",
     "match_rate 1.0000",
 ]
+# Words that indicate a context is historical/non-current, used to allow old values in historical sections.
+HISTORICAL_CONTEXT_MARKERS = {
+    "historical", "previous", "prior", "old package", "superseded", "comparison", "earlier",
+}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -847,8 +852,6 @@ def main() -> int:
     # Phase J: Stale SHA check in current-status docs
     print("\nPhase J: Checking for stale package SHA in current-status docs ...")
     STALE_SHA = "44d56855d242ced21286841ce1f42b65b8924794f486b699ec32d73f8123ddca"
-    CURRENT_SHA = "582c25e54b6219e17f0a7a2af049e7f10ef9a7aa681e5f7b79f86f51740d4f33"
-    HISTORICAL_MARKERS = {"historical", "previous", "prior", "old package", "superseded", "comparison", "earlier"}
     current_status_docs = [
         REPO_ROOT / "VALIDATION_READINESS.md",
         REPO_ROOT / "artifacts/proof/verification/FINAL_VERIFICATION_REPORT.md",
@@ -873,7 +876,7 @@ def main() -> int:
                     ctx_start = max(0, i - 4)
                     ctx_end = min(len(lines), i + 5)
                     context = '\n'.join(lines[ctx_start:ctx_end]).lower()
-                    is_historical = any(m in context for m in HISTORICAL_MARKERS)
+                    is_historical = any(m in context for m in HISTORICAL_CONTEXT_MARKERS)
                     if not is_historical:
                         failures.append(
                             f"STALE_SHA_FOUND: {doc_path.name} line {i+1} contains old SHA {STALE_SHA[:16]}... in non-historical context"
@@ -897,7 +900,6 @@ def main() -> int:
         "failures: 5",
         "failures 5",
     ]
-    import re as _re
     benchmark_docs = [
         REPO_ROOT / "artifacts/proof/current/ALL_PHASES_COMPLETE_FINAL_REPORT.md",
         REPO_ROOT / "artifacts/proof/current/CODEX_MAIN_36_HARDENING_COMPLETE.md",
@@ -922,7 +924,7 @@ def main() -> int:
                         ctx_start = max(0, i - 4)
                         ctx_end = min(len(lines), i + 5)
                         context = '\n'.join(lines[ctx_start:ctx_end]).lower()
-                        is_historical = any(m in context for m in HISTORICAL_MARKERS)
+                        is_historical = any(m in context for m in HISTORICAL_CONTEXT_MARKERS)
                         if not is_historical:
                             failures.append(
                                 f"STALE_BENCHMARK: {doc_path.name} line {i+1} contains stale value {stale_val} in non-historical context"
@@ -931,14 +933,14 @@ def main() -> int:
                         else:
                             print(f"  OK  {doc_path.name} line {i+1}: stale value {stale_val} in historical context")
         for phrase in STALE_FAILURE_PHRASES:
-            if _re.search(phrase, text, _re.IGNORECASE):
+            if re.search(phrase, text, re.IGNORECASE):
                 lines = text.split('\n')
                 for i, line in enumerate(lines):
-                    if _re.search(phrase, line, _re.IGNORECASE):
+                    if re.search(phrase, line, re.IGNORECASE):
                         ctx_start = max(0, i - 4)
                         ctx_end = min(len(lines), i + 5)
                         context = '\n'.join(lines[ctx_start:ctx_end]).lower()
-                        is_historical = any(m in context for m in HISTORICAL_MARKERS)
+                        is_historical = any(m in context for m in HISTORICAL_CONTEXT_MARKERS)
                         if not is_historical:
                             failures.append(
                                 f"STALE_FAILURE_PHRASE: {doc_path.name} line {i+1} contains stale failure phrase: {line.strip()[:80]}"
