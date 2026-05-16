@@ -935,11 +935,11 @@ def main() -> int:
                         is_historical = any(m in context for m in HISTORICAL_CONTEXT_MARKERS)
                         if not is_historical:
                             failures.append(
-                                f"STALE_BENCHMARK: {doc_path.name} line {i+1} contains stale value {stale_val} in non-historical context"
+                                f"STALE_BENCHMARK: {doc_path.name} line {i+1} contains stale benchmark {label} ({stale_val}) in non-historical context"
                             )
                             doc_ok = False
                         else:
-                            print(f"  OK  {doc_path.name} line {i+1}: stale value {stale_val} in historical context")
+                            print(f"  OK  {doc_path.name} line {i+1}: stale benchmark {label} ({stale_val}) in historical context")
         for phrase in STALE_FAILURE_PHRASES:
             if re.search(phrase, text, re.IGNORECASE):
                 lines = text.split('\n')
